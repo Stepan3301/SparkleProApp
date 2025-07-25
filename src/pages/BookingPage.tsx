@@ -11,7 +11,7 @@ import Button from '../components/ui/Button';
 import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
-import ModernAddressAutocomplete from '../components/ui/ModernAddressAutocomplete';
+import UnifiedAddressAutocomplete from '../components/ui/UnifiedAddressAutocomplete';
 import { maskCardNumber } from '../utils/cardEncryption';
 import { PlaceResult } from '../types/places';
 import { 
@@ -1369,16 +1369,22 @@ const BookingPage: React.FC = () => {
                     </select>
                   ) : (
                     <div className="space-y-4">
-                      <ModernAddressAutocomplete
+                      <UnifiedAddressAutocomplete
                         value={newAddressValue}
-                        onChange={(address, placeDetails) => {
-                          console.log('Modern API - Address changed:', address, placeDetails);
+                        onChange={(address: string, placeDetails?: any) => {
+                          console.log('Unified API - Address changed:', address, placeDetails);
                           setNewAddressValue(address);
                           setNewAddressStreet(address);
                           // Update form field immediately
                           setValue('newAddress', address);
                         }}
                         placeholder="Search for your address..."
+                        showMap={true}
+                        onError={(error: string) => {
+                          console.error('Address search error:', error);
+                        }}
+                        componentRestrictions={{ country: ['AE'] }}
+                        types={['address']}
                       />
                       {/* Hidden input to register newAddress with react-hook-form */}
                       <input

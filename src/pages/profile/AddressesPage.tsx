@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
-import GoogleMapsAutocomplete from '../../components/ui/GoogleMapsAutocomplete';
+import UnifiedAddressAutocomplete from '../../components/ui/UnifiedAddressAutocomplete';
 import { PlaceDetails, AddressComponent, PlaceResult } from '../../types/places';
 import { 
   ArrowLeftIcon, 
@@ -341,13 +341,36 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <GoogleMapsAutocomplete
-              value={searchValue}
-              onChange={handleAddressChange}
-              label="Search Address"
-              placeholder="Search for your address..."
-              showMap={true}
-            />
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Address</label>
+              <UnifiedAddressAutocomplete
+                value={searchValue}
+                onChange={(address: string, placeDetails?: any) => {
+                  // Convert UnifiedAddressAutocomplete PlaceDetails to PlaceResult
+                  let convertedPlaceDetails: PlaceResult | undefined;
+                  if (placeDetails) {
+                    convertedPlaceDetails = {
+                      displayName: placeDetails.displayName ? { text: placeDetails.displayName } : undefined,
+                      formattedAddress: placeDetails.formattedAddress,
+                      location: placeDetails.location,
+                      addressComponents: placeDetails.addressComponents?.map((comp: any) => ({
+                        longText: comp.long_name || comp.longText || '',
+                        shortText: comp.short_name || comp.shortText || '',
+                        types: comp.types || []
+                      }))
+                    };
+                  }
+                  handleAddressChange(address, convertedPlaceDetails);
+                }}
+                placeholder="Search for your address..."
+                showMap={true}
+                onError={(error: string) => {
+                  console.error('Address search error:', error);
+                }}
+                componentRestrictions={{ country: ['AE'] }}
+                types={['address']}
+              />
+            </div>
           </div>
 
           {/* Read-only Street Name Field */}
