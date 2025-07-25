@@ -60,6 +60,7 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
   const [inputValue, setInputValue] = useState(value);
   const [isComponentReady, setIsComponentReady] = useState(false);
   const [googleMapsResult, setGoogleMapsResult] = useState<GoogleMapsLoadResult | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Track if component is visible in modal
 
   // Internal value management to prevent React warnings
   const [internalValue, setInternalValue] = useState(value);
@@ -78,49 +79,67 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     onLoadingStateChange?.(loading);
   }, [onLoadingStateChange]);
 
-  // Wait for refs to be available with timeout
+  // Wait for refs to be available with modal-aware timeout and validation
   const waitForRefs = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
       let attempts = 0;
-      const maxAttempts = 40; // 40 * 50ms = 2 seconds timeout
+      const maxAttempts = 60; // 60 * 100ms = 6 seconds timeout (longer for modals)
       
       const checkRefs = () => {
         attempts++;
-        const containerReady = containerRef.current !== null;
-        const inputReady = inputRef.current !== null;
-        const mapReady = !showMap || mapRef.current !== null;
         
-        // Only log every 10 attempts to reduce spam
-        if (attempts === 1 || attempts % 10 === 0) {
-          console.log(`UnifiedAddressAutocomplete: Ref check attempt ${attempts}/${maxAttempts}:`, {
+        // Check if refs exist and elements are actually visible/accessible
+        const containerElement = containerRef.current;
+        const inputElement = inputRef.current;
+        const mapElement = mapRef.current;
+        
+        const containerReady = containerElement !== null && containerElement.offsetParent !== null;
+        const inputReady = inputElement !== null && inputElement.offsetParent !== null;
+        const mapReady = !showMap || (mapElement !== null && mapElement.offsetParent !== null);
+        
+        // Additional check: ensure elements are actually visible in the DOM
+        const containerVisible = containerElement ? containerElement.getBoundingClientRect().width > 0 : false;
+        const inputVisible = inputElement ? inputElement.getBoundingClientRect().width > 0 : false;
+        
+        // Only log every 15 attempts to reduce spam, but always log first and last
+        if (attempts === 1 || attempts % 15 === 0 || attempts >= maxAttempts - 1) {
+          console.log(`UnifiedAddressAutocomplete: Modal-aware ref check ${attempts}/${maxAttempts}:`, {
             containerReady,
             inputReady,
             mapReady,
-            showMap
+            containerVisible,
+            inputVisible,
+            showMap,
+            isModalOpen
           });
         }
         
-        if (containerReady && inputReady && mapReady) {
-          console.log('UnifiedAddressAutocomplete: All required refs are now available');
+        // All refs must be ready AND visible
+        if (containerReady && inputReady && mapReady && containerVisible && inputVisible) {
+          console.log('UnifiedAddressAutocomplete: All required refs are available and visible');
           resolve();
         } else if (attempts >= maxAttempts) {
-          console.error('UnifiedAddressAutocomplete: Timeout waiting for refs. Current state:', {
+          const errorState = {
             containerReady,
             inputReady, 
             mapReady,
+            containerVisible,
+            inputVisible,
             showMap,
-            containerRefExists: !!containerRef.current,
-            inputRefExists: !!inputRef.current,
-            mapRefExists: !!mapRef.current
-          });
-          reject(new Error('Timeout waiting for refs to become available'));
+            isModalOpen,
+            containerExists: !!containerRef.current,
+            inputExists: !!inputRef.current,
+            mapExists: !!mapRef.current
+          };
+          console.error('UnifiedAddressAutocomplete: Timeout waiting for modal refs. Final state:', errorState);
+          reject(new Error(`Modal refs timeout. State: ${JSON.stringify(errorState)}`));
         } else {
-          setTimeout(checkRefs, 50);
+          setTimeout(checkRefs, 100); // Slower checks for modal scenarios
         }
       };
       checkRefs();
     });
-  }, [showMap]);
+  }, [showMap, isModalOpen]);
 
   // Initialize Google Maps API only once
   useEffect(() => {
@@ -150,16 +169,61 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     initializeGoogleMaps();
   }, []); // Only run once
 
-  // Mark component as ready after DOM is set up
+  // Detect when component becomes visible (for modal handling)
+  useEffect(() => {
+    // Check if the component is visible in a modal by monitoring the container
+    const checkVisibility = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const isVisible = rect.width > 0 && rect.height > 0 && rect.top >= 0;
+        
+        if (isVisible && !isModalOpen) {
+          console.log('UnifiedAddressAutocomplete: Component became visible (modal opened)');
+          setIsModalOpen(true);
+        } else if (!isVisible && isModalOpen) {
+          console.log('UnifiedAddressAutocomplete: Component became hidden (modal closed)');
+          setIsModalOpen(false);
+        }
+      }
+    };
+
+    // Initial check
+    checkVisibility();
+
+    // Set up mutation observer to detect DOM changes (modal opening/closing)
+    const observer = new MutationObserver(checkVisibility);
+    if (containerRef.current) {
+      observer.observe(document.body, { 
+        childList: true, 
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+    }
+
+    // Also check on resize/scroll events
+    const handleResize = () => setTimeout(checkVisibility, 100);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize);
+    };
+  }, [isModalOpen]);
+
+  // Mark component as ready after DOM is set up and modal is open
   useLayoutEffect(() => {
     setIsComponentReady(true);
-    console.log('UnifiedAddressAutocomplete: Component is ready, checking refs:', {
+    console.log('UnifiedAddressAutocomplete: Component layout ready, checking refs and visibility:', {
       containerRef: !!containerRef.current,
       inputRef: !!inputRef.current,
       mapRef: !!mapRef.current,
-      showMap
+      showMap,
+      isModalOpen
     });
-  }, [showMap]);
+  }, [showMap, isModalOpen]);
 
   // Initialize map
   const initializeMap = useCallback(() => {
@@ -219,27 +283,36 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     }
   }, [map, showMap, handleError]);
 
-  // Initialize autocomplete after both Google Maps and component are ready
+  // Initialize autocomplete only when Google Maps is loaded, component is ready, AND modal is open
   useEffect(() => {
-    if (!googleMapsResult || !isComponentReady || !googleMapsResult.success) {
+    // Critical: Only initialize when all conditions are met
+    if (!googleMapsResult || !isComponentReady || !googleMapsResult.success || !isModalOpen) {
+      console.log('UnifiedAddressAutocomplete: Waiting for all conditions to be met:', {
+        googleMapsResult: !!googleMapsResult,
+        isComponentReady,
+        googleMapsSuccess: googleMapsResult?.success,
+        isModalOpen
+      });
       return;
     }
 
     const initializeAutocomplete = async () => {
       try {
-        console.log('UnifiedAddressAutocomplete: Starting autocomplete initialization...');
+        console.log('UnifiedAddressAutocomplete: Starting modal-aware autocomplete initialization...');
         
-        // Try to wait for refs, but continue even if it times out
+        // CRITICAL: For modal components, we must wait for DOM elements to be fully visible
+        // before initializing Google Places API. This prevents ref availability issues.
         try {
-          console.log('UnifiedAddressAutocomplete: Waiting for refs...');
+          console.log('UnifiedAddressAutocomplete: Waiting for modal refs to be ready...');
           await waitForRefs();
-          console.log('UnifiedAddressAutocomplete: Refs ready, proceeding with initialization');
+          console.log('UnifiedAddressAutocomplete: Modal refs ready, proceeding with initialization');
         } catch (refError) {
-          console.warn('UnifiedAddressAutocomplete: Ref waiting timed out, trying to continue anyway:', refError);
-          // Check if we can proceed without perfect ref timing
-          if (!containerRef.current) {
-            console.error('UnifiedAddressAutocomplete: Container ref still not available, cannot proceed');
-            handleError('Component not properly mounted');
+          console.warn('UnifiedAddressAutocomplete: Modal ref waiting timed out, checking fallback options:', refError);
+          
+          // For modal scenarios, if refs aren't ready after timeout, it's likely a serious issue
+          if (!containerRef.current || !containerRef.current.offsetParent) {
+            console.error('UnifiedAddressAutocomplete: Modal container not properly mounted or visible');
+            handleError('Component not properly mounted in modal');
             setLoadingState(false);
             return;
           }
@@ -281,7 +354,29 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     };
 
     initializeAutocomplete();
-  }, [googleMapsResult, isComponentReady, showMap, waitForRefs, initializeMap]);
+  }, [googleMapsResult, isComponentReady, showMap, waitForRefs, initializeMap, isModalOpen]);
+
+  // Cleanup when modal closes - Important for preventing memory leaks and stale references
+  useEffect(() => {
+    if (!isModalOpen && autocompleteElement) {
+      console.log('UnifiedAddressAutocomplete: Modal closed, cleaning up autocomplete');
+      
+      // Clean up Google Maps event listeners to prevent memory leaks
+      if (autocompleteElement.legacy) {
+        // Legacy API cleanup
+        window.google?.maps?.event?.clearInstanceListeners?.(autocompleteElement.legacy);
+      }
+      
+      // Reset autocomplete state when modal closes
+      setAutocompleteElement(null);
+      setUseNewAPI(false);
+      
+      // Reset loading state for next modal open
+      if (!googleMapsResult?.success) {
+        setIsLoading(true);
+      }
+    }
+  }, [isModalOpen, autocompleteElement, googleMapsResult]);
 
   // Initialize new Places API (with improved ref checking)
   const initializeNewPlacesAPI = async () => {
@@ -595,7 +690,11 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
   }
 
   return (
-    <div ref={containerRef} className={`unified-address-autocomplete ${className}`}>
+    <div 
+      ref={containerRef} 
+      className={`unified-address-autocomplete ${className}`}
+      // Modal-aware container that tracks visibility for proper initialization timing
+    >
       <style>{`
         .unified-address-autocomplete {
           position: relative;
