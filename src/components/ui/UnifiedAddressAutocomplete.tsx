@@ -82,8 +82,19 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
   const waitForRefs = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
       const checkRefs = () => {
-        if (containerRef.current && inputRef.current) {
-          console.log('UnifiedAddressAutocomplete: Refs are now available');
+        const containerReady = containerRef.current !== null;
+        const inputReady = inputRef.current !== null;
+        const mapReady = !showMap || mapRef.current !== null; // Only check mapRef if showMap is true
+        
+        console.log('UnifiedAddressAutocomplete: Ref status check:', {
+          containerReady,
+          inputReady,
+          mapReady,
+          showMap
+        });
+        
+        if (containerReady && inputReady && mapReady) {
+          console.log('UnifiedAddressAutocomplete: All required refs are now available');
           resolve();
         } else {
           console.log('UnifiedAddressAutocomplete: Waiting for refs to be available...');
@@ -92,7 +103,7 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
       };
       checkRefs();
     });
-  }, []);
+  }, [showMap]);
 
   // Initialize Google Maps API only once
   useEffect(() => {
@@ -128,6 +139,64 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     console.log('UnifiedAddressAutocomplete: Component is ready');
   }, []);
 
+  // Initialize map
+  const initializeMap = useCallback(() => {
+    console.log('UnifiedAddressAutocomplete: initializeMap called', {
+      mapRefCurrent: !!mapRef.current,
+      mapExists: !!map,
+      googleMapsAvailable: !!(window.google?.maps?.Map),
+      showMap
+    });
+
+    if (!mapRef.current) {
+      console.warn('UnifiedAddressAutocomplete: mapRef.current is null, cannot initialize map');
+      return;
+    }
+
+    if (map) {
+      console.log('UnifiedAddressAutocomplete: Map already exists, skipping initialization');
+      return;
+    }
+
+    if (!window.google?.maps?.Map) {
+      console.error('UnifiedAddressAutocomplete: Google Maps library not available');
+      return;
+    }
+
+    try {
+      console.log('UnifiedAddressAutocomplete: Starting map initialization...');
+      
+      // Default to Dubai center
+      const dubaiCenter = { lat: 25.2048, lng: 55.2708 };
+      
+      const mapInstance = new window.google.maps.Map(mapRef.current, {
+        zoom: 12,
+        center: dubaiCenter,
+        styles: [
+          {
+            featureType: 'all',
+            elementType: 'geometry.fill',
+            stylers: [{ color: '#f8fafc' }]
+          },
+          {
+            featureType: 'water',
+            elementType: 'geometry',
+            stylers: [{ color: '#e0f2fe' }]
+          }
+        ],
+        disableDefaultUI: true,
+        zoomControl: true,
+        gestureHandling: 'cooperative'
+      });
+
+      setMap(mapInstance);
+      console.log('UnifiedAddressAutocomplete: Map initialized successfully!');
+    } catch (error) {
+      console.error('UnifiedAddressAutocomplete: Map initialization failed:', error);
+      handleError('Failed to initialize map');
+    }
+  }, [map, showMap, handleError]);
+
   // Initialize autocomplete after both Google Maps and component are ready
   useEffect(() => {
     if (!googleMapsResult || !isComponentReady || !googleMapsResult.success) {
@@ -160,9 +229,13 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
 
         // Initialize map if needed
         if (showMap) {
+          console.log('UnifiedAddressAutocomplete: About to call initializeMap()');
           initializeMap();
+        } else {
+          console.log('UnifiedAddressAutocomplete: Skipping map initialization (showMap=false)');
         }
 
+        console.log('UnifiedAddressAutocomplete: Initialization complete, setting loading to false');
         setLoadingState(false);
 
       } catch (error) {
@@ -173,7 +246,7 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     };
 
     initializeAutocomplete();
-  }, [googleMapsResult, isComponentReady, showMap, waitForRefs]);
+  }, [googleMapsResult, isComponentReady, showMap, waitForRefs, initializeMap]);
 
   // Initialize new Places API (with improved ref checking)
   const initializeNewPlacesAPI = async () => {
@@ -373,41 +446,6 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
       throw error;
     }
   };
-
-  // Initialize map
-  const initializeMap = useCallback(() => {
-    if (!mapRef.current || map) return;
-
-    try {
-      // Default to Dubai center
-      const dubaiCenter = { lat: 25.2048, lng: 55.2708 };
-      
-      const mapInstance = new window.google.maps.Map(mapRef.current, {
-        zoom: 12,
-        center: dubaiCenter,
-        styles: [
-          {
-            featureType: 'all',
-            elementType: 'geometry.fill',
-            stylers: [{ color: '#f8fafc' }]
-          },
-          {
-            featureType: 'water',
-            elementType: 'geometry',
-            stylers: [{ color: '#e0f2fe' }]
-          }
-        ],
-        disableDefaultUI: true,
-        zoomControl: true,
-        gestureHandling: 'cooperative'
-      });
-
-      setMap(mapInstance);
-      console.log('UnifiedAddressAutocomplete: Map initialized');
-    } catch (error) {
-      console.error('UnifiedAddressAutocomplete: Map initialization failed:', error);
-    }
-  }, [map]);
 
   // Update map with new location
   const updateMap = useCallback((location?: { lat: number; lng: number }, title?: string) => {
