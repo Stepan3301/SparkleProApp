@@ -1157,95 +1157,82 @@ const BookingPage: React.FC = () => {
             </div>
             
             <div className="space-y-4">
-              {/* Carousel Container */}
-              <div className="relative">
-                <div className="overflow-x-auto pb-4 scrollbar-hide" style={{
-                  scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
-                }}>
-                  <div className="flex gap-4 min-w-max px-1">
-                    {additionalServices.map((addon) => {
-                      const isSelected = selectedAddons.some(selected => selected.id === addon.id);
-                      
-                      return (
-                        <div
-                          key={addon.id}
-                          className={`flex-shrink-0 w-72 border-2 rounded-2xl p-4 cursor-pointer transition-all ${
-                            isSelected 
-                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
-                              : 'border-gray-200 hover:border-gray-300 bg-white'
-                          }`}
-                          onClick={() => toggleAddon(addon)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                <img
-                                  src={getAddonImage(addon.id)}
-                                  alt={addon.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    const target = e.currentTarget;
-                                    target.style.display = 'none';
-                                    if (target.nextElementSibling) {
-                                      (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                                    }
-                                  }}
-                                />
-                                <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 hidden items-center justify-center">
-                                  <span className="text-emerald-600 text-lg font-bold">
-                                    {addon.name.charAt(0)}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={`font-semibold text-sm ${
-                                    isSelected ? 'text-emerald-900' : 'text-gray-900'
-                                  }`}>
-                                    {addon.name}
-                                  </span>
-                                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">
-                                    +{addon.price} AED
-                                  </span>
-                                </div>
-                                
-                                <p className={`text-xs leading-relaxed ${
-                                  isSelected ? 'text-emerald-700' : 'text-gray-600'
-                                }`}>
-                                  {addon.description}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                              isSelected 
-                                ? 'border-emerald-500 bg-emerald-500' 
-                                : 'border-gray-300'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
+              {/* New Rectangular Grid Layout */}
+              <div className="grid grid-cols-2 gap-3">
+                {additionalServices.map((addon) => {
+                  const isSelected = selectedAddons.some(selected => selected.id === addon.id);
+                  
+                  return (
+                    <div
+                      key={addon.id}
+                      className={`border-2 rounded-2xl cursor-pointer transition-all ${
+                        isSelected 
+                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
+                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                      }`}
+                      onClick={() => toggleAddon(addon)}
+                    >
+                      {/* Rectangular Image on Top */}
+                      <div className="relative">
+                        <div className="w-full h-24 rounded-t-2xl overflow-hidden bg-gray-100">
+                          <img
+                            src={getAddonImage(addon.id)}
+                            alt={addon.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              if (target.nextElementSibling) {
+                                (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                              }
+                            }}
+                          />
+                          <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 hidden items-center justify-center">
+                            <span className="text-emerald-600 text-2xl font-bold">
+                              {addon.name.charAt(0)}
+                            </span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                
-                {/* Scroll indicators */}
-                <div className="flex justify-center mt-4 gap-2">
-                  {additionalServices.map((_, index) => (
-                    <div 
-                      key={index}
-                      className="w-2 h-2 rounded-full bg-gray-300"
-                    />
-                  ))}
-                </div>
+                        
+                        {/* Selection Indicator */}
+                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                          isSelected 
+                            ? 'border-emerald-500 bg-emerald-500' 
+                            : 'border-white bg-white/80'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Text and Price Under Image */}
+                      <div className="p-3">
+                        <div className="text-center">
+                          <h3 className={`font-semibold text-sm mb-2 ${
+                            isSelected ? 'text-emerald-900' : 'text-gray-900'
+                          }`}>
+                            {addon.name}
+                          </h3>
+                          
+                          <p className={`text-xs leading-relaxed mb-3 ${
+                            isSelected ? 'text-emerald-700' : 'text-gray-600'
+                          }`}>
+                            {addon.description}
+                          </p>
+                          
+                          <div className="flex items-center justify-center">
+                            <span className="text-base font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
+                              +{addon.price} AED
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

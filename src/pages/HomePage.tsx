@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
 import ReviewNotification from '../components/ui/ReviewNotification';
+import ServiceDetailModal from '../components/ui/ServiceDetailModal';
 import { useReviewNotifications } from '../hooks/useReviewNotifications';
 import { SIZE_OPTIONS, ADDON_OPTIONS } from '../types/booking';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
@@ -67,6 +68,10 @@ const HomePage: React.FC = () => {
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Service Detail Modal State
+  const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -260,6 +265,17 @@ const HomePage: React.FC = () => {
     if (serviceName.toLowerCase().includes('move')) return 'move';
     if (serviceName.toLowerCase().includes('office')) return 'office';
     return serviceName.toLowerCase().replace(/\s/g, '');
+  };
+
+  // Service Detail Modal Handlers
+  const handleServiceClick = (service: ServiceData) => {
+    setSelectedService(service);
+    setIsServiceModalOpen(true);
+  };
+
+  const handleCloseServiceModal = () => {
+    setIsServiceModalOpen(false);
+    setSelectedService(null);
   };
 
   return (
@@ -502,7 +518,14 @@ const HomePage: React.FC = () => {
               </div>
 
               <div className="book-again-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
-                   onClick={() => navigate('/booking?service=deep')}>
+                   onClick={() => {
+                     const deepCleaningService = services.find(s => getServiceKey(s.name) === 'deep');
+                     if (deepCleaningService) {
+                       handleServiceClick(deepCleaningService);
+                     } else {
+                       navigate('/booking?service=deep');
+                     }
+                   }}>
                 <div className="relative z-10">
                   <img
                     src="/deep-cleaning.JPG"
@@ -591,7 +614,7 @@ const HomePage: React.FC = () => {
               
               return (
                 <div key={service.id} className="service-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer relative"
-                     onClick={() => navigate(`/booking?service=${serviceKey}`)}>
+                     onClick={() => handleServiceClick(service)}>
                   {isPopular && (
                     <div className="popular-badge absolute top-3 right-3 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow-sm">
                       {t('booking.mostPopular', 'Popular')}
@@ -640,6 +663,15 @@ const HomePage: React.FC = () => {
           onClick={() => navigate('/profile')}
         />
       </nav>
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal
+        service={selectedService}
+        serviceImage={selectedService ? getServiceImage(getServiceKey(selectedService.name)) : ''}
+        serviceKey={selectedService ? getServiceKey(selectedService.name) : ''}
+        isOpen={isServiceModalOpen}
+        onClose={handleCloseServiceModal}
+      />
     </div>
   );
 };
