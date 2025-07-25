@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { loadGoogleMapsForComponent } from '../../lib/googleMapsLoader';
 import type { GoogleMapsLoadResult } from '../../lib/googleMapsLoader';
 
@@ -58,6 +58,8 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
   const [autocompleteElement, setAutocompleteElement] = useState<any>(null);
   const [useNewAPI, setUseNewAPI] = useState(false);
   const [inputValue, setInputValue] = useState(value);
+  const [isComponentReady, setIsComponentReady] = useState(false);
+  const [googleMapsResult, setGoogleMapsResult] = useState<GoogleMapsLoadResult | null>(null);
 
   // Internal value management to prevent React warnings
   const [internalValue, setInternalValue] = useState(value);
@@ -76,13 +78,30 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     onLoadingStateChange?.(loading);
   }, [onLoadingStateChange]);
 
-  // Initialize Google Maps API
+  // Wait for refs to be available
+  const waitForRefs = useCallback((): Promise<void> => {
+    return new Promise((resolve) => {
+      const checkRefs = () => {
+        if (containerRef.current && inputRef.current) {
+          console.log('UnifiedAddressAutocomplete: Refs are now available');
+          resolve();
+        } else {
+          console.log('UnifiedAddressAutocomplete: Waiting for refs to be available...');
+          setTimeout(checkRefs, 50); // Check every 50ms
+        }
+      };
+      checkRefs();
+    });
+  }, []);
+
+  // Initialize Google Maps API only once
   useEffect(() => {
     const initializeGoogleMaps = async () => {
       try {
         setLoadingState(true);
         setLoadError(null);
 
+        console.log('UnifiedAddressAutocomplete: Starting Google Maps initialization');
         const result: GoogleMapsLoadResult = await loadGoogleMapsForComponent('UnifiedAddressAutocomplete');
 
         if (!result.success) {
@@ -92,13 +111,44 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
         }
 
         console.log('UnifiedAddressAutocomplete: Google Maps loaded successfully', result);
+        setGoogleMapsResult(result);
+
+      } catch (error) {
+        handleError(error instanceof Error ? error.message : 'Initialization failed');
+        setLoadingState(false);
+      }
+    };
+
+    initializeGoogleMaps();
+  }, []); // Only run once
+
+  // Mark component as ready after DOM is set up
+  useLayoutEffect(() => {
+    setIsComponentReady(true);
+    console.log('UnifiedAddressAutocomplete: Component is ready');
+  }, []);
+
+  // Initialize autocomplete after both Google Maps and component are ready
+  useEffect(() => {
+    if (!googleMapsResult || !isComponentReady || !googleMapsResult.success) {
+      return;
+    }
+
+    const initializeAutocomplete = async () => {
+      try {
+        console.log('UnifiedAddressAutocomplete: Waiting for refs before initializing autocomplete...');
         
+        // Wait for refs to be available
+        await waitForRefs();
+
+        console.log('UnifiedAddressAutocomplete: Refs ready, initializing autocomplete');
+
         // Determine which API to use
-        if (result.hasNewPlacesAPI) {
+        if (googleMapsResult.hasNewPlacesAPI) {
           console.log('UnifiedAddressAutocomplete: Using new Places API');
           setUseNewAPI(true);
           await initializeNewPlacesAPI();
-        } else if (result.hasLegacyPlacesAPI) {
+        } else if (googleMapsResult.hasLegacyPlacesAPI) {
           console.log('UnifiedAddressAutocomplete: Using legacy Places API');
           setUseNewAPI(false);
           await initializeLegacyPlacesAPI();
@@ -116,19 +166,24 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
         setLoadingState(false);
 
       } catch (error) {
-        handleError(error instanceof Error ? error.message : 'Initialization failed');
+        console.error('UnifiedAddressAutocomplete: Autocomplete initialization failed:', error);
+        handleError(error instanceof Error ? error.message : 'Autocomplete initialization failed');
         setLoadingState(false);
       }
     };
 
-    initializeGoogleMaps();
-  }, [showMap, handleError, setLoadingState]);
+    initializeAutocomplete();
+  }, [googleMapsResult, isComponentReady, showMap, waitForRefs]);
 
-  // Initialize new Places API (with corrected syntax)
+  // Initialize new Places API (with improved ref checking)
   const initializeNewPlacesAPI = async () => {
     try {
+      console.log('UnifiedAddressAutocomplete: Initializing new Places API');
+
+      // Double-check refs are available (should be guaranteed by waitForRefs)
       if (!containerRef.current || !inputRef.current) {
-        throw new Error('Container or input ref not available');
+        console.error('UnifiedAddressAutocomplete: Refs still not available after waiting');
+        throw new Error('Component refs not available after waiting');
       }
 
       // Import the new Places library
@@ -161,11 +216,15 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
         placeholder: autocompleteElement.placeholder
       });
 
-      // Replace input with autocomplete element
-      if (inputRef.current && inputRef.current.parentNode) {
-        inputRef.current.parentNode.replaceChild(autocompleteElement, inputRef.current);
+      // Replace input with autocomplete element safely
+      const parentNode = inputRef.current.parentNode;
+      if (parentNode) {
+        parentNode.replaceChild(autocompleteElement, inputRef.current);
         inputRef.current = autocompleteElement as any;
         setAutocompleteElement(autocompleteElement);
+        console.log('UnifiedAddressAutocomplete: New API element attached to DOM');
+      } else {
+        throw new Error('Parent node not available for element replacement');
       }
 
       // Set up new API event listener (FIXED: correct event name)
@@ -236,11 +295,15 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     }
   };
 
-  // Initialize legacy Places API
+  // Initialize legacy Places API (with improved ref checking)
   const initializeLegacyPlacesAPI = async () => {
     try {
+      console.log('UnifiedAddressAutocomplete: Initializing legacy Places API');
+
+      // Double-check refs are available
       if (!inputRef.current) {
-        throw new Error('Input ref not available');
+        console.error('UnifiedAddressAutocomplete: Input ref still not available after waiting');
+        throw new Error('Input ref not available after waiting');
       }
 
       // Create legacy autocomplete with proper configuration
@@ -289,17 +352,19 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
       });
 
       // Handle manual input for legacy API
-      inputRef.current.addEventListener('input', (event: any) => {
-        const newValue = event.target.value || '';
-        console.log('UnifiedAddressAutocomplete: Legacy API - Input changed:', newValue);
-        
-        if (newValue !== internalValueRef.current) {
-          setInternalValue(newValue);
-          setInputValue(newValue);
-          internalValueRef.current = newValue;
-          onChange(newValue);
-        }
-      });
+      if (inputRef.current) {
+        inputRef.current.addEventListener('input', (event: any) => {
+          const newValue = event.target.value || '';
+          console.log('UnifiedAddressAutocomplete: Legacy API - Input changed:', newValue);
+          
+          if (newValue !== internalValueRef.current) {
+            setInternalValue(newValue);
+            setInputValue(newValue);
+            internalValueRef.current = newValue;
+            onChange(newValue);
+          }
+        });
+      }
 
       console.log('UnifiedAddressAutocomplete: Legacy API initialized successfully');
 
