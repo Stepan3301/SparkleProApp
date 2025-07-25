@@ -78,27 +78,44 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     onLoadingStateChange?.(loading);
   }, [onLoadingStateChange]);
 
-  // Wait for refs to be available
+  // Wait for refs to be available with timeout
   const waitForRefs = useCallback((): Promise<void> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 40; // 40 * 50ms = 2 seconds timeout
+      
       const checkRefs = () => {
+        attempts++;
         const containerReady = containerRef.current !== null;
         const inputReady = inputRef.current !== null;
-        const mapReady = !showMap || mapRef.current !== null; // Only check mapRef if showMap is true
+        const mapReady = !showMap || mapRef.current !== null;
         
-        console.log('UnifiedAddressAutocomplete: Ref status check:', {
-          containerReady,
-          inputReady,
-          mapReady,
-          showMap
-        });
+        // Only log every 10 attempts to reduce spam
+        if (attempts === 1 || attempts % 10 === 0) {
+          console.log(`UnifiedAddressAutocomplete: Ref check attempt ${attempts}/${maxAttempts}:`, {
+            containerReady,
+            inputReady,
+            mapReady,
+            showMap
+          });
+        }
         
         if (containerReady && inputReady && mapReady) {
           console.log('UnifiedAddressAutocomplete: All required refs are now available');
           resolve();
+        } else if (attempts >= maxAttempts) {
+          console.error('UnifiedAddressAutocomplete: Timeout waiting for refs. Current state:', {
+            containerReady,
+            inputReady, 
+            mapReady,
+            showMap,
+            containerRefExists: !!containerRef.current,
+            inputRefExists: !!inputRef.current,
+            mapRefExists: !!mapRef.current
+          });
+          reject(new Error('Timeout waiting for refs to become available'));
         } else {
-          console.log('UnifiedAddressAutocomplete: Waiting for refs to be available...');
-          setTimeout(checkRefs, 50); // Check every 50ms
+          setTimeout(checkRefs, 50);
         }
       };
       checkRefs();
@@ -136,8 +153,13 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
   // Mark component as ready after DOM is set up
   useLayoutEffect(() => {
     setIsComponentReady(true);
-    console.log('UnifiedAddressAutocomplete: Component is ready');
-  }, []);
+    console.log('UnifiedAddressAutocomplete: Component is ready, checking refs:', {
+      containerRef: !!containerRef.current,
+      inputRef: !!inputRef.current,
+      mapRef: !!mapRef.current,
+      showMap
+    });
+  }, [showMap]);
 
   // Initialize map
   const initializeMap = useCallback(() => {
@@ -205,12 +227,23 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
 
     const initializeAutocomplete = async () => {
       try {
-        console.log('UnifiedAddressAutocomplete: Waiting for refs before initializing autocomplete...');
+        console.log('UnifiedAddressAutocomplete: Starting autocomplete initialization...');
         
-        // Wait for refs to be available
-        await waitForRefs();
-
-        console.log('UnifiedAddressAutocomplete: Refs ready, initializing autocomplete');
+        // Try to wait for refs, but continue even if it times out
+        try {
+          console.log('UnifiedAddressAutocomplete: Waiting for refs...');
+          await waitForRefs();
+          console.log('UnifiedAddressAutocomplete: Refs ready, proceeding with initialization');
+        } catch (refError) {
+          console.warn('UnifiedAddressAutocomplete: Ref waiting timed out, trying to continue anyway:', refError);
+          // Check if we can proceed without perfect ref timing
+          if (!containerRef.current) {
+            console.error('UnifiedAddressAutocomplete: Container ref still not available, cannot proceed');
+            handleError('Component not properly mounted');
+            setLoadingState(false);
+            return;
+          }
+        }
 
         // Determine which API to use
         if (googleMapsResult.hasNewPlacesAPI) {
@@ -227,15 +260,17 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
           return;
         }
 
-        // Initialize map if needed
+        // Initialize map if needed (with additional safety check)
         if (showMap) {
-          console.log('UnifiedAddressAutocomplete: About to call initializeMap()');
-          initializeMap();
+          console.log('UnifiedAddressAutocomplete: Initializing map...');
+          setTimeout(() => {
+            initializeMap(); // Delay map init slightly to ensure DOM is ready
+          }, 100);
         } else {
           console.log('UnifiedAddressAutocomplete: Skipping map initialization (showMap=false)');
         }
 
-        console.log('UnifiedAddressAutocomplete: Initialization complete, setting loading to false');
+        console.log('UnifiedAddressAutocomplete: Initialization complete');
         setLoadingState(false);
 
       } catch (error) {
@@ -253,10 +288,19 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     try {
       console.log('UnifiedAddressAutocomplete: Initializing new Places API');
 
-      // Double-check refs are available (should be guaranteed by waitForRefs)
+      // Check refs with retry mechanism
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while ((!containerRef.current || !inputRef.current) && retries < maxRetries) {
+        console.log(`UnifiedAddressAutocomplete: Refs not ready, retry ${retries + 1}/${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      
       if (!containerRef.current || !inputRef.current) {
-        console.error('UnifiedAddressAutocomplete: Refs still not available after waiting');
-        throw new Error('Component refs not available after waiting');
+        console.error('UnifiedAddressAutocomplete: Refs still not available after retries');
+        throw new Error('Component refs not available after retries');
       }
 
       // Import the new Places library
@@ -373,10 +417,19 @@ const UnifiedAddressAutocomplete: React.FC<UnifiedAddressAutocompleteProps> = ({
     try {
       console.log('UnifiedAddressAutocomplete: Initializing legacy Places API');
 
-      // Double-check refs are available
+      // Check refs with retry mechanism
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (!inputRef.current && retries < maxRetries) {
+        console.log(`UnifiedAddressAutocomplete: Input ref not ready, retry ${retries + 1}/${maxRetries}`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        retries++;
+      }
+      
       if (!inputRef.current) {
-        console.error('UnifiedAddressAutocomplete: Input ref still not available after waiting');
-        throw new Error('Input ref not available after waiting');
+        console.error('UnifiedAddressAutocomplete: Input ref still not available after retries');
+        throw new Error('Input ref not available after retries');
       }
 
       // Create legacy autocomplete with proper configuration
