@@ -1,0 +1,218 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.additional_services (
+  is_active boolean NOT NULL DEFAULT true,
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  name text NOT NULL,
+  description text,
+  price numeric NOT NULL,
+  unit text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT additional_services_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.addresses (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  user_id uuid NOT NULL,
+  street text NOT NULL,
+  city text NOT NULL,
+  apartment text,
+  zip_code text NOT NULL,
+  is_default boolean NOT NULL DEFAULT false,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT addresses_pkey PRIMARY KEY (id),
+  CONSTRAINT addresses_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.booking_photos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  booking_id bigint NOT NULL,
+  photo_url text NOT NULL,
+  photo_type USER-DEFINED NOT NULL,
+  uploaded_by uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT booking_photos_pkey PRIMARY KEY (id),
+  CONSTRAINT booking_photos_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT booking_photos_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES auth.users(id)
+);
+CREATE TABLE public.bookings (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  customer_id uuid NOT NULL,
+  team_id bigint,
+  requested_date date NOT NULL,
+  requested_time time without time zone NOT NULL,
+  scheduled_date date,
+  scheduled_time time without time zone,
+  duration_hours integer NOT NULL,
+  property_size_sqft integer,
+  special_instructions text,
+  total_cost numeric NOT NULL,
+  admin_notes text,
+  service_id bigint,
+  address_id bigint,
+  status USER-DEFINED NOT NULL DEFAULT 'pending'::booking_status,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  property_size text CHECK (property_size = ANY (ARRAY['small'::text, 'medium'::text, 'large'::text, 'villa'::text])),
+  size_price integer,
+  cleaners_count integer CHECK (cleaners_count >= 1 AND cleaners_count <= 4),
+  own_materials boolean DEFAULT false,
+  customer_name text,
+  customer_phone text,
+  custom_address text,
+  additional_notes text,
+  addons jsonb DEFAULT '[]'::jsonb,
+  base_price integer,
+  addons_total integer DEFAULT 0,
+  total_price integer,
+  service_date date NOT NULL,
+  service_time time without time zone NOT NULL,
+  CONSTRAINT bookings_pkey PRIMARY KEY (id),
+  CONSTRAINT bookings_service_id_fkey FOREIGN KEY (service_id) REFERENCES public.services(id),
+  CONSTRAINT bookings_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES auth.users(id),
+  CONSTRAINT bookings_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.addresses(id),
+  CONSTRAINT bookings_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.payment_cards (
+  user_id uuid NOT NULL,
+  card_name character varying NOT NULL,
+  card_number_encrypted text NOT NULL,
+  card_number_last4 character varying NOT NULL,
+  expiry_month integer NOT NULL,
+  expiry_year integer NOT NULL,
+  cvv_encrypted text,
+  card_type character varying,
+  id bigint NOT NULL DEFAULT nextval('payment_cards_id_seq'::regclass),
+  is_default boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT payment_cards_pkey PRIMARY KEY (id),
+  CONSTRAINT payment_cards_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  full_name text,
+  phone_number text,
+  role USER-DEFINED NOT NULL DEFAULT 'customer'::user_role,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.reviews (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  booking_id bigint NOT NULL UNIQUE,
+  customer_id uuid NOT NULL,
+  team_id bigint,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT reviews_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES auth.users(id),
+  CONSTRAINT reviews_booking_id_fkey FOREIGN KEY (booking_id) REFERENCES public.bookings(id),
+  CONSTRAINT reviews_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
+);
+CREATE TABLE public.services (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  name text NOT NULL,
+  description text,
+  base_price numeric NOT NULL,
+  price_per_hour numeric,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT services_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.teams (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  name text NOT NULL UNIQUE,
+  team_leader_name text,
+  contact_phone text,
+  members_count integer DEFAULT 2,
+  is_active boolean DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT teams_pkey PRIMARY KEY (id)
+);
+
+-- Домашняя уборка (почасовые услуги)
+INSERT INTO public.services (name, description, base_price, price_per_hour, is_active) VALUES
+('Regular Cleaning (without materials)', 'Standard home cleaning service without cleaning materials', 70.00, 35.00, true),
+('Regular Cleaning (with materials)', 'Standard home cleaning service with all cleaning materials included', 90.00, 45.00, true),
+('Deep Cleaning (without materials)', 'Thorough deep cleaning service without cleaning materials', 90.00, 45.00, true),
+('Deep Cleaning (with materials)', 'Thorough deep cleaning service with all cleaning materials included', 110.00, 55.00, true);
+
+-- Вилла и квартира (фиксированные цены)
+INSERT INTO public.services (name, description, base_price, price_per_hour, is_active) VALUES
+('Full Villa Deep Cleaning', 'Complete deep cleaning service for entire villa', 1499.00, NULL, true),
+('Full Apartment Deep Cleaning', 'Complete deep cleaning service for entire apartment', 699.00, NULL, true),
+('Villa Façade Cleaning', 'External villa facade cleaning service', 600.00, NULL, true),
+('Move in/Move out Cleaning', 'Comprehensive cleaning for moving in or out', 799.00, NULL, true),
+('Post-construction Cleaning', 'Specialized cleaning after construction or renovation work', 999.00, NULL, true),
+('Kitchen Deep Cleaning', 'Thorough deep cleaning of kitchen area', 299.00, NULL, true),
+('Bathroom Deep Cleaning', 'Complete deep cleaning of bathroom', 149.00, NULL, true);
+
+-- Стекла и окна
+INSERT INTO public.services (name, description, base_price, price_per_hour, is_active) VALUES
+('Internal Window Cleaning', 'Interior window cleaning per panel', 20.00, NULL, true),
+('External Window Cleaning', 'Exterior window cleaning per panel', 30.00, NULL, true),
+('Full Villa Window Package', 'Complete window cleaning package for villa', 399.00, NULL, true);
+
+-- Создание таблицы для дополнительных услуг
+CREATE TABLE public.additional_services (
+  id bigint generated by default as identity not null,
+  name text not null,
+  description text null,
+  price numeric(10, 2) not null,
+  unit text null, -- 'per_hour', 'per_item', 'fixed', 'per_panel', 'per_meter', 'per_seat'
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  constraint additional_services_pkey primary key (id)
+) TABLESPACE pg_default;
+
+-- Заполнение дополнительных услуг
+INSERT INTO public.additional_services (name, description, price, unit, is_active) VALUES
+('Fridge Cleaning', 'Deep cleaning of refrigerator interior and exterior', 75.00, 'fixed', true),
+('Oven Cleaning', 'Professional oven deep cleaning service', 75.00, 'fixed', true),
+('Balcony Cleaning', 'Complete balcony cleaning service', 99.00, 'fixed', true),
+('Wardrobe/Cabinet Cleaning', 'Interior and exterior cleaning of wardrobes and cabinets', 99.00, 'fixed', true),
+('Ironing Service', 'Professional ironing service', 35.00, 'per_hour', true),
+('Sofa Cleaning', 'Professional sofa cleaning service', 35.00, 'per_seat', true),
+('Carpet Cleaning', 'Professional carpet cleaning', 13.00, 'per_meter', true),
+('Mattress Cleaning Single', 'Deep cleaning for single mattress', 99.00, 'fixed', true),
+('Mattress Cleaning Double', 'Deep cleaning for double mattress', 199.00, 'fixed', true),
+('Curtains Cleaning', 'Professional curtain cleaning', 25.00, 'per_panel', true);
+
+-- 1. Связующая таблица для дополнительных услуг
+CREATE TABLE public.booking_additional_services (
+  id bigint generated by default as identity not null,
+  booking_id bigint not null,
+  additional_service_id bigint not null,
+  quantity integer not null default 1,
+  unit_price numeric(10, 2) not null,
+  total_price numeric(10, 2) not null,
+  created_at timestamp with time zone not null default now(),
+  constraint booking_additional_services_pkey primary key (id),
+  constraint fk_booking foreign key (booking_id) references public.bookings(id) on delete cascade,
+  constraint fk_additional_service foreign key (additional_service_id) references public.additional_services(id)
+) TABLESPACE pg_default;
+
+-- 2. Индексы для производительности
+CREATE INDEX idx_booking_additional_services_booking_id ON public.booking_additional_services(booking_id);
+CREATE INDEX idx_booking_additional_services_service_id ON public.booking_additional_services(additional_service_id);
+
+-- 3. Функция для автоматического расчета общей стоимости
+CREATE OR REPLACE FUNCTION calculate_booking_total()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Обновляем общую стоимость букинга при изменении дополнительных услуг
+  UPDATE public.bookings 
+  SET total_price = COALESCE(base_price, 0) + COALESCE(
+    (SELECT SUM(total_price) FROM public.booking_additional_services WHERE booking_id = NEW.booking_id), 
+    0
+  )
+  WHERE id = NEW.booking_id;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 4. Триггер для автоматического пересчета
+CREATE TRIGGER trigger_calculate_booking_total
+  AFTER INSERT OR UPDATE OR DELETE ON public.booking_additional_services
+  FOR EACH ROW EXECUTE FUNCTION calculate_booking_total();

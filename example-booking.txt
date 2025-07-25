@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CleanHome - Book Service</title>
+    <style>
+        :root {
+            /* Primary palette */
+            --primary: #2563EB;
+            --primary-light: #3B82F6;
+            --secondary: #F59E0B;
+            --accent: #10B981;
+            
+            /* Neutrals */
+            --gray-50: #F8FAFC;
+            --gray-100: #F1F5F9;
+            --gray-200: #E2E8F0;
+            --gray-300: #CBD5E1;
+            --gray-600: #475569;
+            --gray-900: #0F172A;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+            --gradient-gold: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-900);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .step.completed {
+            background: var(--accent);
+            color: white;
+        }
+
+        .booking-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .step-subtitle {
+            text-align: center;
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+        }
+
+        .size-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .size-card {
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .size-card:hover {
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .size-card.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .size-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .size-details {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .size-price {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--secondary);
+        }
+
+        .size-card.selected .size-price {
+            color: white;
+        }
+
+        .duration-selector {
+            margin-bottom: 2rem;
+        }
+
+        .duration-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .duration-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .duration-option {
+            background: var(--gray-100);
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .duration-option:hover {
+            border-color: var(--primary-light);
+        }
+
+        .duration-option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .addons-section {
+            margin-bottom: 2rem;
+        }
+
+        .addons-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .addons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .addon-item {
+            background: var(--gray-50);
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .addon-item:hover {
+            border-color: var(--primary-light);
+        }
+
+        .addon-item.selected {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary);
+        }
+
+        .addon-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .addon-price {
+            font-size: 0.875rem;
+            color: var(--secondary);
+            font-weight: 600;
+        }
+
+        .checkbox {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--gray-300);
+            border-radius: 3px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .addon-item.selected .checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .addon-item.selected .checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--gray-900);
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .datetime-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .price-summary {
+            background: var(--gradient-gold);
+            color: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .price-main {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .price-details {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .staff-info {
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-900);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-animation {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .success-animation.show {
+            display: block;
+        }
+
+        .checkmark {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            animation: bounce 0.6s ease;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            80% { transform: translateY(-8px); }
+        }
+
+        @media (max-width: 480px) {
+            .size-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .duration-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .addons-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .datetime-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.36 2.72L20.78 4.14L15.06 9.85C16.13 11.39 16.28 13.24 15.38 14.44L9.06 8.12C10.26 7.22 12.11 7.37 13.65 8.44L19.36 2.72M5.93 17.57C3.92 15.56 2.69 13.16 2.35 10.92L7.23 8.83L14.67 16.27L12.58 21.15C10.34 20.81 7.94 19.58 5.93 17.57Z"/>
+                </svg>
+                CleanHome
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+            <div class="step" id="step3">3</div>
+            <div class="step" id="step4">4</div>
+        </div>
+
+        <div class="booking-card">
+            <div class="card-body">
+                <!-- Step 1: Property Size & Duration -->
+                <div class="step-content active" id="content1">
+                    <div class="step-title">Choose Your Service</div>
+                    <div class="step-subtitle">Select property size and cleaning duration</div>
+                    
+                    <div class="size-grid">
+                        <div class="size-card" data-size="small" data-price="100">
+                            <div class="size-label">Small</div>
+                            <div class="size-details">< 40 sqm</div>
+                            <div class="size-price">100 AED/hr</div>
+                        </div>
+                        <div class="size-card" data-size="medium" data-price="150">
+                            <div class="size-label">Medium</div>
+                            <div class="size-details">40-80 sqm</div>
+                            <div class="size-price">150 AED/hr</div>
+                        </div>
+                        <div class="size-card" data-size="large" data-price="200">
+                            <div class="size-label">Large</div>
+                            <div class="size-details">80-100 sqm</div>
+                            <div class="size-price">200 AED/hr</div>
+                        </div>
+                        <div class="size-card" data-size="villa" data-price="300">
+                            <div class="size-label">Villa</div>
+                            <div class="size-details">> 100 sqm</div>
+                            <div class="size-price">300 AED/hr</div>
+                        </div>
+                    </div>
+
+                    <div class="duration-selector">
+                        <div class="duration-title">Number of Cleaners</div>
+                        <div class="duration-grid">
+                            <div class="duration-option" data-cleaners="1">1 cleaner</div>
+                            <div class="duration-option" data-cleaners="2">2 cleaners</div>
+                            <div class="duration-option" data-cleaners="3">3 cleaners</div>
+                            <div class="duration-option" data-cleaners="4">4 cleaners</div>
+                        </div>
+                    </div>
+
+                    <div class="duration-selector">
+                        <div class="duration-title">Cleaning Duration</div>
+                        <div class="duration-grid">
+                            <div class="duration-option duration-hours" data-hours="2">2 hrs</div>
+                            <div class="duration-option duration-hours" data-hours="3">3 hrs</div>
+                            <div class="duration-option duration-hours" data-hours="4">4 hrs</div>
+                            <div class="duration-option duration-hours" data-hours="5">5 hrs</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Add-ons -->
+                <div class="step-content" id="content2">
+                    <div class="step-title">Extra Services</div>
+                    <div class="step-subtitle">Add optional services (tap to select)</div>
+                    
+                    <div class="addons-section">
+                        <div class="addons-grid">
+                            <div class="addon-item" data-addon="windows" data-price="60">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Window Cleaning</div>
+                                <div class="addon-price">+60 AED</div>
+                            </div>
+                            <div class="addon-item" data-addon="carpet" data-price="100">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Carpet Deep Clean</div>
+                                <div class="addon-price">+100 AED</div>
+                            </div>
+                            <div class="addon-item" data-addon="oven" data-price="80">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Oven Cleaning</div>
+                                <div class="addon-price">+80 AED</div>
+                            </div>
+                            <div class="addon-item" data-addon="fridge" data-price="50">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Fridge Cleaning</div>
+                                <div class="addon-price">+50 AED</div>
+                            </div>
+                            <div class="addon-item" data-addon="balcony" data-price="90">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Balcony/Patio</div>
+                                <div class="addon-price">+90 AED</div>
+                            </div>
+                            <div class="addon-item" data-addon="laundry" data-price="40">
+                                <div class="checkbox"></div>
+                                <div class="addon-name">Laundry Service</div>
+                                <div class="addon-price">+40 AED</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Schedule -->
+                <div class="step-content" id="content3">
+                    <div class="step-title">Schedule Service</div>
+                    <div class="step-subtitle">Choose your preferred date and time</div>
+                    
+                    <div class="datetime-grid">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-input" id="serviceDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Time</label>
+                            <select class="form-select" id="serviceTime" required>
+                                <option value="">Select time</option>
+                                <option value="08:00">8:00 AM</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Contact Info -->
+                <div class="step-content" id="content4">
+                    <div class="step-title">Contact Details</div>
+                    <div class="step-subtitle">We need this to confirm your booking</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="tel" class="form-input" id="customerPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-input" id="customerAddress" required>
+                    </div>
+                </div>
+
+                <!-- Success Animation -->
+                <div class="success-animation" id="successAnimation">
+                    <div class="checkmark">✓</div>
+                    <h2>Booking Confirmed!</h2>
+                    <p>Your cleaning service has been scheduled. We'll call you shortly to confirm.</p>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="nav-buttons" id="navButtons">
+                    <button class="btn btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">Back</button>
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Continue</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Summary -->
+        <div class="price-summary" id="priceSummary" style="display: none;">
+            <div class="price-main" id="totalPrice">0 AED</div>
+            <div class="price-details" id="priceBreakdown">Select service to see pricing</div>
+            <div class="staff-info" id="staffInfo">Service details will appear here</div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedSize = null;
+        let selectedCleaners = null;
+        let selectedDuration = null;
+        let selectedAddons = [];
+        let basePrice = 0;
+
+        // Set minimum date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('serviceDate').min = tomorrow.toISOString().split('T')[0];
+
+        // Size selection
+        document.querySelectorAll('.size-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.size-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                selectedSize = {
+                    size: this.dataset.size,
+                    price: parseInt(this.dataset.price)
+                };
+                
+                updatePricing();
+            });
+        });
+
+        // Cleaners selection
+        document.querySelectorAll('[data-cleaners]').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('[data-cleaners]').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                selectedCleaners = parseInt(this.dataset.cleaners);
+                updatePricing();
+            });
+        });
+
+        // Duration selection
+        document.querySelectorAll('.duration-hours').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.duration-hours').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                selectedDuration = parseInt(this.dataset.hours);
+                updatePricing();
+            });
+        });
+
+        // Addon selection
+        document.querySelectorAll('.addon-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const addonId = this.dataset.addon;
+                const addonPrice = parseInt(this.dataset.price);
+                const addonName = this.querySelector('.addon-name').textContent;
+                
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    selectedAddons = selectedAddons.filter(addon => addon.id !== addonId);
+                } else {
+                    this.classList.add('selected');
+                    selectedAddons.push({
+                        id: addonId,
+                        name: addonName,
+                        price: addonPrice
+                    });
+                }
+                
+                updatePricing();
+            });
+        });
+
+        function updatePricing() {
+            const priceSummary = document.getElementById('priceSummary');
+            const totalPriceEl = document.getElementById('totalPrice');
+            const priceBreakdownEl = document.getElementById('priceBreakdown');
+            const staffInfoEl = document.getElementById('staffInfo');
+            
+            if (!selectedSize || !selectedCleaners || !selectedDuration) {
+                priceSummary.style.display = 'none';
+                return;
+            }
+            
+            priceSummary.style.display = 'block';
+            
+            // Calculate base price: size price per hour * cleaners * duration
+            basePrice = selectedSize.price * selectedCleaners * selectedDuration;
+            
+            // Calculate addons total
+            const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+            const total = basePrice + addonsTotal;
+            
+            // Update display
+            totalPriceEl.textContent = `${total} AED`;
+            
+            let breakdown = `${selectedSize.size.charAt(0).toUpperCase() + selectedSize.size.slice(1)} • ${selectedCleaners} cleaner${selectedCleaners > 1 ? 's' : ''} • ${selectedDuration}h`;
+            if (addonsTotal > 0) {
+                breakdown += ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`;
+            }
+            priceBreakdownEl.textContent = breakdown;
+            
+            staffInfoEl.textContent = `${selectedCleaners} professional cleaner${selectedCleaners > 1 ? 's' : ''} • ${selectedDuration} hours`;
+        }
+
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!selectedSize || !selectedCleaners || !selectedDuration) {
+                    alert('Please select property size, number of cleaners, and duration');
+                    return;
+                }
+            } else if (currentStep === 3) {
+                const date = document.getElementById('serviceDate').value;
+                const time = document.getElementById('serviceTime').value;
+                if (!date || !time) {
+                    alert('Please select date and time');
+                    return;
+                }
+            } else if (currentStep === 4) {
+                const name = document.getElementById('customerName').value;
+                const phone = document.getElementById('customerPhone').value;
+                const address = document.getElementById('customerAddress').value;
+                
+                if (!name || !phone || !address) {
+                    alert('Please fill in all contact details');
+                    return;
+                }
+                
+                // Complete booking
+                completeBooking();
+                return;
+            }
+            
+            if (currentStep < 4) {
+                currentStep++;
+                updateStepDisplay();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepDisplay();
+            }
+        }
+
+        function updateStepDisplay() {
+            // Update step indicators
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                const content = document.getElementById(`content${i}`);
+                
+                if (i < currentStep) {
+                    step.className = 'step completed';
+                } else if (i === currentStep) {
+                    step.className = 'step active';
+                } else {
+                    step.className = 'step';
+                }
+                
+                content.classList.toggle('active', i === currentStep);
+            }
+            
+            // Update navigation buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+            nextBtn.textContent = currentStep === 4 ? 'Book Now' : 'Continue';
+        }
+
+        function completeBooking() {
+            document.getElementById('navButtons').style.display = 'none';
+            document.getElementById('priceSummary').style.display = 'none';
+            
+            // Hide all step content
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show success animation
+            document.getElementById('successAnimation').classList.add('show');
+            
+            // Log booking data
+            console.log('Booking completed:', {
+                size: selectedSize,
+                cleaners: selectedCleaners,
+                duration: selectedDuration,
+                addons: selectedAddons,
+                total: basePrice + selectedAddons.reduce((sum, addon) => sum + addon.price, 0)
+            });
+        }
+
+        // Initialize
+        updatePricing();
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+Business-Optimized Cleaning Service Recommendation Algorithm
+
+Property Size Categories:
+
+Small: < 50 sqm
+Medium: 50-100 sqm
+Large: 100-200 sqm
+Villa: > 200 sqm
+
+Service Types with Complexity Coefficients:
+
+regular_cleaning: 1.0
+deep_cleaning: 1.3
+move_in_out: 1.5
+post_construction: 1.7
+kitchen_deep: 1.2
+bathroom_deep: 1.1
+
+Size Multipliers (inflated for business):
+
+small: 1.2
+medium: 1.6
+large: 2.4
+villa: 3.2
+
+Cleaner Recommendation Logic:
+
+Calculate complexity index = service_coefficient * size_multiplier
+Recommend cleaners based on complexity:
+complexity <= 1.0: recommend 2 cleaners (never recommend 1)
+complexity <= 1.8: recommend 2 cleaners
+complexity <= 2.8: recommend 3 cleaners
+complexity > 2.8: recommend 4 cleaners
+Always minimum 2 cleaners for "quality and efficiency"
+
+Base Hours for 1 Cleaner (inflated estimates):
+
+regular_cleaning: small=4h, medium=6h, large=8h, villa=12h
+deep_cleaning: small=5h, medium=7h, large=10h, villa=15h
+move_in_out: small=6h, medium=8h, large=12h, villa=18h
+post_construction: small=7h, medium=9h, large=14h, villa=20h
+kitchen_deep: small=3h, medium=3.5h, large=4h, villa=5h
+bathroom_deep: small=2.5h, medium=3h, large=3.5h, villa=4h
+
+Team Efficiency Coefficients (conservative for higher revenue):
+
+1 cleaner: 1.0
+2 cleaners: 0.75 (instead of 0.5)
+3 cleaners: 0.55 (instead of 0.33)
+4 cleaners: 0.45 (instead of 0.25)
+
+Time Calculation:
+
+recommended_time = base_hours * team_efficiency[selected_cleaners]
+Add 0.5 hour buffer for "quality assurance"
+Round up to nearest 0.5 hour
+Minimum 2.5 hours, maximum 7 hours
+
+Pricing Structure (per cleaner per hour):
+
+Regular cleaning without materials: 35 AED
+Regular cleaning with materials: 45 AED
+Deep cleaning without materials: 45 AED
+Deep cleaning with materials: 55 AED
+
+Final Cost Calculation: total_cost = recommended_hours * selected_cleaners * hourly_rate
+
+Implementation Notes:
+
+Always present 2+ cleaners as "optimal for quality"
+Show time savings with more cleaners as selling point
+Emphasize "professional team efficiency"
+Never recommend less than 2.5 hours for "quality guarantee"
+Algorithm designed to increase average order value by 30-40%
+
+Function should return:
+
+recommended_cleaners (int)
+recommended_hours (float)
+estimated_cost (int)
+efficiency_message (string)

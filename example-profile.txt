@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - SparklePro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            padding: 20px 20px 40px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 6s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .avatar {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #50C878, #40E0D0);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            box-shadow: 0 8px 25px rgba(80, 200, 120, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: avatarShine 3s infinite;
+        }
+
+        @keyframes avatarShine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .profile-info h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .profile-info p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 3px;
+        }
+
+        .member-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .content {
+            padding: 20px;
+            margin-top: -20px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .menu-item:hover::before {
+            left: 100%;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .menu-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .menu-item:nth-child(1) .menu-icon {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+        }
+
+        .menu-item:nth-child(2) .menu-icon {
+            background: linear-gradient(135deg, #50C878, #40E0D0);
+            color: white;
+        }
+
+        .menu-item:nth-child(3) .menu-icon {
+            background: linear-gradient(135deg, #f59e0b, #f97316);
+            color: white;
+        }
+
+        .menu-item:nth-child(4) .menu-icon {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .menu-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .menu-subtitle {
+            font-size: 12px;
+            color: #6b7280;
+            position: relative;
+            z-index: 2;
+        }
+
+        .full-width-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .full-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .full-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .full-item:hover::before {
+            left: 100%;
+        }
+
+        .full-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .full-item .menu-icon {
+            margin-bottom: 0;
+            width: 45px;
+            height: 45px;
+        }
+
+        .full-item:nth-child(1) .menu-icon {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+        }
+
+        .full-item:nth-child(2) .menu-icon {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+        }
+
+        .full-item-content {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .arrow {
+            color: #9ca3af;
+            font-size: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logout-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .logout-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logout-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .logout-btn:hover::before {
+            left: 100%;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        .version {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+            margin-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .premium-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #b45309;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="profile-header">
+            <div class="avatar">
+                👤
+            </div>
+            <div class="profile-info">
+                <h1>First Test</h1>
+                <p>stepantrockij57@gmail.com</p>
+                <div class="member-badge">
+                    ⭐ Active member since 2024
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Bookings</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Addresses</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">5.0</div>
+                <div class="stat-label">Rating</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="menu-grid">
+            <a href="#" class="menu-item">
+                <div class="menu-icon">👤</div>
+                <div class="menu-title">Personal Info</div>
+                <div class="menu-subtitle">Update profile</div>
+            </a>
+            
+            <a href="#" class="menu-item">
+                <div class="menu-icon">📍</div>
+                <div class="menu-title">Addresses</div>
+                <div class="menu-subtitle">Manage locations</div>
+            </a>
+            
+            <a href="#" class="menu-item">
+                <div class="menu-icon">💳</div>
+                <div class="menu-title">Payment</div>
+                <div class="menu-subtitle">Cards & billing</div>
+                <div class="premium-badge">NEW</div>
+            </a>
+            
+            <a href="#" class="menu-item">
+                <div class="menu-icon">🔔</div>
+                <div class="menu-title">Notifications</div>
+                <div class="menu-subtitle">Preferences</div>
+                <div class="notification-badge">3</div>
+            </a>
+        </div>
+
+        <div class="full-width-items">
+            <a href="#" class="full-item">
+                <div class="menu-icon">🔒</div>
+                <div class="full-item-content">
+                    <div class="menu-title">Privacy & Security</div>
+                    <div class="menu-subtitle">Account security settings</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+            
+            <a href="#" class="full-item">
+                <div class="menu-icon">❓</div>
+                <div class="full-item-content">
+                    <div class="menu-title">Help & Support</div>
+                    <div class="menu-subtitle">Get help and contact us</div>
+                </div>
+                <div class="arrow">›</div>
+            </a>
+        </div>
+
+        <div class="logout-section">
+            <button class="logout-btn">
+                🚪 Sign Out
+            </button>
+        </div>
+
+        <div class="version">
+            SparklePro v1.0.0
+        </div>
+    </div>
+</body>
+</html>

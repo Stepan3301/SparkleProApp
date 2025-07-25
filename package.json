@@ -3,19 +3,48 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
+    "@headlessui/react": "^2.2.4",
+    "@heroicons/react": "^2.2.0",
+    "@hookform/resolvers": "^5.1.1",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.4.0",
+    "@supabase/supabase-js": "^2.50.5",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tanstack/react-query": "^5.83.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.126",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "autoprefixer": "^10.4.21",
+    "browser-image-compression": "^2.0.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
+    "date-fns": "^4.1.0",
+    "firebase": "^11.10.0",
+    "googleapis": "^153.0.0",
+    "i18next": "^23.7.0",
+    "i18next-browser-languagedetector": "^7.2.0",
+    "lucide-react": "^0.525.0",
+    "postcss": "^8.5.6",
     "react": "^19.1.0",
+    "react-datepicker": "^8.4.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.60.0",
+    "react-i18next": "^13.5.0",
+    "react-image-crop": "^11.0.10",
+    "react-router-dom": "^7.6.3",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "zod": "^4.0.5",
+    "zustand": "^5.0.6"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -40,5 +69,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/google.maps": "^3.58.1",
+    "@types/react-datepicker": "^6.2.0",
+    "tailwindcss": "^3.4.17"
   }
 }

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - CleanPro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding-bottom: 80px;
+        }
+
+        .mobile-container {
+            max-width: 100%;
+            margin: 0;
+            padding: 10px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2E86AB;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #F24236, #F6AE2D);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: #F24236;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: #d63031;
+        }
+
+        .content-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .tab-content {
+            padding: 20px 15px;
+            min-height: calc(100vh - 200px);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .mobile-table {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #2E86AB;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .card-id {
+            font-weight: bold;
+            color: #2E86AB;
+            font-size: 14px;
+        }
+
+        .card-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .card-info {
+            margin-bottom: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: #2E86AB;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #F6AE2D;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #F24236;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-form {
+            max-width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2E86AB;
+            box-shadow: 0 0 0 3px rgba(46, 134, 171, 0.1);
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, #2E86AB, #A23B72);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(46, 134, 171, 0.2);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            min-width: 60px;
+        }
+
+        .nav-item.active {
+            background: rgba(46, 134, 171, 0.1);
+            color: #2E86AB;
+        }
+
+        .nav-item:hover {
+            background: rgba(46, 134, 171, 0.05);
+        }
+
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .analytics-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .analytics-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .service-item:last-child {
+            border-bottom: none;
+        }
+
+        .service-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .service-stats {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .service-revenue {
+            font-weight: 600;
+            color: #2E86AB;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <div class="logo">🧽 CleanPro Admin</div>
+            <div class="admin-info">
+                <div class="admin-avatar">AD</div>
+                <span style="font-size: 14px;">Admin</span>
+                <button class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="tab-content">
+                <!-- Orders Tab -->
+                <div class="tab-panel active" id="orders">
+                    <div class="section-title">Orders Management</div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">24</div>
+                            <div class="stat-label">Active Orders</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">156</div>
+                            <div class="stat-label">Completed Today</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">12,450</div>
+                            <div class="stat-label">Revenue (AED)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">4.8</div>
+                            <div class="stat-label">Avg Rating</div>
+                        </div>
+                    </div>
+
+                    <div class="mobile-table">
+                        <div class="table-card">
+                            <div class="card-header">
+                                <div class="card-id">#1001</div>
+                                <div class="card-status status-pending">In Progress</div>
+                            </div>
+                            <div class="card-info">
+                                <div class="info-row">
+                                    <span class="info-label">Client:</span>
+                                    <span class="info-value">Anna Petrova</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Service:</span>
+                                    <span class="info-value">Deep Cleaning</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Date:</span>
+                                    <span class="info-value">July 15, 2025</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Amount:</span>
+                                    <span class="info-value">280 AED</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="action-btn btn-view">View</button>
+                                <button class="action-btn btn-edit">Edit</button>
+                            </div>
+                        </div>
+
+                        <div class="table-card">
+                            <div class="card-header">
+                                <div class="card-id">#1002</div>
+                                <div class="card-status status-completed">Completed</div>
+                            </div>
+                            <div class="card-info">
+                                <div class="info-row">
+                                    <span class="info-label">Client:</span>
+                                    <span class="info-value">Michael Ivanov</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Service:</span>
+                                    <span class="info-value">Apartment Cleaning</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Date:</span>
+                                    <span class="info-value">July 15, 2025</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Amount:</span>
+                                    <span class="info-value">120 AED</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="action-btn btn-view">View</button>
+                                <button class="action-btn btn-edit">Edit</button>
+                            </div>
+                        </div>
+
+                        <div class="table-card">
+                            <div class="card-header">
+                                <div class="card-id">#1003</div>
+                                <div class="card-status status-cancelled">Cancelled</div>
+                            </div>
+                            <div class="card-info">
+                                <div class="info-row">
+                                    <span class="info-label">Client:</span>
+                                    <span class="info-value">Elena Sidorova</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Service:</span>
+                                    <span class="info-value">Window Cleaning</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Date:</span>
+                                    <span class="info-value">July 14, 2025</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Amount:</span>
+                                    <span class="info-value">80 AED</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="action-btn btn-view">View</button>
+                                <button class="action-btn btn-delete">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-panel" id="users">
+                    <div class="section-title">Users Management</div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">1,247</div>
+                            <div class="stat-label">Total Users</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">89</div>
+                            <div class="stat-label">New This Month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">756</div>
+                            <div class="stat-label">Active Clients</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">92%</div>
+                            <div class="stat-label">Satisfaction</div>
+                        </div>
+                    </div>
+
+                    <div class="mobile-table">
+                        <div class="table-card">
+                            <div class="card-header">
+                                <div class="card-id">#U001</div>
+                            </div>
+                            <div class="card-info">
+                                <div class="info-row">
+                                    <span class="info-label">Name:</span>
+                                    <span class="info-value">Anna Petrova</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email:</span>
+                                    <span class="info-value">anna@example.com</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Phone:</span>
+                                    <span class="info-value">+971 50 123 4567</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Orders:</span>
+                                    <span class="info-value">12</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Joined:</span>
+                                    <span class="info-value">June 1, 2025</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="action-btn btn-view">View</button>
+                                <button class="action-btn btn-edit">Edit</button>
+                                <button class="action-btn btn-delete">Block</button>
+                            </div>
+                        </div>
+
+                        <div class="table-card">
+                            <div class="card-header">
+                                <div class="card-id">#U002</div>
+                            </div>
+                            <div class="card-info">
+                                <div class="info-row">
+                                    <span class="info-label">Name:</span>
+                                    <span class="info-value">Michael Ivanov</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Email:</span>
+                                    <span class="info-value">mikhail@example.com</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Phone:</span>
+                                    <span class="info-value">+971 55 987 6543</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Orders:</span>
+                                    <span class="info-value">8</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Joined:</span>
+                                    <span class="info-value">May 15, 2025</span>
+                                </div>
+                            </div>
+                            <div class="card-actions">
+                                <button class="action-btn btn-view">View</button>
+                                <button class="action-btn btn-edit">Edit</button>
+                                <button class="action-btn btn-delete">Block</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div class="tab-panel" id="analytics">
+                    <div class="section-title">Analytics Dashboard</div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">45,670</div>
+                            <div class="stat-label">Monthly Revenue (AED)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">234</div>
+                            <div class="stat-label">Orders This Month</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">4.8</div>
+                            <div class="stat-label">Average Rating</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">92%</div>
+                            <div class="stat-label">Customer Satisfaction</div>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <div class="analytics-title">Popular Services</div>
+                            <div class="service-item">
+                                <div class="service-name">Deep Cleaning</div>
+                                <div class="service-stats">
+                                    <div class="service-revenue">24,920 AED</div>
+                                    <div>89 orders • 4.9★</div>
+                                </div>
+                            </div>
+                            <div class="service-item">
+                                <div class="service-name">Apartment Cleaning</div>
+                                <div class="service-stats">
+                                    <div class="service-revenue">18,720 AED</div>
+                                    <div>156 orders • 4.7★</div>
+                                </div>
+                            </div>
+                            <div class="service-item">
+                                <div class="service-name">Window Cleaning</div>
+                                <div class="service-stats">
+                                    <div class="service-revenue">3,600 AED</div>
+                                    <div>45 orders • 4.8★</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Tab -->
+                <div class="tab-panel" id="profile">
+                    <div class="section-title">Profile Settings</div>
+                    
+                    <div class="profile-form">
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" value="Administrator" placeholder="Enter your name">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" class="form-input" value="admin@cleanpro.com" placeholder="Enter your email">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" class="form-input" value="+971 50 000 0000" placeholder="Enter your phone">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" class="form-input" placeholder="Enter current password">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-input" placeholder="Enter new password">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-input" placeholder="Confirm new password">
+                        </div>
+
+                        <button class="save-btn">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <div class="nav-item active" data-tab="orders">
+            <div class="nav-icon">📋</div>
+            <div class="nav-label">Orders</div>
+        </div>
+        <div class="nav-item" data-tab="users">
+            <div class="nav-icon">👥</div>
+            <div class="nav-label">Users</div>
+        </div>
+        <div class="nav-item" data-tab="analytics">
+            <div class="nav-icon">📊</div>
+            <div class="nav-label">Analytics</div>
+        </div>
+        <div class="nav-item" data-tab="profile">
+            <div class="nav-icon">⚙️</div>
+            <div class="nav-label">Profile</div>
+        </div>
+    </div>
+
+    <script>
+        // Bottom navigation functionality
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tabId = item.dataset.tab;
+                
+                // Remove active class from all nav items and panels
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                
+                // Add active class to selected nav item and panel
+                item.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Action buttons functionality
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.target.textContent;
+                const card = e.target.closest('.table-card');
+                const id = card.querySelector('.card-id').textContent;
+                
+                switch(action) {
+                    case 'View':
+                        alert(`Viewing record ${id}`);
+                        break;
+                    case 'Edit':
+                        alert(`Editing record ${id}`);
+                        break;
+                    case 'Delete':
+                    case 'Block':
+                        if(confirm(`Are you sure you want to ${action.toLowerCase()} record ${id}?`)) {
+                            alert(`Record ${id} has been ${action.toLowerCase()}ed`);
+                        }
+                        break;
+                }
+            });
+        });
+
+        // Logout functionality
+        document.querySelector('.logout-btn').addEventListener('click', () => {
+            if(confirm('Are you sure you want to logout?')) {
+                alert('Logging out...');
+            }
+        });
+
+        // Save profile functionality
+        document.querySelector('.save-btn').addEventListener('click', () => {
+            alert('Profile settings saved successfully!');
+        });
+
+        // Loading animation
+        window.addEventListener('load', () => {
+            document.querySelector('.mobile-container').style.opacity = '0';
+            document.querySelector('.mobile-container').style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                document.querySelector('.mobile-container').style.transition = 'all 0.5s ease';
+                document.querySelector('.mobile-container').style.opacity = '1';
+                document.querySelector('.mobile-container').style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body>
+</html>
