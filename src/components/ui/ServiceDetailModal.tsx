@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DirhamIcon from './DirhamIcon';
+import { useSimpleTranslation } from '../../utils/i18n';
 
 interface ServiceDetailModalProps {
   service: {
@@ -24,6 +25,7 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
   onClose
 }) => {
   const navigate = useNavigate();
+  const { t } = useSimpleTranslation();
 
   // Handle escape key press
   useEffect(() => {
@@ -74,14 +76,14 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden">
+        <div className="bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1 bg-gray-300 rounded-full" />
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(85vh-60px)]">
+          <div className="overflow-y-auto flex-1">
             {/* Service Image */}
             <div className="relative">
               <div className="w-full h-64 overflow-hidden">
@@ -119,7 +121,7 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
               {/* Price */}
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-xl font-bold text-emerald-600">From</span>
+                <span className="text-xl font-bold text-emerald-600">{t('booking.from', 'From')}</span>
                                  <div className="flex items-center gap-1">
                    <div className="text-emerald-600">
                      <DirhamIcon size="lg" color="inherit" />
@@ -129,13 +131,13 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                    </span>
                  </div>
                 <span className="text-lg text-emerald-600 font-semibold">
-                  {service.price_per_hour ? '/hour' : ''}
+                  {service.price_per_hour ? `/${t('booking.hours', 'hour')}` : ''}
                 </span>
               </div>
 
               {/* Service Description */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Service Description</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('common.serviceDescription', 'Service Description')}</h3>
                 <p className="text-gray-600 leading-relaxed">
                   {service.description}
                 </p>
@@ -143,23 +145,23 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
               {/* Features (you can customize this based on service type) */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">What's Included</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('common.whatsIncluded', "What's Included")}</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    <span className="text-gray-600">Professional cleaning equipment</span>
+                    <span className="text-gray-600">{t('common.professionalCleaningEquipment', 'Professional cleaning equipment')}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    <span className="text-gray-600">Eco-friendly cleaning products</span>
+                    <span className="text-gray-600">{t('common.ecoFriendlyCleaningProducts', 'Eco-friendly cleaning products')}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    <span className="text-gray-600">Trained and insured cleaners</span>
+                    <span className="text-gray-600">{t('common.trainedAndInsuredCleaners', 'Trained and insured cleaners')}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    <span className="text-gray-600">Quality guarantee</span>
+                    <span className="text-gray-600">{t('common.qualityGuarantee', 'Quality guarantee')}</span>
                   </div>
                 </div>
               </div>
@@ -167,19 +169,20 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="border-t border-gray-100 p-6 bg-gray-50">
+          {/* Fixed Footer for Buttons */}
+          <div className="border-t border-gray-100 p-6 bg-gray-50 flex-shrink-0">
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-3 px-6 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
+                className="flex-1 py-4 px-6 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition-colors"
               >
-                Back
+                {t('navigation.back', 'Back')}
               </button>
               <button
                 onClick={handleBookNow}
-                className="flex-2 py-3 px-8 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg"
+                className="flex-[2] py-4 px-8 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-emerald-600 hover:to-emerald-700 transition-all transform hover:scale-105 shadow-lg"
               >
-                Book Now!
+                {t('common.bookNow', 'Book Now!')}
               </button>
             </div>
           </div>

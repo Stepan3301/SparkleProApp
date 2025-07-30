@@ -145,6 +145,33 @@
       "packageService": "Package Service • Our team handles all details",
       "professionalCleaners": "{{count}} professional cleaner • {{hours}} hours",
       "professionalCleaners_plural": "{{count}} professional cleaners • {{hours}} hours"
+    },
+    "additionalServices": {
+      "names": {
+        "fridgeCleaning": "Fridge Cleaning",
+        "ovenCleaning": "Oven Cleaning",
+        "balconyCleaning": "Balcony Cleaning",
+        "wardrobeCabinetCleaning": "Wardrobe/Cabinet Cleaning",
+        "ironingService": "Ironing Service",
+        "sofaCleaning": "Sofa Cleaning",
+        "carpetCleaning": "Carpet Cleaning",
+        "mattressCleaningSingle": "Mattress Cleaning Single",
+        "mattressCleaningDouble": "Mattress Cleaning Double",
+        "curtainsCleaning": "Curtains Cleaning"
+      },
+      "descriptions": {
+        "fridgeCleaning": "Deep cleaning of refrigerator interior and exterior",
+        "ovenCleaning": "Professional oven deep cleaning service",
+        "balconyCleaning": "Complete balcony cleaning service",
+        "wardrobeCabinetCleaning": "Interior and exterior cleaning of wardrobes and cabinets",
+        "ironingService": "Professional ironing service",
+        "sofaCleaning": "Professional sofa cleaning service",
+        "carpetCleaning": "Professional carpet cleaning",
+        "mattressCleaningSingle": "Deep cleaning for single mattress",
+        "mattressCleaningDouble": "Deep cleaning for double mattress",
+        "curtainsCleaning": "Professional curtain cleaning"
+      },
+      "scrollHint": "← Scroll to see all services →"
     }
   },
   "services": {
@@ -155,7 +182,39 @@
     "perPanelService": "Per Panel Service",
     "professionalService": "Professional Service",
     "fromPrice": "From {{price}}/hour",
-    "basePrice": "Base: {{price}} AED"
+    "basePrice": "Base: {{price}} AED",
+    "names": {
+      "regularCleaningWithout": "Regular Cleaning (without materials)",
+      "regularCleaningWith": "Regular Cleaning (with materials)",
+      "deepCleaningWithout": "Deep Cleaning (without materials)",
+      "deepCleaningWith": "Deep Cleaning (with materials)",
+      "fullVillaDeepCleaning": "Full Villa Deep Cleaning",
+      "fullApartmentDeepCleaning": "Full Apartment Deep Cleaning",
+      "villaFacadeCleaning": "Villa Façade Cleaning",
+      "moveInOutCleaning": "Move in/Move out Cleaning",
+      "postConstructionCleaning": "Post-construction Cleaning",
+      "kitchenDeepCleaning": "Kitchen Deep Cleaning",
+      "bathroomDeepCleaning": "Bathroom Deep Cleaning",
+      "internalWindowCleaning": "Internal Window Cleaning",
+      "externalWindowCleaning": "External Window Cleaning",
+      "fullVillaWindowPackage": "Full Villa Window Package"
+    },
+    "descriptions": {
+      "regularCleaningWithout": "Standard home cleaning service without cleaning materials",
+      "regularCleaningWith": "Standard home cleaning service with all cleaning materials included",
+      "deepCleaningWithout": "Thorough deep cleaning service without cleaning materials",
+      "deepCleaningWith": "Thorough deep cleaning service with all cleaning materials included",
+      "fullVillaDeepCleaning": "Comprehensive deep cleaning of entire villa",
+      "fullApartmentDeepCleaning": "Comprehensive deep cleaning of entire apartment",
+      "villaFacadeCleaning": "Professional villa facade cleaning service",
+      "moveInOutCleaning": "Complete cleaning for move-in or move-out",
+      "postConstructionCleaning": "Specialized cleaning after construction or renovation",
+      "kitchenDeepCleaning": "Deep kitchen cleaning including all surfaces",
+      "bathroomDeepCleaning": "Complete deep bathroom cleaning",
+      "internalWindowCleaning": "Interior window cleaning per panel",
+      "externalWindowCleaning": "Exterior window cleaning per panel",
+      "fullVillaWindowPackage": "Complete window cleaning package for villa"
+    }
   },
   "history": {
     "title": "Booking History",
@@ -300,6 +359,29 @@
     "refresh": "Refresh",
     "tryAgain": "Try Again",
     "networkError": "Network error. Please check your connection.",
-    "somethingWentWrong": "Something went wrong. Please try again."
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "bookNow": "Book Now!",
+    "selectTime": "Select Time",
+    "cashOnDelivery": "Cash on Delivery",
+    "fee": "fee",
+    "payIn4Installments": "Pay in 4 installments",
+    "myCards": "My Cards",
+    "default": "Default",
+    "addNewCard": "Add New Card",
+    "whatsIncluded": "What's Included",
+    "professionalCleaningEquipment": "Professional cleaning equipment",
+    "ecoFriendlyCleaningProducts": "Eco-friendly cleaning products",
+    "trainedAndInsuredCleaners": "Trained and insured cleaners",
+    "qualityGuarantee": "Quality guarantee",
+    "serviceDescription": "Service Description",
+    "makeBooking": "Make Booking",
+    "selectYourService": "Select Your Service",
+    "chooseFromProfessional": "Choose from our professional cleaning services",
+    "fixedPriceComprehensive": "Fixed-price comprehensive services",
+    "perUnitSpecialized": "Per-unit specialized services",
+    "materials": "materials",
+    "provided": "provided",
+    "processing": "Processing...",
+    "bookNowCaps": "BOOK NOW"
   }
 } 

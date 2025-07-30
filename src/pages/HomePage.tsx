@@ -196,9 +196,9 @@ const HomePage: React.FC = () => {
       'post': '/post-construction-cleaning.png',
       'wardrobe': '/wardrobe-cabinet-cleaning.png',
       'cabinet': '/wardrobe-cabinet-cleaning.png',
-      'sofa': '/carpet-cleaning.JPG',
-      'mattress': '/carpet-cleaning.JPG',
-      'curtains': '/window-cleaning.JPG'
+      'sofa': '/sofa-cleaning.png',
+      'mattress': '/matress-cleaning.png',
+      'curtains': '/curtains-cleaning.JPG'
     };
     
     // Convert to lowercase for case-insensitive matching

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
-import UnifiedAddressAutocomplete from '../../components/ui/UnifiedAddressAutocomplete';
-import { PlaceDetails, AddressComponent, PlaceResult } from '../../types/places';
+import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
+
 import { 
   ArrowLeftIcon, 
   MapPinIcon,
@@ -290,35 +290,9 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
     }
   };
 
-  const handleAddressChange = (address: string, placeDetails?: PlaceResult) => {
+  const handleAddressChange = (address: string) => {
     setSearchValue(address);
-    
-    if (placeDetails && placeDetails.addressComponents) {
-      // Parse address components
-      let street = '';
-      let city = '';
-      let zipCode = '';
-      
-      placeDetails.addressComponents.forEach((component: any) => {
-        const types = component.types;
-        if (types.includes('street_number') || types.includes('route')) {
-          street += component.longText + ' ';
-        } else if (types.includes('locality') || types.includes('administrative_area_level_1')) {
-          city = component.longText;
-        } else if (types.includes('postal_code')) {
-          zipCode = component.longText;
-        }
-      });
-      
-      setFormData({
-        ...formData,
-        street: street.trim() || address,
-        city: city || formData.city,
-        zipCode: zipCode || formData.zipCode
-      });
-    } else {
-      setFormData({ ...formData, street: address });
-    }
+    setFormData({ ...formData, street: address });
   };
 
   return (
@@ -343,29 +317,18 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
           <div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Search Address</label>
-              <UnifiedAddressAutocomplete
+              <PlacesAutocomplete
                 value={searchValue}
                 onChange={(address: string, placeDetails?: any) => {
-                  // Convert UnifiedAddressAutocomplete PlaceDetails to PlaceResult
-                  let convertedPlaceDetails: PlaceResult | undefined;
-                  if (placeDetails) {
-                    convertedPlaceDetails = {
-                      displayName: placeDetails.displayName ? { text: placeDetails.displayName } : undefined,
-                      formattedAddress: placeDetails.formattedAddress,
-                      location: placeDetails.location,
-                      addressComponents: placeDetails.addressComponents?.map((comp: any) => ({
-                        longText: comp.long_name || comp.longText || '',
-                        shortText: comp.short_name || comp.shortText || '',
-                        types: comp.types || []
-                      }))
-                    };
-                  }
-                  handleAddressChange(address, convertedPlaceDetails);
+                  console.log('Places API - Address changed:', address, placeDetails);
+                  setSearchValue(address);
+                  handleAddressChange(address);
                 }}
                 placeholder="Search for your address..."
                 showMap={true}
+                mapHeight={200}
                 onError={(error: string) => {
-                  console.error('Address search error:', error);
+                  console.error('Places API error:', error);
                 }}
                 componentRestrictions={{ country: ['AE'] }}
                 types={['address']}

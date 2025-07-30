@@ -145,6 +145,33 @@
       "packageService": "Пакетная услуга • Наша команда занимается всеми деталями",
       "professionalCleaners": "{{count}} профессиональный уборщик • {{hours}} часов",
       "professionalCleaners_plural": "{{count}} профессиональных уборщика • {{hours}} часов"
+    },
+    "additionalServices": {
+      "names": {
+        "fridgeCleaning": "Уборка холодильника",
+        "ovenCleaning": "Уборка духовки",
+        "balconyCleaning": "Уборка балкона",
+        "wardrobeCabinetCleaning": "Уборка шкафов/гардеробных",
+        "ironingService": "Услуги глажки",
+        "sofaCleaning": "Чистка дивана",
+        "carpetCleaning": "Чистка ковров",
+        "mattressCleaningSingle": "Чистка матраса односпальный",
+        "mattressCleaningDouble": "Чистка матраса двуспальный",
+        "curtainsCleaning": "Чистка штор"
+      },
+      "descriptions": {
+        "fridgeCleaning": "Глубокая чистка холодильника изнутри и снаружи",
+        "ovenCleaning": "Профессиональная глубокая чистка духовки",
+        "balconyCleaning": "Полная уборка балкона",
+        "wardrobeCabinetCleaning": "Уборка внутри и снаружи шкафов и гардеробных",
+        "ironingService": "Профессиональные услуги глажки",
+        "sofaCleaning": "Профессиональная чистка дивана",
+        "carpetCleaning": "Профессиональная чистка ковров",
+        "mattressCleaningSingle": "Глубокая чистка односпального матраса",
+        "mattressCleaningDouble": "Глубокая чистка двуспального матраса",
+        "curtainsCleaning": "Профессиональная чистка штор"
+      },
+      "scrollHint": "← Прокрутите, чтобы увидеть все услуги →"
     }
   },
   "services": {
@@ -155,7 +182,39 @@
     "perPanelService": "Услуга за панель",
     "professionalService": "Профессиональная услуга",
     "fromPrice": "От {{price}}/час",
-    "basePrice": "База: {{price}} дирхам"
+    "basePrice": "База: {{price}} дирхам",
+    "names": {
+      "regularCleaningWithout": "Обычная уборка (без материалов)",
+      "regularCleaningWith": "Обычная уборка (с материалами)",
+      "deepCleaningWithout": "Генеральная уборка (без материалов)",
+      "deepCleaningWith": "Генеральная уборка (с материалами)",
+      "fullVillaDeepCleaning": "Полная генеральная уборка виллы",
+      "fullApartmentDeepCleaning": "Полная генеральная уборка квартиры",
+      "villaFacadeCleaning": "Уборка фасада виллы",
+      "moveInOutCleaning": "Уборка при переезде",
+      "postConstructionCleaning": "Уборка после ремонта",
+      "kitchenDeepCleaning": "Генеральная уборка кухни",
+      "bathroomDeepCleaning": "Генеральная уборка ванной",
+      "internalWindowCleaning": "Мытье внутренних окон",
+      "externalWindowCleaning": "Мытье внешних окон",
+      "fullVillaWindowPackage": "Полный пакет мытья окон виллы"
+    },
+    "descriptions": {
+      "regularCleaningWithout": "Стандартная домашняя уборка без чистящих материалов",
+      "regularCleaningWith": "Стандартная домашняя уборка со всеми чистящими материалами",
+      "deepCleaningWithout": "Тщательная генеральная уборка без чистящих материалов",
+      "deepCleaningWith": "Тщательная генеральная уборка со всеми чистящими материалами включены",
+      "fullVillaDeepCleaning": "Комплексная генеральная уборка всей виллы",
+      "fullApartmentDeepCleaning": "Комплексная генеральная уборка всей квартиры",
+      "villaFacadeCleaning": "Профессиональная уборка фасада виллы",
+      "moveInOutCleaning": "Полная уборка при въезде или выезде",
+      "postConstructionCleaning": "Специализированная уборка после строительства или ремонта",
+      "kitchenDeepCleaning": "Глубокая уборка кухни включая все поверхности",
+      "bathroomDeepCleaning": "Полная глубокая уборка ванной комнаты",
+      "internalWindowCleaning": "Мытье внутренних окон за панель",
+      "externalWindowCleaning": "Мытье внешних окон за панель",
+      "fullVillaWindowPackage": "Полный пакет мытья всех окон виллы"
+    }
   },
   "history": {
     "title": "История заказов",
@@ -300,6 +359,29 @@
     "refresh": "Обновить",
     "tryAgain": "Попробовать снова",
     "networkError": "Ошибка сети. Пожалуйста, проверьте ваше соединение.",
-    "somethingWentWrong": "Что-то пошло не так. Пожалуйста, попробуйте снова."
+    "somethingWentWrong": "Что-то пошло не так. Пожалуйста, попробуйте снова.",
+    "bookNow": "Заказать сейчас!",
+    "selectTime": "Выберите время",
+    "cashOnDelivery": "Наличными при доставке",
+    "fee": "комиссия",
+    "payIn4Installments": "Оплата в 4 части",
+    "myCards": "Мои карты",
+    "default": "По умолчанию",
+    "addNewCard": "Добавить новую карту",
+    "whatsIncluded": "Что включено",
+    "professionalCleaningEquipment": "Профессиональное оборудование для уборки",
+    "ecoFriendlyCleaningProducts": "Экологически чистые средства",
+    "trainedAndInsuredCleaners": "Обученные и застрахованные уборщики",
+    "qualityGuarantee": "Гарантия качества",
+    "serviceDescription": "Описание услуги",
+    "makeBooking": "Оформить заказ",
+    "selectYourService": "Выберите вашу услуги",
+    "chooseFromProfessional": "Выберите из наших профессиональных клининговых услуг",
+    "fixedPriceComprehensive": "Фиксированная цена комплексные услуги",
+    "perUnitSpecialized": "За единицу специализированные услуги",
+    "materials": "материалы",
+    "provided": "предоставлены",
+    "processing": "Обработка...",
+    "bookNowCaps": "ЗАКАЗАТЬ СЕЙЧАС"
   }
 } 

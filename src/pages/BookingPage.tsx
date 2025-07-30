@@ -11,9 +11,8 @@ import Button from '../components/ui/Button';
 import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
-import UnifiedAddressAutocomplete from '../components/ui/UnifiedAddressAutocomplete';
 import { maskCardNumber } from '../utils/cardEncryption';
-import { PlaceResult } from '../types/places';
+import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
 import { 
   Address, 
   Addon, 
@@ -28,6 +27,7 @@ import {
   calculateCost,
   RecommendationResult
 } from '../utils/recommendationAlgorithm';
+import { useSimpleTranslation } from '../utils/i18n';
 
 // Form validation schema for step 5 (was step 4)
 const contactSchema = z.object({
@@ -95,41 +95,41 @@ const MAIN_SERVICE_CATEGORIES = [
 ];
 
 // Service categories for the new two-staged selection
-const MAIN_SERVICE_CATEGORIES_NEW = [
+const getMainServiceCategories = (t: any) => [
   {
     key: 'regular',
     icon: '🏠',
-    title: 'Regular Cleaning',
-    subtitle: 'Perfect for weekly maintenance',
-    price: 'From 70 AED',
-    description: 'Standard home cleaning service',
+    title: t('booking.services.regular', 'Regular Cleaning'),
+    subtitle: t('booking.services.regularDesc', 'Perfect for weekly maintenance'),
+    price: t('booking.from', 'From') + ' 70 ' + t('booking.aed', 'AED'),
+    description: t('booking.services.regularDesc', 'Standard home cleaning service'),
     serviceIds: [6, 7] // Regular Cleaning (without/with materials)
   },
   {
     key: 'deep',
     icon: '✨',
-    title: 'Deep Cleaning',
-    subtitle: 'Thorough cleaning service',
-    price: 'From 90 AED',
-    description: 'Complete deep cleaning',
+    title: t('booking.services.deep', 'Deep Cleaning'),
+    subtitle: t('booking.services.deepDesc', 'Thorough cleaning service'),
+    price: t('booking.from', 'From') + ' 90 ' + t('booking.aed', 'AED'),
+    description: t('booking.services.deepDesc', 'Complete deep cleaning'),
     serviceIds: [8, 9] // Deep Cleaning (without/with materials)
   },
   {
     key: 'packages',
     icon: '📦',
-    title: 'Complete Packages',
-    subtitle: 'All-inclusive cleaning solutions',
-    price: 'From 299 AED',
-    description: 'Fixed-price comprehensive services',
+    title: t('booking.services.packages', 'Complete Packages'),
+    subtitle: t('booking.services.packagesDesc', 'All-inclusive cleaning solutions'),
+    price: t('booking.from', 'From') + ' 299 ' + t('booking.aed', 'AED'),
+    description: t('common.fixedPriceComprehensive', 'Fixed-price comprehensive services'),
     serviceIds: [10, 11, 12, 13, 14, 15, 16] // Full Villa Deep Cleaning, Full Apartment Deep Cleaning, Villa Façade Cleaning, Move in/Move out Cleaning, Post-construction Cleaning, Kitchen Deep Cleaning, Bathroom Deep Cleaning
   },
   {
     key: 'specialized',
     icon: '🪟',
-    title: 'Specialized Services',
-    subtitle: 'Professional specialized cleaning',
-    price: 'From 20 AED',
-    description: 'Per-unit specialized services',
+    title: t('booking.services.specialized', 'Specialized Services'),
+    subtitle: t('booking.services.specializedDesc', 'Professional specialized cleaning'),
+    price: t('booking.from', 'From') + ' 20 ' + t('booking.aed', 'AED'),
+    description: t('common.perUnitSpecialized', 'Per-unit specialized services'),
     serviceIds: [17, 18, 19] // Internal Window Cleaning, External Window Cleaning, Full Villa Window Package
   }
 ];
@@ -138,6 +138,7 @@ const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useSimpleTranslation();
   
   // State management
   const [currentStep, setCurrentStep] = useState(1);
@@ -196,7 +197,7 @@ const BookingPage: React.FC = () => {
       
       if (categoryKey) {
         setSelectedMainCategory(categoryKey);
-        setCurrentStep(2); // Skip to step 2 if service is pre-selected
+        // Stay on step 1 but with category pre-selected
       }
     }
   }, [location.search]);
@@ -217,6 +218,29 @@ const BookingPage: React.FC = () => {
       fetchServices();
     }
   }, [user]);
+
+  // Handle service selection when both category and services are available
+  useEffect(() => {
+    if (selectedMainCategory && services.length > 0 && !selectedService) {
+      // For regular and deep cleaning, automatically select the base service (without materials)
+      let targetService = null;
+      if (selectedMainCategory === 'regular') {
+        targetService = services.find(s => s.id === 6); // Regular Cleaning (without materials)
+      } else if (selectedMainCategory === 'deep') {
+        targetService = services.find(s => s.id === 8); // Deep Cleaning (without materials)  
+      } else {
+        // For packages and specialized, find the first service in the category
+        const category = getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory);
+        if (category) {
+          targetService = services.find(s => category.serviceIds.includes(s.id));
+        }
+      }
+      
+      if (targetService) {
+        setSelectedService(targetService);
+      }
+    }
+  }, [selectedMainCategory, services, selectedService, t]);
 
   // Set minimum date to tomorrow
   useEffect(() => {
@@ -355,17 +379,7 @@ const BookingPage: React.FC = () => {
       
       setAdditionalServices(addonsWithUI);
 
-      // Initialize selectedService based on pre-selected category
-      if (selectedMainCategory) {
-        const category = MAIN_SERVICE_CATEGORIES_NEW.find(cat => cat.key === selectedMainCategory);
-        if (category) {
-          const service = servicesWithUI?.find(s => category.serviceIds.includes(s.id));
-          if (service) {
-            setSelectedService(service);
-            setCurrentStep(2); // Skip to step 2 if service is pre-selected
-          }
-        }
-      }
+      // Service selection is now handled by the dedicated useEffect above
     } catch (error) {
       console.error('Error fetching services:', error);
     }
@@ -636,11 +650,11 @@ const BookingPage: React.FC = () => {
       '3': '/balcony-cleaning.JPG',          // Balcony Cleaning
       '4': '/wardrobe-cabinet-cleaning.png', // Wardrobe/Cabinet Cleaning
       '5': '/laundry-service.JPG',           // Ironing Service
-      '6': '/carpet-cleaning.JPG',           // Sofa Cleaning  
+      '6': '/sofa-cleaning.png',             // Sofa Cleaning - NEW IMAGE
       '7': '/carpet-cleaning.JPG',           // Carpet Cleaning
-      '8': '/carpet-cleaning.JPG',           // Mattress Cleaning Single
-      '9': '/carpet-cleaning.JPG',           // Mattress Cleaning Double
-      '10': '/window-cleaning.JPG'           // Curtains Cleaning
+      '8': '/matress-cleaning.png',          // Mattress Cleaning Single - NEW IMAGE
+      '9': '/matress-cleaning.png',          // Mattress Cleaning Double - NEW IMAGE
+      '10': '/curtains-cleaning.JPG'         // Curtains Cleaning - NEW IMAGE
     };
     return imageMap[addonId] || '/regular-cleaning.jpg'; // Fallback to main service image
   };
@@ -659,14 +673,14 @@ const BookingPage: React.FC = () => {
         return (
           <div>
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-primary mb-2">Select Your Service</h2>
-              <p className="text-gray-600">Choose from our professional cleaning services</p>
+              <h2 className="text-xl font-bold text-primary mb-2">{t('common.selectYourService', 'Select Your Service')}</h2>
+              <p className="text-gray-600">{t('common.chooseFromProfessional', 'Choose from our professional cleaning services')}</p>
             </div>
             
             {/* Stage 1: Main Service Categories (4 cards) */}
             {!selectedMainCategory && (
               <div className="grid grid-cols-2 gap-4 mb-6">
-                {MAIN_SERVICE_CATEGORIES_NEW.map((category) => (
+                {getMainServiceCategories(t).map((category) => (
                   <div
                     key={category.key}
                     className="border-2 border-gray-200 rounded-2xl p-4 cursor-pointer transition-all hover:border-primary hover:bg-primary/5 hover:shadow-lg"
@@ -734,14 +748,14 @@ const BookingPage: React.FC = () => {
                 <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 mb-6">
                   <div className="flex items-center gap-3">
                     <div className="text-3xl">
-                      {MAIN_SERVICE_CATEGORIES_NEW.find(cat => cat.key === selectedMainCategory)?.icon}
+                      {getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory)?.icon}
                     </div>
                     <div>
                       <h3 className="font-bold text-lg text-gray-900">
-                        {MAIN_SERVICE_CATEGORIES_NEW.find(cat => cat.key === selectedMainCategory)?.title}
+                        {getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory)?.title}
                       </h3>
                       <p className="text-gray-600 text-sm">
-                        {MAIN_SERVICE_CATEGORIES_NEW.find(cat => cat.key === selectedMainCategory)?.subtitle}
+                        {getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory)?.subtitle}
                       </p>
                     </div>
                   </div>
@@ -774,7 +788,7 @@ const BookingPage: React.FC = () => {
                     <h3 className="font-semibold text-gray-800">Choose Specific Service</h3>
                     {services
                       .filter(service => {
-                        const category = MAIN_SERVICE_CATEGORIES_NEW.find(cat => cat.key === selectedMainCategory);
+                        const category = getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory);
                         return category ? category.serviceIds.includes(service.id) : false;
                       })
                       .map((service) => (
@@ -1152,87 +1166,99 @@ const BookingPage: React.FC = () => {
         return (
           <div>
             <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-primary mb-2">Extra Services</h2>
-              <p className="text-gray-600">Add optional services to enhance your cleaning</p>
+              <h2 className="text-xl font-bold text-primary mb-2">{t('booking.steps.extraServices', 'Extra Services')}</h2>
+              <p className="text-gray-600">{t('booking.steps.extraServicesDesc', 'Add optional services to enhance your cleaning')}</p>
             </div>
             
             <div className="space-y-4">
-              {/* New Rectangular Grid Layout */}
-              <div className="grid grid-cols-2 gap-3">
-                {additionalServices.map((addon) => {
-                  const isSelected = selectedAddons.some(selected => selected.id === addon.id);
-                  
-                  return (
-                    <div
-                      key={addon.id}
-                      className={`border-2 rounded-2xl cursor-pointer transition-all ${
-                        isSelected 
-                          ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
-                      onClick={() => toggleAddon(addon)}
-                    >
-                      {/* Rectangular Image on Top */}
-                      <div className="relative">
-                        <div className="w-full h-24 rounded-t-2xl overflow-hidden bg-gray-100">
-                          <img
-                            src={getAddonImage(addon.id)}
-                            alt={addon.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const target = e.currentTarget;
-                              target.style.display = 'none';
-                              if (target.nextElementSibling) {
-                                (target.nextElementSibling as HTMLElement).style.display = 'flex';
-                              }
-                            }}
-                          />
-                          <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 hidden items-center justify-center">
-                            <span className="text-emerald-600 text-2xl font-bold">
-                              {addon.name.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Selection Indicator */}
-                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          isSelected 
-                            ? 'border-emerald-500 bg-emerald-500' 
-                            : 'border-white bg-white/80'
-                        }`}>
-                          {isSelected && (
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                      </div>
+              {/* Horizontal Carousel Layout */}
+              <div className="relative">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-4 pb-4"  >
+                    {additionalServices.map((addon) => {
+                      const isSelected = selectedAddons.some(selected => selected.id === addon.id);
                       
-                      {/* Text and Price Under Image */}
-                      <div className="p-3">
-                        <div className="text-center">
-                          <h3 className={`font-semibold text-sm mb-2 ${
-                            isSelected ? 'text-emerald-900' : 'text-gray-900'
-                          }`}>
-                            {addon.name}
-                          </h3>
+                      return (
+                        <div
+                          key={addon.id}
+                          className={`flex-shrink-0 w-64 border-2 rounded-2xl cursor-pointer transition-all ${
+                            isSelected 
+                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100/50' 
+                              : 'border-gray-200 hover:border-gray-300 bg-white'
+                          }`}
+                          onClick={() => toggleAddon(addon)}
+                        >
+                          {/* Horizontal Rectangular Image on Top */}
+                          <div className="relative">
+                            <div className="w-full h-32 rounded-t-2xl overflow-hidden bg-gray-100">
+                              <img
+                                src={getAddonImage(addon.id)}
+                                alt={addon.name}
+                                className="w-full h-full object-cover"
+                                style={{ aspectRatio: '2/1' }}
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  target.style.display = 'none';
+                                  if (target.nextElementSibling) {
+                                    (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                                  }
+                                }}
+                              />
+                              <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 hidden items-center justify-center">
+                                <span className="text-emerald-600 text-3xl font-bold">
+                                  {addon.name.charAt(0)}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Selection Indicator */}
+                            <div className={`absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
+                              isSelected 
+                                ? 'border-emerald-500 bg-emerald-500' 
+                                : 'border-white bg-white/90'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
                           
-                          <p className={`text-xs leading-relaxed mb-3 ${
-                            isSelected ? 'text-emerald-700' : 'text-gray-600'
-                          }`}>
-                            {addon.description}
-                          </p>
-                          
-                          <div className="flex items-center justify-center">
-                            <span className="text-base font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
-                              +{addon.price} AED
-                            </span>
+                          {/* Text and Price Under Image */}
+                          <div className="p-4">
+                            <div className="text-center">
+                              <h3 className={`font-semibold text-base mb-2 ${
+                                isSelected ? 'text-emerald-900' : 'text-gray-900'
+                              }`}>
+                                {addon.name}
+                              </h3>
+                              
+                              <p className={`text-sm leading-relaxed mb-4 ${
+                                isSelected ? 'text-emerald-700' : 'text-gray-600'
+                              }`}>
+                                {addon.description}
+                              </p>
+                              
+                              <div className="flex items-center justify-center">
+                                <span className="text-lg font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200">
+                                  +{addon.price} AED
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                {/* Scroll indicators */}
+                <div className="flex justify-center mt-2">
+                  <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    {t('booking.additionalServices.scrollHint', '← Scroll to see all services →')}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1356,28 +1382,22 @@ const BookingPage: React.FC = () => {
                     </select>
                   ) : (
                     <div className="space-y-4">
-                      <UnifiedAddressAutocomplete
+                      <PlacesAutocomplete
                         value={newAddressValue}
                         onChange={(address: string, placeDetails?: any) => {
-                          console.log('Unified API - Address changed:', address, placeDetails);
+                          console.log('Places API - Address changed:', address, placeDetails);
                           setNewAddressValue(address);
                           setNewAddressStreet(address);
-                          // Update form field immediately
                           setValue('newAddress', address);
                         }}
                         placeholder="Search for your address..."
                         showMap={true}
+                        mapHeight={200}
                         onError={(error: string) => {
-                          console.error('Address search error:', error);
+                          console.error('Places API error:', error);
                         }}
                         componentRestrictions={{ country: ['AE'] }}
                         types={['address']}
-                      />
-                      {/* Hidden input to register newAddress with react-hook-form */}
-                      <input
-                        type="hidden"
-                        {...register('newAddress')}
-                        value={newAddressValue}
                       />
                     </div>
                   )}
@@ -1682,7 +1702,7 @@ const BookingPage: React.FC = () => {
         <h1 className="text-xl font-bold text-gray-900">Make Booking</h1>
       </header>
 
-      <div className="max-w-2xl mx-auto p-4 pb-32">
+      <div className="max-w-2xl mx-auto p-4 pb-40">
         {/* Step Indicator */}
         {currentStep <= 4 && (
           <StepIndicator currentStep={currentStep} totalSteps={4} />
@@ -1699,7 +1719,7 @@ const BookingPage: React.FC = () => {
 
         {/* Navigation Buttons */}
         {currentStep <= 4 && (
-          <div className={`flex items-center mt-6 ${currentStep === 3 ? 'justify-between px-4' : 'justify-between'}`}>
+          <div className={`flex items-center mt-6 mb-8 ${currentStep === 3 ? 'justify-between px-4' : 'justify-between'}`}>
             {currentStep > 1 ? (
               <Button
                 variant="nav-back"
