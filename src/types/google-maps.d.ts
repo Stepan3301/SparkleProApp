@@ -115,14 +115,19 @@ declare namespace google.maps {
   }
 
   namespace places {
-    // New Places API
+    // New Places API (CORRECTED)
     interface PlaceAutocompleteElement extends HTMLElement {
-      new (): PlaceAutocompleteElement;
+      new (options?: PlaceAutocompleteElementOptions): PlaceAutocompleteElement;
       id: string;
       placeholder: string;
       locationBias: LatLng | LatLngLiteral;
-      componentRestrictions: ComponentRestrictions;
+      setAttribute(name: string, value: string): void;
       addEventListener(type: 'gmp-select', listener: (event: PlaceSelectEvent) => void): void;
+    }
+
+    interface PlaceAutocompleteElementOptions {
+      includedRegionCodes?: string[]; // Correct property for new API
+      locationBias?: LatLng | LatLngLiteral;
     }
 
     interface PlaceSelectEvent {

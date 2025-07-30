@@ -23,11 +23,8 @@ interface PlacesAutocompleteProps {
   className?: string;
   disabled?: boolean;
   onError?: (error: string) => void;
-  // Configuration options
-  types?: string[];
-  componentRestrictions?: {
-    country: string[];
-  };
+  // Configuration options (CORRECTED for new API)
+  includedRegionCodes?: string[]; // Correct property for new Places API
   showMap?: boolean;
   mapHeight?: number;
 }
@@ -39,8 +36,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
   className = "",
   disabled = false,
   onError,
-  types = ['address'],
-  componentRestrictions = { country: ['AE'] },
+  includedRegionCodes = ['ae'], // Correct property for UAE
   showMap = false,
   mapHeight = 200
 }) => {
@@ -111,18 +107,23 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
     }
   }, [showMap, onError]);
 
-  // Initialize autocomplete using new Places API
+  // Initialize autocomplete using new Places API (CORRECTED)
   const initializeAutocomplete = useCallback(async () => {
     if (!containerRef.current || !isLoaded || autocompleteElementRef.current) return;
 
     try {
-      // Import the Places library
-      await window.google.maps.importLibrary("places");
+      // Import the Places library (correct import)
+      const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places");
       
-      console.log('Creating PlaceAutocompleteElement...');
+      console.log('Creating PlaceAutocompleteElement with correct syntax...');
       
-      // Create the PlaceAutocompleteElement (new API)
-      const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement();
+      // Create the PlaceAutocompleteElement with proper configuration (FIXED)
+      const placeAutocomplete = new PlaceAutocompleteElement({
+        // Correct UAE restriction (FIXED)
+        includedRegionCodes: includedRegionCodes, // Use prop value
+        // Set location bias to Dubai for UAE addresses
+        locationBias: { lat: 25.2048, lng: 55.2708 }
+      });
       
       console.log('PlaceAutocompleteElement created:', placeAutocomplete);
       
@@ -131,15 +132,6 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       
       // Set the placeholder directly as an attribute
       placeAutocomplete.setAttribute('placeholder', placeholder);
-      
-      // Set location bias to Dubai for UAE addresses
-      const dubaiCenter = { lat: 25.2048, lng: 55.2708 };
-      placeAutocomplete.locationBias = dubaiCenter;
-      
-      // Configure for addresses in UAE
-      if (componentRestrictions?.country) {
-        placeAutocomplete.componentRestrictions = { country: componentRestrictions.country };
-      }
 
       // Ensure the element is properly styled and visible
       placeAutocomplete.style.width = '100%';
@@ -161,14 +153,15 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         }
       }, 1000);
       
-      // Listen for place selection using the new 'gmp-select' event
+      // Listen for place selection using the CORRECT 'gmp-select' event (FIXED)
       placeAutocomplete.addEventListener('gmp-select', async (event: any) => {
         console.log('Place selection event triggered:', event);
         
+        // Correct destructuring (FIXED)
         const { placePrediction } = event;
         const place = placePrediction.toPlace();
         
-        // Fetch place details
+        // Fetch place details with correct method (FIXED)
         await place.fetchFields({ 
           fields: ['displayName', 'formattedAddress', 'location', 'id'] 
         });
@@ -225,7 +218,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       });
 
       autocompleteElementRef.current = placeAutocomplete;
-      console.log('PlaceAutocompleteElement initialized successfully');
+      console.log('PlaceAutocompleteElement initialized successfully with correct syntax');
     } catch (error) {
       console.error('Failed to initialize PlaceAutocompleteElement:', error);
       
@@ -238,7 +231,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         onError?.('Failed to initialize address search');
       }
     }
-  }, [isLoaded, componentRestrictions, onChange, onError, placeholder]);
+  }, [isLoaded, onChange, onError, placeholder, includedRegionCodes]);
 
   // Fallback to legacy Autocomplete API
   const initializeLegacyAutocomplete = useCallback(async () => {
@@ -254,8 +247,8 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
     containerRef.current.appendChild(input);
 
     const autocomplete = new window.google.maps.places.Autocomplete(input, {
-      types: types,
-      componentRestrictions: componentRestrictions,
+      types: ['address'],
+      componentRestrictions: { country: includedRegionCodes },
       fields: ['place_id', 'formatted_address', 'name', 'geometry']
     });
 
@@ -291,7 +284,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
 
     autocompleteElementRef.current = { element: input, autocomplete };
     console.log('Legacy Autocomplete initialized successfully');
-  }, [types, componentRestrictions, placeholder, onChange]);
+  }, [includedRegionCodes, placeholder, onChange]);
 
   // Initialize components when loaded
   useEffect(() => {

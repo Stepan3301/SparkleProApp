@@ -330,8 +330,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
                 onError={(error: string) => {
                   console.error('Places API error:', error);
                 }}
-                componentRestrictions={{ country: ['AE'] }}
-                types={['address']}
+                includedRegionCodes={['ae']}
               />
             </div>
           </div>

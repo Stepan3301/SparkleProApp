@@ -1396,8 +1396,7 @@ const BookingPage: React.FC = () => {
                         onError={(error: string) => {
                           console.error('Places API error:', error);
                         }}
-                        componentRestrictions={{ country: ['AE'] }}
-                        types={['address']}
+                        includedRegionCodes={['ae']}
                       />
                     </div>
                   )}
