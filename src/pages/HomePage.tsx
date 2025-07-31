@@ -53,6 +53,7 @@ interface ServiceData {
   base_price: number;
   price_per_hour: number | null;
   is_active: boolean;
+  image_url: string;
 }
 
 const HomePage: React.FC = () => {
@@ -127,7 +128,8 @@ const HomePage: React.FC = () => {
           additional_notes, 
           created_at,
           services (
-            name
+            name,
+            image_url
           )
         `)
         .eq('customer_id', user.id)
@@ -136,10 +138,11 @@ const HomePage: React.FC = () => {
 
       if (error) throw error;
       
-      // Transform the data to include service_name
+      // Transform the data to include service_name and service_image
       const transformedBookings = (bookings || []).map(booking => ({
         ...booking,
-        service_name: booking.services?.[0]?.name || null
+        service_name: booking.services?.[0]?.name || null,
+        service_image_url: booking.services?.[0]?.image_url || null
       }));
       
       setRecentBookings(transformedBookings);
@@ -152,7 +155,7 @@ const HomePage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('services')
-        .select('*')
+        .select('id, name, description, base_price, price_per_hour, is_active, image_url')
         .eq('is_active', true)
         .order('name');
 
@@ -174,52 +177,14 @@ const HomePage: React.FC = () => {
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   };
 
-  const getServiceImage = (serviceName: string | null) => {
-    // Handle null or empty service name
-    if (!serviceName) {
-      return '/regular-cleaning.jpg'; // Default image
+  const getServiceImage = (booking: any) => {
+    // Use service image from database if available
+    if (booking.service_image_url) {
+      return booking.service_image_url;
     }
     
-    const imageMap: { [key: string]: string } = {
-      'regular': '/regular-cleaning.jpg',
-      'deep': '/deep-cleaning.JPG',
-      'move': '/move-in-move-out.JPG',
-      'office': '/office-cleaning.JPG',
-      'villa': '/villa-deep-cleaning.png',
-      'apartment': '/appartment-deep-cleaning.png',
-      'window': '/window-cleaning.JPG',
-      'kitchen': '/kitchen-deep-cleaning.png',
-      'bathroom': '/bathroom-deep-cleaning.png',
-      'facade': '/villa-facade-cleaning.png',
-      'postconstruction': '/post-construction-cleaning.png',
-      'construction': '/post-construction-cleaning.png',
-      'post': '/post-construction-cleaning.png',
-      'wardrobe': '/wardrobe-cabinet-cleaning.png',
-      'cabinet': '/wardrobe-cabinet-cleaning.png',
-      'sofa': '/sofa-cleaning.png',
-      'mattress': '/matress-cleaning.png',
-      'curtains': '/curtains-cleaning.JPG'
-    };
-    
-    // Convert to lowercase for case-insensitive matching
-    const name = serviceName.toLowerCase();
-    
-    // Specific service name matching (most specific first)
-    if (name.includes('full villa deep')) return '/villa-deep-cleaning.png';
-    if (name.includes('full apartment deep')) return '/appartment-deep-cleaning.png';
-    if (name.includes('villa facade')) return '/villa-facade-cleaning.png';
-    if (name.includes('bathroom deep')) return '/bathroom-deep-cleaning.png';
-    if (name.includes('kitchen deep')) return '/kitchen-deep-cleaning.png';
-    if (name.includes('post-construction') || name.includes('postconstruction')) return '/post-construction-cleaning.png';
-    if (name.includes('wardrobe') || name.includes('cabinet')) return '/wardrobe-cabinet-cleaning.png';
-    
-    // General keyword matching
-    for (const [key, image] of Object.entries(imageMap)) {
-      if (name.includes(key)) {
-        return image;
-      }
-    }
-    return '/regular-cleaning.jpg'; // Default image
+    // Fallback to default image if no service image available
+    return '/regular-cleaning.jpg';
   };
 
   const getServiceName = (propertySize: string | null) => {
@@ -469,7 +434,7 @@ const HomePage: React.FC = () => {
                 >
                   <div className="relative z-10">
                     <img
-                      src={getServiceImage(booking.service_name || booking.property_size || '')}
+                      src={getServiceImage(booking)}
                       alt={getServiceName(booking.service_name || booking.property_size || '')}
                       className="w-full h-32 object-cover rounded-t-2xl"
                     />
@@ -667,7 +632,7 @@ const HomePage: React.FC = () => {
       {/* Service Detail Modal */}
       <ServiceDetailModal
         service={selectedService}
-        serviceImage={selectedService ? getServiceImage(getServiceKey(selectedService.name)) : ''}
+        serviceImage={selectedService ? selectedService.image_url || '/regular-cleaning.jpg' : ''}
         serviceKey={selectedService ? getServiceKey(selectedService.name) : ''}
         isOpen={isServiceModalOpen}
         onClose={handleCloseServiceModal}

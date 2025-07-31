@@ -13,6 +13,7 @@ interface ServiceData {
   base_price: number;
   price_per_hour: number | null;
   is_active: boolean;
+  image_url: string;
 }
 
 const ServicesPage: React.FC = () => {
@@ -31,7 +32,7 @@ const ServicesPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('services')
-        .select('*')
+        .select('id, name, description, base_price, price_per_hour, is_active, image_url')
         .eq('is_active', true)
         .order('name');
 
@@ -44,45 +45,14 @@ const ServicesPage: React.FC = () => {
     }
   };
 
-  const getServiceImage = (serviceName: string) => {
-    const imageMap: { [key: string]: string } = {
-      'regular': '/regular-cleaning.jpg',
-      'deep': '/deep-cleaning.JPG',
-      'move': '/move-in-move-out.JPG',
-      'office': '/office-cleaning.JPG',
-      'villa': '/villa-deep-cleaning.png',
-      'apartment': '/appartment-deep-cleaning.png',
-      'window': '/window-cleaning.JPG',
-      'kitchen': '/kitchen-deep-cleaning.png',
-      'bathroom': '/bathroom-deep-cleaning.png',
-      'facade': '/villa-facade-cleaning.png',
-      'postconstruction': '/post-construction-cleaning.png',
-      'construction': '/post-construction-cleaning.png',
-      'wardrobe': '/wardrobe-cabinet-cleaning.png',
-      'cabinet': '/wardrobe-cabinet-cleaning.png',
-      'sofa': '/sofa-cleaning.png',
-      'mattress': '/matress-cleaning.png',
-      'curtains': '/curtains-cleaning.JPG'
-    };
-    
-    const name = serviceName.toLowerCase();
-    
-    // Specific service name matching (most specific first)
-    if (name.includes('full villa deep')) return '/villa-deep-cleaning.png';
-    if (name.includes('full apartment deep')) return '/appartment-deep-cleaning.png';
-    if (name.includes('villa facade')) return '/villa-facade-cleaning.png';
-    if (name.includes('bathroom deep')) return '/bathroom-deep-cleaning.png';
-    if (name.includes('kitchen deep')) return '/kitchen-deep-cleaning.png';
-    if (name.includes('post-construction') || name.includes('postconstruction')) return '/post-construction-cleaning.png';
-    if (name.includes('wardrobe') || name.includes('cabinet')) return '/wardrobe-cabinet-cleaning.png';
-    
-    // General keyword matching
-    for (const [key, image] of Object.entries(imageMap)) {
-      if (name.includes(key)) {
-        return image;
-      }
+  const getServiceImage = (service: ServiceData) => {
+    // Use image_url from database if available
+    if (service.image_url) {
+      return service.image_url;
     }
-    return '/regular-cleaning.jpg'; // Default image
+    
+    // Fallback to default image
+    return '/regular-cleaning.jpg';
   };
 
   const getServiceKey = (serviceName: string) => {
@@ -145,7 +115,7 @@ const ServicesPage: React.FC = () => {
                   {/* Service Image */}
                   <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-emerald-50 to-sky-50 border-2 border-dashed border-gray-300">
                     <img
-                      src={getServiceImage(serviceKey)}
+                      src={getServiceImage(service)}
                       alt={service.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {

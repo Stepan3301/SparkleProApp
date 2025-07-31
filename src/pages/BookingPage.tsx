@@ -344,7 +344,7 @@ const BookingPage: React.FC = () => {
       // Fetch main services
       const { data: servicesData, error: servicesError } = await supabase
         .from('services')
-        .select('*')
+        .select('id, name, description, base_price, price_per_hour, is_active, image_url')
         .eq('is_active', true)
         .order('id');
 
@@ -353,7 +353,7 @@ const BookingPage: React.FC = () => {
       // Add UI-specific fields to services
       const servicesWithUI = servicesData?.map(service => ({
         ...service,
-        image: getServiceImageByName(service.name),
+        image: service.image_url || '/regular-cleaning.jpg', // Use database image_url
         category: getCategoryByName(service.name)
       })) || [];
       
@@ -385,32 +385,11 @@ const BookingPage: React.FC = () => {
     }
   };
 
-  // Helper functions for service mapping
+  // Helper function for service image (now using database image_url)
   const getServiceImageByName = (serviceName: string): string => {
-    const name = serviceName.toLowerCase();
-    
-    // Specific service mappings
-    if (name.includes('full villa deep')) return '/villa-deep-cleaning.png';
-    if (name.includes('full apartment deep')) return '/appartment-deep-cleaning.png';
-    if (name.includes('villa facade')) return '/villa-facade-cleaning.png';
-    if (name.includes('bathroom deep')) return '/bathroom-deep-cleaning.png';
-    if (name.includes('kitchen deep')) return '/kitchen-deep-cleaning.png';
-    if (name.includes('post-construction') || name.includes('postconstruction')) return '/post-construction-cleaning.png';
-    if (name.includes('wardrobe') || name.includes('cabinet')) return '/wardrobe-cabinet-cleaning.png';
-    
-    // General category mappings
-    if (name.includes('regular')) return '/regular-cleaning.jpg';
-    if (name.includes('deep')) return '/deep-cleaning.JPG';
-    if (name.includes('move')) return '/move-in-move-out.JPG';
-    if (name.includes('office')) return '/office-cleaning.JPG';
-    if (name.includes('villa')) return '/villa-deep-cleaning.png';
-    if (name.includes('apartment')) return '/appartment-deep-cleaning.png';
-    if (name.includes('window')) return '/window-cleaning.JPG';
-    if (name.includes('bathroom')) return '/bathroom-deep-cleaning.png';
-    if (name.includes('kitchen')) return '/kitchen-deep-cleaning.png';
-    if (name.includes('facade')) return '/villa-facade-cleaning.png';
-    
-    return '/regular-cleaning.jpg';
+    // This function is kept for backward compatibility but should use database image_url
+    // For new implementations, use service.image_url directly
+    return '/regular-cleaning.jpg'; // Fallback
   };
 
   const getCategoryByName = (serviceName: string): string => {
