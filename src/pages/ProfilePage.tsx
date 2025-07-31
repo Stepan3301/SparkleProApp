@@ -144,14 +144,14 @@ const ProfilePage: React.FC = () => {
       icon: <ShieldCheckIcon className="w-5 h-5" />,
       title: "Privacy & Security",
       description: "Account security settings",
-      onClick: () => console.log('Security clicked'),
+      onClick: () => navigate('/profile/privacy-security'),
       gradient: "from-purple-500 to-purple-600"
     },
     {
       icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
       title: "Help & Support", 
       description: "Get help and contact us",
-      onClick: () => console.log('Help clicked'),
+      onClick: () => navigate('/profile/help-support'),
       gradient: "from-cyan-500 to-blue-500"
     }
   ];

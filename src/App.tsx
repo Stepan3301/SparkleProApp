@@ -13,6 +13,8 @@ import PersonalInfoPage from './pages/profile/PersonalInfoPage';
 import AddressesPage from './pages/profile/AddressesPage';
 import NotificationsPage from './pages/profile/NotificationsPage';
 import PaymentMethodsPage from './pages/profile/PaymentMethodsPage';
+import PrivacySecurityPage from './pages/profile/PrivacySecurityPage';
+import HelpSupportPage from './pages/profile/HelpSupportPage';
 import './App.css';
 
 // Component to handle scroll reset on route change
@@ -85,6 +87,16 @@ function App() {
           <Route path="/profile/payment-methods" element={
             <RoleBasedRoute>
               <PaymentMethodsPage />
+            </RoleBasedRoute>
+          } />
+          <Route path="/profile/privacy-security" element={
+            <RoleBasedRoute>
+              <PrivacySecurityPage />
+            </RoleBasedRoute>
+          } />
+          <Route path="/profile/help-support" element={
+            <RoleBasedRoute>
+              <HelpSupportPage />
             </RoleBasedRoute>
           } />
           
