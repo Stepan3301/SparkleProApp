@@ -18,6 +18,9 @@ const signupSchema = z.object({
   phone: z.string().min(10, 'Please enter a valid phone number'),
   address: z.string().min(5, 'Please enter a valid address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  termsAccepted: z.boolean().refine(val => val === true, {
+    message: 'You must accept the Terms and Conditions',
+  }),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -29,6 +32,7 @@ const AuthPage: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -859,6 +863,54 @@ const AuthPage: React.FC = () => {
                )}
              </div>
 
+            {/* Terms and Conditions Checkbox */}
+            <div className="form-group" style={{ marginBottom: '20px' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                gap: '10px',
+                fontSize: '14px',
+                color: '#666'
+              }}>
+                <input
+                  type="checkbox"
+                  id="termsAccepted"
+                  {...signupForm.register('termsAccepted')}
+                  style={{
+                    marginTop: '2px',
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#10b981',
+                    cursor: 'pointer'
+                  }}
+                />
+                <label htmlFor="termsAccepted" style={{ cursor: 'pointer', lineHeight: '1.4' }}>
+                  I agree with{' '}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    style={{
+                      color: '#3b82f6',
+                      textDecoration: 'underline',
+                      background: 'none',
+                      border: 'none',
+                      padding: '0',
+                      cursor: 'pointer',
+                      fontSize: 'inherit',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    Terms and Conditions
+                  </button>
+                </label>
+              </div>
+              {signupForm.formState.errors.termsAccepted && (
+                <div className="error-message" style={{ marginTop: '5px' }}>
+                  {signupForm.formState.errors.termsAccepted.message}
+                </div>
+              )}
+            </div>
+
             <button type="submit" className="submit-btn" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
@@ -914,6 +966,127 @@ const AuthPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      {showTermsModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowTermsModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Terms and Conditions</h2>
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+              <div className="space-y-4 text-gray-700 leading-relaxed">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Service Agreement</h3>
+                  <p>
+                    By using SparklePro cleaning services, you agree to our professional cleaning standards 
+                    and service delivery terms. Our team is committed to providing high-quality cleaning 
+                    services for residential and commercial properties.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">2. Booking and Scheduling</h3>
+                  <p>
+                    All bookings must be made through our platform. We require at least 24 hours notice 
+                    for booking confirmations and 4 hours notice for cancellations. Same-day bookings 
+                    are subject to availability.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">3. Payment Terms</h3>
+                  <p>
+                    Payment is due upon completion of services unless otherwise arranged. We accept 
+                    various payment methods including credit cards and digital payments. All prices 
+                    are subject to applicable taxes.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">4. Property Access and Security</h3>
+                  <p>
+                    Customers must provide secure access to the property during scheduled service times. 
+                    SparklePro is not responsible for lost keys or access issues. We recommend being 
+                    present during the first cleaning service.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">5. Service Quality and Satisfaction</h3>
+                  <p>
+                    We guarantee satisfaction with our cleaning services. If you're not satisfied, 
+                    please contact us within 24 hours of service completion, and we'll arrange to 
+                    address any concerns at no additional cost.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">6. Liability and Insurance</h3>
+                  <p>
+                    SparklePro maintains comprehensive insurance coverage for all cleaning operations. 
+                    Our liability is limited to the cost of the cleaning service. We are not responsible 
+                    for pre-existing damage or items of extraordinary value.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">7. Privacy and Data Protection</h3>
+                  <p>
+                    We respect your privacy and protect your personal information in accordance with 
+                    applicable data protection laws. Your information is used solely for service 
+                    delivery and customer communication purposes.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">8. Service Modifications</h3>
+                  <p>
+                    SparklePro reserves the right to modify these terms and our services with 
+                    appropriate notice to customers. Continued use of our services constitutes 
+                    acceptance of any modifications.
+                  </p>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 mt-6">
+                  <p className="text-sm text-gray-600">
+                    <strong>Last updated:</strong> {new Date().toLocaleDateString()}<br />
+                    <strong>Contact:</strong> For questions about these terms, please contact our 
+                    customer service team through the app or visit our website.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 p-6">
+              <button
+                onClick={() => setShowTermsModal(false)}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
