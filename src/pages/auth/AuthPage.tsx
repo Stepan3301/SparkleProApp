@@ -974,11 +974,11 @@ const AuthPage: React.FC = () => {
           onClick={() => setShowTermsModal(false)}
         >
           <div
-            className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden"
+            className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
               <h2 className="text-xl font-semibold text-gray-900">Terms and Conditions</h2>
               <button
                 onClick={() => setShowTermsModal(false)}
@@ -991,7 +991,7 @@ const AuthPage: React.FC = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+            <div className="p-4 overflow-y-auto flex-1">
               <div className="space-y-4 text-gray-700 leading-relaxed">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">1. Service Agreement</h3>
@@ -1076,7 +1076,7 @@ const AuthPage: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="border-t border-gray-200 p-6">
+            <div className="border-t border-gray-200 p-4 flex-shrink-0">
               <button
                 onClick={() => setShowTermsModal(false)}
                 className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
