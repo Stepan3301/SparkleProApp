@@ -11,15 +11,14 @@ import Button from '../components/ui/Button';
 import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
-import { maskCardNumber } from '../utils/cardEncryption';
+// Removed unused import: maskCardNumber
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
 import Lottie from 'lottie-react';
 import bookingSuccessAnimation from '../assets/animations/booking-success.json';
 import { 
   Address, 
-  Addon, 
-  calculateBookingTotal,
   Profile
+  // Removed unused: Addon, calculateBookingTotal
 } from '../types/booking';
 import { 
   getRecommendation, 

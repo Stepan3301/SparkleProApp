@@ -532,7 +532,9 @@ const AuthPage: React.FC = () => {
             </button>
 
             <div className="forgot-password">
-              <a href="#">Forgot Password?</a>
+              <button type="button" className="text-blue-600 hover:text-blue-700 text-sm underline bg-transparent border-none cursor-pointer">
+                Forgot Password?
+              </button>
             </div>
 
             {/* Google Sign-In Button */}

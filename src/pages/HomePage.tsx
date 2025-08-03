@@ -7,20 +7,13 @@ import Button from '../components/ui/Button';
 import ReviewNotification from '../components/ui/ReviewNotification';
 import ServiceDetailModal from '../components/ui/ServiceDetailModal';
 import { useReviewNotifications } from '../hooks/useReviewNotifications';
-import { SIZE_OPTIONS, ADDON_OPTIONS } from '../types/booking';
+// Removed unused imports: SIZE_OPTIONS, ADDON_OPTIONS
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { useSimpleTranslation } from '../utils/i18n';
 import { 
   MapPinIcon, 
-  BellIcon, 
-  HomeIcon, 
-  StarIcon,
   UserIcon,
-  CalendarIcon,
-  DocumentTextIcon,
-  SparklesIcon,
-  BuildingOfficeIcon,
-  ArchiveBoxIcon
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import { 
   HomeIcon as HomeSolid,

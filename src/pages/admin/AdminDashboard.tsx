@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import DirhamIcon from '../../components/ui/DirhamIcon';
-import Button from '../../components/ui/Button';
+// Removed unused import: Button
 import { 
   ArrowRightOnRectangleIcon,
   ClipboardDocumentListIcon,
