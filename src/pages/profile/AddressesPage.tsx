@@ -253,17 +253,15 @@ interface AddAddressModalProps {
 const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    street: '',
     apartment: '',
     city: 'Dubai',
-    zipCode: '',
   });
   const [searchValue, setSearchValue] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !formData.street) return;
+    if (!user || !searchValue.trim()) return;
 
     setLoading(true);
 
@@ -272,10 +270,10 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
         .from('addresses')
         .insert({
           user_id: user.id,
-          street: formData.street,
+          street: searchValue,
           apartment: formData.apartment || null,
           city: formData.city,
-          zip_code: formData.zipCode,
+          zip_code: null,
           is_default: false,
         });
 
@@ -290,9 +288,17 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
     }
   };
 
-  const handleAddressChange = (address: string) => {
-    setSearchValue(address);
-    setFormData({ ...formData, street: address });
+  const handleAddressChange = (address: string, placeDetails?: any) => {
+    // Extract building/place name from placeDetails if available, otherwise use the search term
+    let buildingName = address;
+    
+    if (placeDetails && placeDetails.displayName) {
+      buildingName = placeDetails.displayName;
+    } else if (placeDetails && placeDetails.name) {
+      buildingName = placeDetails.name;
+    }
+    
+    setSearchValue(buildingName);
   };
 
   return (
@@ -316,15 +322,14 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Address</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Search Building/Place Name</label>
               <PlacesAutocomplete
                 value={searchValue}
                 onChange={(address: string, placeDetails?: any) => {
                   console.log('Places API - Address changed:', address, placeDetails);
-                  setSearchValue(address);
-                  handleAddressChange(address);
+                  handleAddressChange(address, placeDetails);
                 }}
-                placeholder="Search for your address..."
+                placeholder="Search for building name (e.g., Westwood Grande 2 by Imtiaz)..."
                 showMap={true}
                 mapHeight={200}
                 onError={(error: string) => {
@@ -335,50 +340,37 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
             </div>
           </div>
 
-          {/* Read-only Street Name Field */}
-          {formData.street && (
+          {/* Selected Building Name Display */}
+          {searchValue && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Street Name</label>
-              <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-700 font-medium">
-                {formData.street}
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Selected Building</label>
+              <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-blue-50 text-gray-900 font-medium border-blue-200">
+                {searchValue}
               </div>
-              <p className="text-xs text-gray-500 mt-1">This field was auto-filled from your search</p>
+              <p className="text-xs text-blue-600 mt-1">This is the building name that will be saved</p>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Apartment/Unit (Optional)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Apartment/Unit/Floor (Optional)</label>
             <input
               type="text"
               value={formData.apartment}
               onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-              placeholder="Apt, Suite, Unit, etc."
+              placeholder="e.g., Apt 101, Floor 5, Unit A..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
-              <input
-                type="text"
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">ZIP Code</label>
-              <input
-                type="text"
-                value={formData.zipCode}
-                onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                placeholder="12345"
-                required
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              required
+            />
           </div>
 
           <Button
@@ -386,7 +378,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
             variant="primary"
             shape="bubble"
             size="md"
-            disabled={loading || !formData.street}
+            disabled={loading || !searchValue.trim()}
             fullWidth={true}
             className="!py-3 !shadow-lg"
           >

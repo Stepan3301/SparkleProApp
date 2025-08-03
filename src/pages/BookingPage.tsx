@@ -13,6 +13,8 @@ import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker
 import AddCardForm from '../components/ui/AddCardForm';
 import { maskCardNumber } from '../utils/cardEncryption';
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
+import Lottie from 'lottie-react';
+import bookingSuccessAnimation from '../assets/animations/booking-success.json';
 import { 
   Address, 
   Addon, 
@@ -35,6 +37,8 @@ const contactSchema = z.object({
   customerPhone: z.string().min(10, 'Please enter a valid phone number'),
   selectedAddressId: z.number().optional(),
   newAddress: z.string().optional(),
+  newAddressFloor: z.string().optional(),
+  newAddressApartment: z.string().optional(),
   additionalNotes: z.string().optional(),
 });
 
@@ -1365,11 +1369,21 @@ const BookingPage: React.FC = () => {
                         value={newAddressValue}
                         onChange={(address: string, placeDetails?: any) => {
                           console.log('Places API - Address changed:', address, placeDetails);
-                          setNewAddressValue(address);
-                          setNewAddressStreet(address);
-                          setValue('newAddress', address);
+                          
+                          // Extract building/place name from placeDetails if available, otherwise use the search term
+                          let buildingName = address;
+                          
+                          if (placeDetails && placeDetails.displayName) {
+                            buildingName = placeDetails.displayName;
+                          } else if (placeDetails && placeDetails.name) {
+                            buildingName = placeDetails.name;
+                          }
+                          
+                          setNewAddressValue(buildingName);
+                          setNewAddressStreet(buildingName);
+                          setValue('newAddress', buildingName);
                         }}
-                        placeholder="Search for your address..."
+                        placeholder="Search for building name (e.g., Westwood Grande 2 by Imtiaz)..."
                         showMap={true}
                         mapHeight={200}
                         onError={(error: string) => {
@@ -1377,34 +1391,47 @@ const BookingPage: React.FC = () => {
                         }}
                         includedRegionCodes={['ae']}
                       />
+                      
+                      {/* Selected Building Name Display */}
+                      {newAddressValue && (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Selected Building</label>
+                          <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-blue-50 text-gray-900 font-medium border-blue-200">
+                            {newAddressValue}
+                          </div>
+                          <p className="text-xs text-blue-600 mt-1">This building name will be used for your service</p>
+                        </div>
+                      )}
+
+                      {/* Floor and Apartment Number Fields */}
+                      {newAddressValue && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Floor (Optional)</label>
+                            <input
+                              type="text"
+                              {...register('newAddressFloor')}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                              placeholder="e.g., 5th, Ground, etc."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Apartment (Optional)</label>
+                            <input
+                              type="text"
+                              {...register('newAddressApartment')}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                              placeholder="e.g., 501, A12, etc."
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Always show address input field when New Address is selected */}
-              <div>
-                <label className="block font-medium text-gray-700 mb-2">Selected Address</label>
-                <input
-                  type="text"
-                  value={newAddressValue}
-                  readOnly
-                  className="w-full p-3 border-2 border-emerald-200 rounded-lg bg-emerald-50 text-gray-800 focus:outline-none"
-                  placeholder="Address will appear here when selected from search above"
-                />
-              </div>
 
-              {/* Display selected address confirmation */}
-              {newAddressValue && (
-                <div className="p-3 bg-gradient-to-r from-emerald-50 to-sky-50 border border-emerald-200 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-emerald-600 text-sm font-medium">Address confirmed for your cleaning service</span>
-                  </div>
-                </div>
-              )}
 
               <div>
                 <label className="block font-medium mb-2">Additional Notes (Optional)</label>
@@ -1615,13 +1642,59 @@ const BookingPage: React.FC = () => {
 
       case 5:
         return (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-              <div className="text-white text-2xl font-bold">✓</div>
+          <div className="text-center py-8 relative overflow-hidden">
+            {/* Background Celebration Effects */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute top-1/4 right-1/4 w-3 h-3 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '1.5s' }}></div>
+              <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
-            <p className="text-gray-600 mb-4">Your cleaning service has been scheduled. We'll call you shortly to confirm.</p>
-            <p className="text-sm text-gray-500">Redirecting to booking history...</p>
+
+            {/* Success Lottie Animation */}
+            <div className="mb-6 relative z-10">
+              <Lottie
+                animationData={bookingSuccessAnimation}
+                loop={true}
+                autoplay={true}
+                style={{ width: 160, height: 160 }}
+                className="mx-auto rounded-2xl shadow-2xl border-4 border-white"
+              />
+            </div>
+
+            {/* Success Content */}
+            <div className="relative z-10 space-y-4">
+              <div className="text-6xl mb-4 animate-bounce">🎉</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-3">
+                <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  Booking Confirmed!
+                </span>
+              </h2>
+              <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mx-4">
+                <p className="text-lg text-green-800 font-semibold mb-2">
+                  ✅ Your cleaning service has been scheduled successfully!
+                </p>
+                <p className="text-green-700">
+                  We'll call you shortly to confirm the details and timing.
+                </p>
+              </div>
+              
+              <div className="mt-6 space-y-2">
+                <p className="text-emerald-600 font-medium">🌟 Thank you for choosing SparklePro!</p>
+                <p className="text-sm text-gray-500">Redirecting to booking history in 3 seconds...</p>
+              </div>
+
+              {/* Sparkle Animation */}
+              <div className="flex justify-center mt-4 space-x-2">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  ></div>
+                ))}
+              </div>
+            </div>
           </div>
         );
 

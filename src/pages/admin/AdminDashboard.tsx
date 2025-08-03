@@ -397,36 +397,33 @@ const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 pb-20">
+    <div className="min-h-screen bg-white pb-20">
       <div className="max-w-md mx-auto p-4">
         {/* Header */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-4 mb-6 shadow-lg">
+        <div className="bg-white p-4 mb-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="text-xl font-bold text-indigo-600">🧽 SparklePro Admin</div>
+              <div className="text-xl font-bold text-emerald-600">🧽 SparklePro Admin</div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-gradient-to-r from-pink-500 to-indigo-600 rounded-full flex items-center justify-center">
+              <div className="w-9 h-9 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">
                   {profile?.full_name?.charAt(0) || 'A'}
                 </span>
               </div>
-              <span className="text-sm font-medium">{profile?.full_name || 'Admin'}</span>
-              <Button
-                variant="signout"
-                shape="soap"
-                size="sm"
+              <span className="text-sm font-medium text-gray-700">{profile?.full_name || 'Admin'}</span>
+              <button
                 onClick={signOut}
-                className="!px-3 !py-1 !text-xs !min-w-[36px] !w-9 !h-8"
+                className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200 transition-colors"
               >
                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div className="bg-white mb-6">
           <div className="p-6">
             {/* Orders Tab */}
             {activeTab === 'orders' && (
@@ -435,19 +432,19 @@ const AdminDashboard: React.FC = () => {
                 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.activeBookings || 0}</div>
                     <div className="text-xs opacity-90">Active Orders</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.completedToday || 0}</div>
                     <div className="text-xs opacity-90">Completed Today</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats ? formatCurrency(stats.totalRevenue) : <span className="flex items-center gap-1"><DirhamIcon size="sm" color="white" />0</span>}</div>
                     <div className="text-xs opacity-90">Total Revenue</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.avgRating || 0}</div>
                     <div className="text-xs opacity-90">Avg Rating</div>
                   </div>
@@ -456,9 +453,9 @@ const AdminDashboard: React.FC = () => {
                 {/* Bookings List */}
                 <div className="space-y-4">
                   {bookings.map((booking) => (
-                    <div key={booking.id} className="bg-white border border-gray-200 rounded-xl p-4 border-l-4 border-l-indigo-500">
+                    <div key={booking.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 border-l-4 border-l-emerald-500">
                       <div className="flex justify-between items-start mb-3">
-                        <div className="font-semibold text-indigo-600 text-sm">#{booking.id}</div>
+                        <div className="font-semibold text-emerald-600 text-sm">#{booking.id}</div>
                         {getStatusBadge(booking.status)}
                       </div>
                       
@@ -482,22 +479,19 @@ const AdminDashboard: React.FC = () => {
                       </div>
                       
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="view"
-                          shape="droplet"
-                          size="sm"
+                        <button
                           onClick={() => viewBooking(booking)}
-                          className="!px-3 !py-1 !text-xs !min-w-0"
-                          leftIcon={<EyeIcon className="w-3 h-3" />}
+                          className="flex items-center gap-1 px-3 py-1 bg-sky-500 text-white rounded-lg text-xs hover:bg-sky-600 transition-colors"
                         >
+                          <EyeIcon className="w-3 h-3" />
                           View
-                        </Button>
+                        </button>
                         <div className="relative">
                           <select
                             value={booking.status}
                             onChange={(e) => updateBookingStatus(booking.id, e.target.value)}
                             disabled={updatingStatus === booking.id}
-                            className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {getStatusOptions().map((status) => (
                               <option key={status} value={status} className="text-black">
@@ -525,19 +519,19 @@ const AdminDashboard: React.FC = () => {
                 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.totalUsers || 0}</div>
                     <div className="text-xs opacity-90">Total Users</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.newUsersThisMonth || 0}</div>
                     <div className="text-xs opacity-90">New This Month</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.activeClients || 0}</div>
                     <div className="text-xs opacity-90">Active Clients</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.satisfaction || 0}%</div>
                     <div className="text-xs opacity-90">Satisfaction</div>
                   </div>
@@ -552,7 +546,7 @@ const AdminDashboard: React.FC = () => {
                       placeholder="Search users by name, email, phone, or ID..."
                       value={userSearchQuery}
                       onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
                     />
                   </div>
                 </div>
@@ -560,13 +554,13 @@ const AdminDashboard: React.FC = () => {
                 {/* Users List - Compact Design */}
                 <div className="space-y-3">
                   {filteredUsers.slice(0, 20).map((user) => (
-                    <div key={user.id} className="bg-white border border-gray-200 rounded-lg p-3 border-l-4 border-l-indigo-500">
+                    <div key={user.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 border-l-4 border-l-sky-500">
                       <div className="flex justify-between items-center">
                         <div className="flex-1">
                           <div className="flex justify-between items-start mb-2">
-                            <div className="font-semibold text-indigo-600 text-xs">#{user.id.slice(0, 8)}</div>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                            <div className="font-semibold text-sky-600 text-xs">#{user.id.slice(0, 8)}</div>
+                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                              user.role === 'admin' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
                             }`}>
                               {user.role.toUpperCase()}
                             </span>
@@ -589,16 +583,13 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         
                         <div className="ml-3">
-                          <Button
-                            variant="view"
-                            shape="droplet"
-                            size="sm"
+                          <button
                             onClick={() => viewUser(user)}
-                            className="!px-3 !py-1 !text-xs !min-w-0"
-                            leftIcon={<EyeIcon className="w-3 h-3" />}
+                            className="flex items-center gap-1 px-3 py-1 bg-sky-500 text-white rounded-lg text-xs hover:bg-sky-600 transition-colors"
                           >
+                            <EyeIcon className="w-3 h-3" />
                             View
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -620,26 +611,26 @@ const AdminDashboard: React.FC = () => {
                 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats ? formatCurrency(stats.monthlyRevenue) : <span className="flex items-center gap-1"><DirhamIcon size="sm" color="white" />0</span>}</div>
                     <div className="text-xs opacity-90">Monthly Revenue</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.monthlyCompletedOrders || 0}</div>
                     <div className="text-xs opacity-90">Orders This Month</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.avgRating || 0}</div>
                     <div className="text-xs opacity-90">Average Rating</div>
                   </div>
-                  <div className="bg-gradient-to-r from-primary to-primary-light text-white p-4 rounded-xl text-center">
+                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
                     <div className="text-xl font-bold">{stats?.satisfaction || 0}%</div>
                     <div className="text-xs opacity-90">Customer Satisfaction</div>
                   </div>
                 </div>
 
                 {/* Recent Activity */}
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h3 className="font-semibold text-gray-800 mb-4">Recent Activity</h3>
                   <div className="space-y-3">
                     {bookings.slice(0, 5).map((booking) => (
@@ -649,7 +640,7 @@ const AdminDashboard: React.FC = () => {
                           <div className="text-sm text-gray-500">{booking.customer_name || 'N/A'}</div>
                         </div>
                         <div className="text-right text-sm">
-                          <div className="font-semibold text-indigo-600">{formatCurrency(booking.total_price || 0)}</div>
+                          <div className="font-semibold text-emerald-600">{formatCurrency(booking.total_price || 0)}</div>
                           <div className="text-gray-500">{formatDate(booking.service_date)}</div>
                         </div>
                       </div>
@@ -672,7 +663,7 @@ const AdminDashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <input 
                       type="text" 
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
                       defaultValue={profile?.full_name || 'Administrator'} 
                     />
                   </div>
@@ -680,7 +671,7 @@ const AdminDashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                     <input 
                       type="tel" 
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
                       defaultValue={profile?.phone_number || ''} 
                     />
                   </div>
@@ -688,7 +679,7 @@ const AdminDashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                     <input 
                       type="password" 
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
                       placeholder="Enter current password" 
                     />
                   </div>
@@ -696,11 +687,11 @@ const AdminDashboard: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                     <input 
                       type="password" 
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
                       placeholder="Enter new password" 
                     />
                   </div>
-                  <button className="w-full bg-gradient-to-r from-primary to-primary-light text-white py-3 rounded-lg font-medium hover:from-primary-600 hover:to-primary-700 transition-all">
+                  <button className="w-full bg-emerald-500 text-white py-3 rounded-lg font-medium hover:bg-emerald-600 transition-colors">
                     Save Changes
                   </button>
                 </div>
@@ -859,7 +850,7 @@ const AdminDashboard: React.FC = () => {
                     updateBookingStatus(selectedBooking.id, e.target.value);
                     closeModal();
                   }}
-                  className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
                 >
                   {getStatusOptions().map((status) => (
                     <option key={status} value={status} className="text-black">
@@ -961,16 +952,12 @@ const AdminDashboard: React.FC = () => {
 
               {/* Close Button */}
               <div className="mt-6">
-                <Button
-                  variant="secondary"
-                  shape="bubble"
-                  size="md"
+                <button
                   onClick={closeUserModal}
-                  fullWidth={true}
-                  className="!py-2"
+                  className="w-full bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors"
                 >
                   Close
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -978,12 +965,12 @@ const AdminDashboard: React.FC = () => {
       )}
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
         <div className="flex justify-around py-3">
           <button
             onClick={() => setActiveTab('orders')}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'orders' ? 'bg-blue-100 text-primary' : 'text-gray-600 hover:bg-blue-50'
+              activeTab === 'orders' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <ClipboardDocumentListIcon className="w-5 h-5 mb-1" />
@@ -992,7 +979,7 @@ const AdminDashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('users')}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'users' ? 'bg-blue-100 text-primary' : 'text-gray-600 hover:bg-blue-50'
+              activeTab === 'users' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <UsersIcon className="w-5 h-5 mb-1" />
@@ -1001,7 +988,7 @@ const AdminDashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('analytics')}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'analytics' ? 'bg-blue-100 text-primary' : 'text-gray-600 hover:bg-blue-50'
+              activeTab === 'analytics' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <ChartBarIcon className="w-5 h-5 mb-1" />
@@ -1010,7 +997,7 @@ const AdminDashboard: React.FC = () => {
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'profile' ? 'bg-blue-100 text-primary' : 'text-gray-600 hover:bg-blue-50'
+              activeTab === 'profile' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'
             }`}
           >
             <Cog6ToothIcon className="w-5 h-5 mb-1" />

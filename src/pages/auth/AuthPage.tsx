@@ -5,6 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../contexts/AuthContext';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
+import Lottie from 'lottie-react';
+import failedLoginAnimation from '../../assets/animations/failed-login.json';
+import successAnimation from '../../assets/animations/success.json';
 
 // Validation schemas
 const loginSchema = z.object({
@@ -30,6 +33,7 @@ const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showFailedLogin, setShowFailedLogin] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -70,47 +74,7 @@ const AuthPage: React.FC = () => {
     createBubbles();
   }, []);
 
-  // Create sparkles animation when success is shown
-  useEffect(() => {
-    if (showSuccess) {
-      const createSparkles = () => {
-        const sparklesContainer = document.getElementById('sparkles');
-        if (!sparklesContainer) return;
-        
-        const sparkleSymbols = ['✨', '⭐', '💫', '🌟', '✦', '✧'];
-        
-        for (let i = 0; i < 15; i++) {
-          setTimeout(() => {
-            const sparkle = document.createElement('div');
-            sparkle.className = 'sparkle';
-            sparkle.textContent = sparkleSymbols[Math.floor(Math.random() * sparkleSymbols.length)];
-            sparkle.style.left = Math.random() * 100 + '%';
-            sparkle.style.top = Math.random() * 100 + '%';
-            sparkle.style.animationDelay = Math.random() * 2 + 's';
-            sparkle.style.animationDuration = (Math.random() * 2 + 2) + 's';
-            sparklesContainer.appendChild(sparkle);
-            
-            // Remove sparkle after animation
-            setTimeout(() => {
-              if (sparkle.parentNode) {
-                sparkle.parentNode.removeChild(sparkle);
-              }
-            }, 4000);
-          }, i * 100);
-        }
-      };
 
-      createSparkles();
-      
-      // Prevent body scroll when overlay is active
-      document.body.style.overflow = 'hidden';
-      
-      // Re-enable scroll when hiding overlay (after navigation)
-      return () => {
-        document.body.style.overflow = 'auto';
-      };
-    }
-  }, [showSuccess]);
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -119,9 +83,13 @@ const AuthPage: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => {
         navigate('/home');
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error('Login error:', error);
+      setShowFailedLogin(true);
+      setTimeout(() => {
+        setShowFailedLogin(false);
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +102,7 @@ const AuthPage: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => {
         navigate('/home');
-      }, 1500);
+      }, 2000);
     } catch (error) {
       console.error('Signup error:', error);
     } finally {
@@ -407,205 +375,7 @@ const AuthPage: React.FC = () => {
           display: none;
         }
 
-        .success-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(135deg, #50C878 0%, #40E0D0 25%, #48D1CC 50%, #20B2AA 75%, #008B8B 100%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.5s ease;
-          z-index: 1000;
-        }
 
-        .success-overlay.active {
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .success-content {
-          text-align: center;
-          color: white;
-          transform: scale(0.5) translateY(30px);
-          transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-          padding: 20px;
-          max-width: 90vw;
-        }
-
-        .success-overlay.active .success-content {
-          transform: scale(1) translateY(0);
-        }
-
-        .success-icon {
-          font-size: 80px;
-          margin-bottom: 20px;
-          animation: bounce 1s ease-in-out;
-          filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
-        }
-
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% {
-            transform: translateY(0);
-          }
-          40% {
-            transform: translateY(-20px);
-          }
-          60% {
-            transform: translateY(-10px);
-          }
-        }
-
-        .success-title {
-          font-size: 32px;
-          font-weight: 700;
-          margin-bottom: 15px;
-          text-shadow: 0 3px 10px rgba(0,0,0,0.3);
-          animation: slideInUp 0.8s ease-out 0.3s both;
-        }
-
-        .success-subtitle {
-          font-size: 18px;
-          font-weight: 300;
-          opacity: 0.9;
-          margin-bottom: 25px;
-          text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          animation: slideInUp 0.8s ease-out 0.5s both;
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .sparkles {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          pointer-events: none;
-        }
-
-        .sparkle {
-          position: absolute;
-          color: rgba(255, 255, 255, 0.8);
-          font-size: 16px;
-          animation: sparkleFloat 3s infinite ease-in-out;
-        }
-
-        @keyframes sparkleFloat {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-            opacity: 0;
-          }
-          50% {
-            transform: translateY(-60px) rotate(180deg);
-            opacity: 1;
-          }
-        }
-
-        .pulse-ring {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 200px;
-          height: 200px;
-          border: 2px solid rgba(255, 255, 255, 0.3);
-          border-radius: 50%;
-          animation: pulseRing 2s infinite ease-out;
-        }
-
-        @keyframes pulseRing {
-          0% {
-            transform: translate(-50%, -50%) scale(0.5);
-            opacity: 1;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(1.5);
-            opacity: 0;
-          }
-        }
-
-        .floating-elements {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
-          pointer-events: none;
-        }
-
-        .floating-element {
-          position: absolute;
-          opacity: 0.2;
-          animation: float 6s infinite ease-in-out;
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-15px) rotate(180deg);
-          }
-        }
-
-        .glow-effect {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-          border-radius: 50%;
-          animation: glow 4s infinite ease-in-out;
-        }
-
-        @keyframes glow {
-          0%, 100% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translate(-50%, -50%) scale(1.2);
-            opacity: 0.1;
-          }
-        }
-
-        .welcome-message {
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 15px;
-          padding: 20px;
-          margin-top: 15px;
-          animation: slideInUp 0.8s ease-out 0.7s both;
-          max-width: 280px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        .welcome-message h3 {
-          margin-bottom: 10px;
-          font-size: 16px;
-          font-weight: 600;
-        }
-
-        .welcome-message p {
-          font-size: 14px;
-          opacity: 0.9;
-          line-height: 1.4;
-        }
 
                  .error-message {
            color: #EF4444;
@@ -640,10 +410,34 @@ const AuthPage: React.FC = () => {
            height: 20px;
          }
 
-         .cleaning-icon {
-           width: 24px;
-           height: 24px;
-         }
+                 .cleaning-icon {
+          width: 24px;
+          height: 24px;
+        }
+
+        /* Success Text Animation */
+        .success-header-text {
+          opacity: 0;
+          transform: translateY(-20px);
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .success-footer-text {
+          opacity: 0;
+          transform: translateY(20px);
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
       `}</style>
 
       <div className="bubbles" id="bubbles"></div>
@@ -935,37 +729,69 @@ const AuthPage: React.FC = () => {
 
       </div>
 
-      {/* Success Overlay */}
-      <div className={`success-overlay ${showSuccess ? 'active' : ''}`} id="successOverlay">
-        <div className="glow-effect"></div>
-        <div className="pulse-ring"></div>
-        <div className="pulse-ring" style={{animationDelay: '0.5s'}}></div>
-        <div className="pulse-ring" style={{animationDelay: '1s'}}></div>
-        
-        <div className="floating-elements">
-          <div className="floating-element" style={{top: '15%', left: '15%', fontSize: '20px'}}>✨</div>
-          <div className="floating-element" style={{top: '25%', right: '20%', fontSize: '18px', animationDelay: '1s'}}>⭐</div>
-          <div className="floating-element" style={{bottom: '35%', left: '25%', fontSize: '22px', animationDelay: '2s'}}>💫</div>
-          <div className="floating-element" style={{bottom: '25%', right: '15%', fontSize: '19px', animationDelay: '3s'}}>🌟</div>
-          <div className="floating-element" style={{top: '55%', left: '10%', fontSize: '21px', animationDelay: '4s'}}>✨</div>
-          <div className="floating-element" style={{top: '65%', right: '10%', fontSize: '17px', animationDelay: '5s'}}>⭐</div>
+      {/* Success Overlay - Animation First, Then Text */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 backdrop-blur-sm">
+          <div className="text-center text-white p-8">
+            {/* Header Text - Appears after animation */}
+            <div className="success-header-text mb-6" style={{ animationDelay: '1.2s' }}>
+              <h1 className="text-4xl font-bold text-white">Success!</h1>
+            </div>
+            
+            {/* Lottie Animation */}
+            <div className="mb-6">
+              <Lottie
+                animationData={successAnimation}
+                loop={false}
+                autoplay={true}
+                style={{ width: 180, height: 180 }}
+                className="mx-auto"
+              />
+            </div>
+            
+            {/* Footer Text - Appears after animation */}
+            <div className="success-footer-text" style={{ animationDelay: '1.4s' }}>
+              <p className="text-xl text-white font-medium">Ready for cleaning?</p>
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="sparkles" id="sparkles"></div>
-        
-        <div className="success-content">
-          <div className="success-icon">🎉</div>
-          <h1 className="success-title">{isLogin ? 'Welcome Back!' : 'Welcome to SparklePro!'}</h1>
-          <p className="success-subtitle">{isLogin ? 'Happy to see you again' : 'Account created successfully'}</p>
-          
-          <div className="welcome-message">
-            <h3>✨ You're all set!</h3>
-            <p>
-              Ready to make your space sparkle? Let's get started with your next cleaning adventure!
+      {/* Failed Login Animation Overlay */}
+      {showFailedLogin && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(40, 40, 40, 0.5)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)'
+          }}
+          onClick={() => setShowFailedLogin(false)}
+        >
+          <div className="text-center space-y-6" onClick={(e) => e.stopPropagation()}>
+            {/* Header Text */}
+            <h2 className="text-3xl font-bold text-white mb-8 tracking-wide">
+              Login Failed
+            </h2>
+            
+            {/* Failed Login Lottie Animation */}
+            <div className="flex justify-center">
+              <Lottie
+                animationData={failedLoginAnimation}
+                loop={true}
+                autoplay={true}
+                style={{ width: 150, height: 150 }}
+                className="drop-shadow-2xl"
+              />
+            </div>
+            
+            {/* Subtitle Text */}
+            <p className="text-lg text-gray-200 mt-6 font-medium tracking-wide">
+              Invalid credentials
             </p>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Terms and Conditions Modal */}
       {showTermsModal && (

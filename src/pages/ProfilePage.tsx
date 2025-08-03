@@ -134,8 +134,7 @@ const ProfilePage: React.FC = () => {
       title: "Notifications",
       description: "Preferences",
       onClick: () => navigate('/profile/notifications'),
-      gradient: "from-red-500 to-red-600",
-      notificationCount: 3
+      gradient: "from-red-500 to-red-600"
     }
   ];
 
@@ -335,12 +334,7 @@ const ProfilePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Notification Count */}
-              {item.notificationCount && (
-                <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold pulse-dot">
-                  {item.notificationCount}
-                </div>
-              )}
+
             </div>
           ))}
         </div>

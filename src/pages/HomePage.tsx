@@ -44,6 +44,20 @@ interface RecentBooking {
   additional_notes?: string;
   created_at: string;
   service_name?: string;
+  service_image_url?: string;
+  status?: string;
+  total_price?: number;
+}
+
+interface ActiveBooking {
+  id: number;
+  service_date: string;
+  service_time: string;
+  status: string;
+  total_price: number;
+  service_name: string;
+  service_image_url?: string;
+  property_size: string;
 }
 
 interface ServiceData {
@@ -67,7 +81,10 @@ const HomePage: React.FC = () => {
     totalAddresses: 0
   });
   const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
+  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
   const [services, setServices] = useState<ServiceData[]>([]);
+  const [popularServices, setPopularServices] = useState<ServiceData[]>([]);
+  const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Service Detail Modal State
@@ -76,9 +93,27 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      fetchUserStats();
-      fetchRecentBookings();
-      fetchServices();
+      // Track all critical async operations to prevent layout shifts
+      const loadAllData = async () => {
+        setLoading(true);
+        try {
+          await Promise.all([
+            fetchUserStats(),
+            fetchActiveBookings(),
+            fetchServices(),
+            fetchPopularServices()
+          ]);
+          // These can load in parallel without affecting layout
+          fetchRecentBookings();
+          fetchUserPreferences();
+        } catch (error) {
+          console.error('Error loading homepage data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      loadAllData();
     }
   }, [user]);
 
@@ -108,8 +143,6 @@ const HomePage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -166,11 +199,124 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const fetchActiveBookings = async () => {
+    if (!user) return;
+
+    try {
+      const now = new Date().toISOString();
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          service_date,
+          service_time,
+          status,
+          total_price,
+          property_size,
+          services (
+            name,
+            image_url
+          )
+        `)
+        .eq('customer_id', user.id)
+        .in('status', ['confirmed', 'in_progress'])
+        .gte('service_date', now.split('T')[0])
+        .order('service_date', { ascending: true })
+        .limit(3);
+
+      if (error) throw error;
+
+      const transformedBookings = (bookings || []).map(booking => ({
+        ...booking,
+        service_name: booking.services?.[0]?.name || 'Cleaning Service',
+        service_image_url: booking.services?.[0]?.image_url || '/regular-cleaning.jpg'
+      }));
+
+      setActiveBookings(transformedBookings);
+    } catch (error) {
+      console.error('Error fetching active bookings:', error);
+    }
+  };
+
+  const fetchPopularServices = async () => {
+    try {
+      // Get most booked services (top 4)
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name, description, base_price, price_per_hour, is_active, image_url')
+        .eq('is_active', true)
+        .order('base_price', { ascending: true })
+        .limit(4);
+
+      if (error) throw error;
+      setPopularServices(data || []);
+    } catch (error) {
+      console.error('Error fetching popular services:', error);
+    }
+  };
+
+  const fetchUserPreferences = async () => {
+    if (!user) return;
+
+    try {
+      // Get user's most booked service types for recommendations
+      const { data: bookings, error } = await supabase
+        .from('bookings')
+        .select(`
+          services (name)
+        `)
+        .eq('customer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      const serviceNames = bookings?.map(b => b.services?.[0]?.name).filter(Boolean) || [];
+      setUserPreferences(serviceNames);
+    } catch (error) {
+      console.error('Error fetching user preferences:', error);
+    }
+  };
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return t('home.greeting.morning', 'Good morning');
     if (hour < 17) return t('home.greeting.afternoon', 'Good afternoon');
     return t('home.greeting.evening', 'Good evening');
+  };
+
+  const getPersonalizedMessage = () => {
+    if (userStats.totalBookings === 0) {
+      return "Ready for your first clean?";
+    }
+    
+    if (recentBookings.length > 0) {
+      const lastBooking = new Date(recentBookings[0].service_date);
+      const daysSince = Math.floor((Date.now() - lastBooking.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysSince <= 7) {
+        return "Hope your last cleaning was perfect!";
+      } else if (daysSince <= 30) {
+        return `Your last booking was ${daysSince} days ago`;
+      }
+    }
+    
+    return "Ready for your next clean?";
+  };
+
+  const getRecommendedServices = () => {
+    if (userPreferences.length === 0) {
+      return services.slice(0, 2);
+    }
+    
+    // Find services similar to user's preferences
+    const recommended = services.filter(service => 
+      userPreferences.some(pref => 
+        service.name.toLowerCase().includes(pref.toLowerCase().split(' ')[0])
+      )
+    ).slice(0, 2);
+    
+    return recommended.length > 0 ? recommended : services.slice(0, 2);
   };
 
   const getUserName = () => {
@@ -399,9 +545,12 @@ const HomePage: React.FC = () => {
         </div>
         
         <div className="welcome-card bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 relative z-[5]">
-          <div className="welcome-title text-base font-semibold mb-2">✨ {t('home.welcome', 'Welcome to SparkleNCS!')}</div>
+          <div className="welcome-title text-base font-semibold mb-2">✨ {getPersonalizedMessage()}</div>
           <div className="welcome-text text-sm opacity-90 leading-relaxed">
-            {t('home.welcomeDescription', 'Your trusted cleaning service partner in Dubai. Book your first service today!')}
+            {userStats.totalBookings > 0 
+              ? `${userStats.totalBookings} cleaning${userStats.totalBookings > 1 ? 's' : ''} completed • ${userStats.totalAddresses} address${userStats.totalAddresses > 1 ? 'es' : ''} saved`
+              : 'Your trusted cleaning service partner in Dubai. Book your first service today!'
+            }
           </div>
         </div>
       </header>
@@ -418,188 +567,241 @@ const HomePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Book Again Section */}
-        <section className="mb-8">
-          <div className="section-title mb-5">
-            <h2 className="text-xl font-bold text-gray-800">{t('home.bookAgain', 'Book Again?')}</h2>
-          </div>
+        {/* Active Booking / Next Booking Section - Always reserve space to prevent layout shifts */}
+        {loading ? (
+          // Skeleton placeholder - maintains consistent height during loading
+          <section className="mb-6">
+            <div className="section-title mb-4">
+              <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div className="flex-1">
+                  <div className="h-5 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
+                  <div className="flex items-center justify-between">
+                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </section>
+        ) : activeBookings.length > 0 ? (
+          <section className="mb-6">
+            <div className="section-title mb-4">
+              <h2 className="text-lg font-bold text-gray-800">🔄 Your Next Cleaning</h2>
+            </div>
+            
+            {activeBookings.slice(0, 1).map((booking) => (
+              <div key={booking.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 cursor-pointer hover:shadow-md transition-all"
+                   onClick={() => navigate('/history')}>
+                <div className="flex items-center gap-4">
+                  <img
+                    src={booking.service_image_url}
+                    alt={booking.service_name}
+                    className="w-16 h-16 object-cover rounded-xl border-2 border-white shadow-sm"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 mb-1">{booking.service_name}</h3>
+                    <div className="text-sm text-gray-600 mb-2">
+                      📅 {new Date(booking.service_date).toLocaleDateString('en-AE', { 
+                        weekday: 'long', 
+                        month: 'short', 
+                        day: 'numeric' 
+                      })} at {booking.service_time || '09:00'}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                        {booking.status === 'confirmed' ? 'Confirmed' : 'In Progress'}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                        <DirhamIcon size="sm" />{booking.total_price}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-blue-500">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
-          {recentBookings.length > 0 ? (
-            <div className="book-again-carousel">
-              {recentBookings.map((booking) => (
-                <div 
-                  key={booking.id} 
-                  className="book-again-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
-                  onClick={() => navigate('/booking')}
+        {/* Smart Recommendations Section */}
+        <section className="mb-6">
+          <div className="section-title mb-4">
+            {loading ? (
+              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+            ) : (
+              <h2 className="text-lg font-bold text-gray-800">
+                {userStats.totalBookings > 0 ? '🎯 Based on Your History' : '⭐ Recommended for You'}
+              </h2>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {loading ? (
+              // Skeleton placeholders for services
+              Array.from({ length: 4 }, (_, index) => (
+                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                  <div className="w-full h-24 bg-gray-200 rounded-xl mb-3 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-16 mb-1 animate-pulse"></div>
+                  <div className="h-3 bg-gray-200 rounded w-20 animate-pulse"></div>
+                </div>
+              ))
+            ) : (
+              getRecommendedServices().map((service) => (
+                <div key={service.id} 
+                     className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer"
+                     onClick={() => handleServiceClick(service)}>
+                  <img
+                    src={service.image_url || '/regular-cleaning.jpg'}
+                    alt={service.name}
+                    className="w-full h-24 object-cover rounded-xl mb-3"
+                  />
+                  <h3 className="font-semibold text-gray-800 mb-1 text-sm">{service.name}</h3>
+                  <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
+                    From <DirhamIcon size="sm" />{service.base_price}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {userStats.totalBookings > 0 ? 'You might like this' : 'Popular choice'}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        {/* Popular Services Grid */}
+        <section className="mb-6">
+          <div className="section-title flex items-center justify-between mb-4">
+            {loading ? (
+              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold text-gray-800">🔥 Popular Services</h2>
+                <button
+                  onClick={() => navigate('/services')}
+                  className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors"
                 >
-                  <div className="relative z-10">
+                  See All →
+                </button>
+              </>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {loading ? (
+              // Skeleton placeholders for popular services
+              Array.from({ length: 4 }, (_, index) => (
+                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative">
+                  {index === 0 && (
+                    <div className="absolute top-2 right-2 w-8 h-5 bg-gray-200 rounded animate-pulse"></div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="mt-2">
+                    <div className="h-3 bg-gray-200 rounded w-full mb-1 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              popularServices.map((service, index) => (
+                <div key={service.id} 
+                     className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer relative"
+                     onClick={() => handleServiceClick(service)}>
+                  {index === 0 && (
+                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+                      #1
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
                     <img
-                      src={getServiceImage(booking)}
-                      alt={getServiceName(booking.service_name || booking.property_size || '')}
-                      className="w-full h-32 object-cover rounded-t-2xl"
+                      src={service.image_url || '/regular-cleaning.jpg'}
+                      alt={service.name}
+                      className="w-12 h-12 object-cover rounded-lg"
                     />
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-800 mb-2">{getServiceName(booking.service_name || booking.property_size || '')}</h3>
-                      <p className="text-sm text-gray-600 mb-3">
-                        {getServiceName(booking.service_name || booking.property_size || '')} with {booking.cleaners_count} cleaner{booking.cleaners_count > 1 ? 's' : ''} and {booking.own_materials ? 'own materials' : 'provided materials'}
-                      </p>
-                      {booking.additional_notes && (
-                        <p className="text-xs text-gray-500 italic mb-3 line-clamp-2">
-                          "{booking.additional_notes}"
-                        </p>
-                      )}
-                      <div className="text-xs text-emerald-600 font-medium">
-                        Last booked: {new Date(booking.service_date).toLocaleDateString()}
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-800 text-sm mb-1">{service.name}</h3>
+                      <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
+                        <DirhamIcon size="sm" />{service.base_price}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="book-again-carousel">
-              {/* Demo/Placeholder Cards */}
-              <div className="book-again-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
-                   onClick={() => navigate('/booking?service=regular')}>
-                <div className="relative z-10">
-                  <img
-                    src="/regular-cleaning.jpg"
-                    alt="Regular Cleaning"
-                    className="w-full h-32 object-cover rounded-t-2xl"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">Regular Cleaning</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Regular Cleaning with 2 cleaners and provided materials
-                    </p>
-                    <p className="text-xs text-gray-500 italic mb-3">
-                      "Perfect for weekly maintenance"
-                    </p>
-                    <div className="text-xs text-emerald-600 font-medium">
-                      Try this popular service
-                    </div>
+                  <div className="text-xs text-gray-500 mt-2 leading-tight">
+                    {service.description.length > 60 
+                      ? service.description.substring(0, 60) + '...'
+                      : service.description
+                    }
                   </div>
                 </div>
-              </div>
-
-              <div className="book-again-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
-                   onClick={() => {
-                     const deepCleaningService = services.find(s => getServiceKey(s.name) === 'deep');
-                     if (deepCleaningService) {
-                       handleServiceClick(deepCleaningService);
-                     } else {
-                       navigate('/booking?service=deep');
-                     }
-                   }}>
-                <div className="relative z-10">
-                  <img
-                    src="/deep-cleaning.JPG"
-                    alt="Deep Cleaning"
-                    className="w-full h-32 object-cover rounded-t-2xl"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">Deep Cleaning</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Deep Cleaning with 3 cleaners and provided materials
-                    </p>
-                    <p className="text-xs text-gray-500 italic mb-3">
-                      "Thorough cleaning for your space"
-                    </p>
-                    <div className="text-xs text-emerald-600 font-medium">
-                      Most comprehensive service
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="book-again-card bg-white rounded-2xl shadow-sm border border-gray-100 cursor-pointer"
-                   onClick={() => navigate('/booking?service=office')}>
-                <div className="relative z-10">
-                  <img
-                    src="/office-cleaning.JPG"
-                    alt="Office Cleaning"
-                    className="w-full h-32 object-cover rounded-t-2xl"
-                  />
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-800 mb-2">Office Cleaning</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Office Cleaning with 2 cleaners and provided materials
-                    </p>
-                    <p className="text-xs text-gray-500 italic mb-3">
-                      "Professional workspace cleaning"
-                    </p>
-                    <div className="text-xs text-emerald-600 font-medium">
-                      Perfect for business
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Stats Row */}
-        <section className="stats-row flex justify-around bg-white rounded-2xl p-5 mb-6 shadow-sm">
-          <div className="stat-item text-center">
-            <div className="stat-number text-xl font-bold text-emerald-600 mb-1">
-              {userStats.totalBookings}
-            </div>
-            <div className="stat-label text-xs text-gray-500">
-              Booking{userStats.totalBookings !== 1 ? 's' : ''}
-            </div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="stat-number text-xl font-bold text-emerald-600 mb-1 flex items-center justify-center gap-1">
-              {userStats.averageRating}★
-            </div>
-            <div className="stat-label text-xs text-gray-500">Rating</div>
-          </div>
-          <div className="stat-item text-center">
-            <div className="stat-number text-xl font-bold text-emerald-600 mb-1">24/7</div>
-            <div className="stat-label text-xs text-gray-500">Support</div>
+              ))
+            )}
           </div>
         </section>
 
-        {/* Popular Services */}
+        {/* Promo / Loyalty Section */}
+        <section className="mb-6">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-5 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🎁</span>
+                <h3 className="font-bold text-lg">Special Offer!</h3>
+              </div>
+              <p className="text-sm opacity-90 mb-3">
+                {userStats.totalBookings === 0 
+                  ? "Get 15% off your first cleaning service. Use code FIRST15"
+                  : "Invite a friend and get 10% off your next booking!"
+                }
+              </p>
+              <button 
+                onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : navigate('/profile')}
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+              >
+                {userStats.totalBookings === 0 ? "Book Now" : "Invite Friend"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Bottom Stats for Context */}
         <section className="mb-8">
-          <div className="section-title flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-gray-800">{t('home.popularServices', 'Popular Services')}</h2>
-            <button
-              onClick={() => navigate('/services')}
-              className="px-4 py-2 bg-sky-500 text-white text-sm font-semibold rounded-full hover:bg-sky-600 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md"
-            >
-              {t('home.seeAll', 'See All')}
-            </button>
-          </div>
-
-          <div className="services-grid grid grid-cols-2 gap-4 mb-8">
-            {services.slice(0, 4).map((service, index) => {
-              const serviceKey = getServiceKey(service.name);
-              const isPopular = index === 0; // First service is marked as popular
-              
-              return (
-                <div key={service.id} className="service-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer relative"
-                     onClick={() => handleServiceClick(service)}>
-                  {isPopular && (
-                    <div className="popular-badge absolute top-3 right-3 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white text-xs font-semibold px-2 py-1 rounded-lg shadow-sm">
-                      {t('booking.mostPopular', 'Popular')}
-                    </div>
-                  )}
-                  <div className="service-image w-full h-28 bg-gradient-to-br from-emerald-50 to-sky-50 rounded-xl mb-4 overflow-hidden border-2 border-dashed border-gray-300">
-                    <img src={getServiceImage(serviceKey)} alt={service.name} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="service-info relative z-10">
-                    <div className="service-name text-base font-semibold text-gray-800 mb-1">{service.name}</div>
-                    <div className="service-price text-sm text-emerald-600 font-semibold mb-2 flex items-center gap-1">
-                      From <DirhamIcon size="sm" />{service.price_per_hour || service.base_price}/hour
-                    </div>
-                    <div className="service-description text-xs text-gray-500 leading-relaxed">
-                      {service.description}
-                    </div>
-                  </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="grid grid-cols-3 divide-x divide-gray-200">
+              <div className="text-center px-3">
+                <div className="text-lg font-bold text-emerald-600 mb-1">
+                  {userStats.totalBookings}
                 </div>
-              );
-            })}
+                <div className="text-xs text-gray-500">
+                  Total Booking{userStats.totalBookings !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <div className="text-center px-3">
+                <div className="text-lg font-bold text-emerald-600 mb-1 flex items-center justify-center gap-1">
+                  {userStats.averageRating}★
+                </div>
+                <div className="text-xs text-gray-500">Our Rating</div>
+              </div>
+              <div className="text-center px-3">
+                <div className="text-lg font-bold text-emerald-600 mb-1">24/7</div>
+                <div className="text-xs text-gray-500">Support</div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
