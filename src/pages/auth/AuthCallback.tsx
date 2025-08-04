@@ -8,6 +8,10 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('Auth callback - Current URL:', window.location.href); // Debug log
+        console.log('Auth callback - Hash:', window.location.hash); // Debug log
+        
+        // Handle OAuth callback with hash parameters
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -17,9 +21,11 @@ const AuthCallback: React.FC = () => {
         }
 
         if (data.session) {
+          console.log('Auth callback - Session found, redirecting to home'); // Debug log
           // User is authenticated, redirect to home
           navigate('/home');
         } else {
+          console.log('Auth callback - No session found, redirecting to auth'); // Debug log
           // No session found, redirect to auth
           navigate('/auth');
         }
@@ -29,7 +35,10 @@ const AuthCallback: React.FC = () => {
       }
     };
 
-    handleAuthCallback();
+    // Small delay to ensure URL hash is processed
+    const timeoutId = setTimeout(handleAuthCallback, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [navigate]);
 
   return (
