@@ -1356,10 +1356,10 @@ const BookingPage: React.FC = () => {
                     >
                       <option value="">Select an address</option>
                       {addresses.map((address) => (
-                        <option key={address.id} value={address.id}>
-                          {address.street}, {address.city} {address.zip_code}
-                          {address.is_default && ' (Default)'}
-                        </option>
+                                        <option key={address.id} value={address.id}>
+                  {address.street}, {address.city}
+                  {address.is_default && ' (Default)'}
+                </option>
                       ))}
                     </select>
                   ) : (

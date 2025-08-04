@@ -6,7 +6,6 @@ export interface Address {
   street: string;
   apartment?: string;
   city: string;
-  zip_code: string;
   is_default: boolean;
   created_at: string;
   updated_at: string;

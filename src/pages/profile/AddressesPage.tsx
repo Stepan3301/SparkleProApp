@@ -19,7 +19,6 @@ interface Address {
   street: string;
   city: string;
   apartment?: string;
-  zip_code: string;
   is_default: boolean;
 }
 
@@ -205,7 +204,7 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-600">{address.city}, {address.zip_code}</p>
+                          <p className="text-sm text-gray-600">{address.city}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -273,7 +272,6 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
           street: searchValue,
           apartment: formData.apartment || null,
           city: formData.city,
-          zip_code: null,
           is_default: false,
         });
 
