@@ -54,24 +54,29 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isInternalUpdate = useRef(false);
 
+  // Initialize component with existing value
   useEffect(() => {
-    // Initialize with UAE if no value
-    if (!value) {
-      setSelectedCountry(COUNTRIES[12]); // UAE
-      setPhoneNumber('');
+    // Skip if this is an internal update to prevent infinite loop
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
       return;
     }
 
-    // Parse existing value to find country and number
+    if (!value || value.trim() === '') {
+      return; // Don't reset if value is empty
+    }
+
+    // Parse existing value to find country and number (only when value prop changes from outside)
     const country = COUNTRIES.find(c => value.startsWith(c.dialCode));
     if (country) {
       setSelectedCountry(country);
-      setPhoneNumber(value.replace(country.dialCode, ''));
-    } else {
-      setPhoneNumber(value);
+      const phoneOnly = value.replace(country.dialCode, '');
+      const formatted = formatPhoneNumber(phoneOnly, country.format);
+      setPhoneNumber(formatted);
     }
-  }, [value]);
+  }, [value]); // Listen to value changes but with protection
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -111,6 +116,8 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
     const formatted = formatPhoneNumber(limitedDigits, selectedCountry.format);
     setPhoneNumber(formatted);
     
+    // Set flag to prevent useEffect from triggering
+    isInternalUpdate.current = true;
     const fullNumber = selectedCountry.dialCode + limitedDigits;
     onChange(fullNumber);
   };
@@ -121,6 +128,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
     
     // Update the phone number with new country code
     const digits = phoneNumber.replace(/\D/g, '');
+    isInternalUpdate.current = true;
     const fullNumber = country.dialCode + digits;
     onChange(fullNumber);
   };
