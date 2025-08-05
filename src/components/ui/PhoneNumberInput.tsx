@@ -56,7 +56,8 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
 
-  // Initialize component with existing value
+  // Initialize component with existing value - TEMPORARILY DISABLED FOR TESTING
+  /*
   useEffect(() => {
     // Skip if this is an internal update to prevent infinite loop
     if (isInternalUpdate.current) {
@@ -77,6 +78,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       setPhoneNumber(formatted);
     }
   }, [value]); // Listen to value changes but with protection
+  */
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -107,19 +109,32 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   };
 
   const handlePhoneChange = (input: string) => {
+    console.log('handlePhoneChange called with:', input); // Debug log
+    
+    // Temporarily just allow any input to test
+    setPhoneNumber(input);
+    onChange(selectedCountry.dialCode + input.replace(/\D/g, ''));
+    
+    // Original logic commented out for testing
+    /*
     const digits = input.replace(/\D/g, '');
     const maxLength = selectedCountry.format.replace(/\D/g, '').length;
+    
+    console.log('digits:', digits, 'maxLength:', maxLength); // Debug log
     
     // Limit input to maximum allowed digits for this country
     const limitedDigits = digits.slice(0, maxLength);
     
     const formatted = formatPhoneNumber(limitedDigits, selectedCountry.format);
+    console.log('formatted:', formatted); // Debug log
+    
     setPhoneNumber(formatted);
     
     // Set flag to prevent useEffect from triggering
     isInternalUpdate.current = true;
     const fullNumber = selectedCountry.dialCode + limitedDigits;
     onChange(fullNumber);
+    */
   };
 
   const handleCountrySelect = (country: Country) => {
@@ -158,7 +173,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
 
           {/* Dropdown */}
           {showDropdown && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
+            <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] max-h-60 overflow-y-auto">
               <div className="p-2">
                 <div className="text-xs font-medium text-gray-500 mb-2 px-2">CIS Countries</div>
                 {COUNTRIES.slice(0, 12).map((country) => (
@@ -200,7 +215,14 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         <input
           type="tel"
           value={phoneNumber}
-          onChange={(e) => handlePhoneChange(e.target.value)}
+          onChange={(e) => {
+            console.log('Input onChange triggered:', e.target.value);
+            handlePhoneChange(e.target.value);
+          }}
+          onInput={(e) => {
+            console.log('Input onInput triggered:', (e.target as HTMLInputElement).value);
+          }}
+          onFocus={() => console.log('Input focused')}
           placeholder={selectedCountry.placeholder}
           className={`flex-1 px-4 py-3 border border-gray-200 rounded-r-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
             error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
