@@ -56,20 +56,13 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
 
-  // Initialize component with existing value - TEMPORARILY DISABLED FOR TESTING
-  /*
+  // Initialize component with existing value on mount only
   useEffect(() => {
-    // Skip if this is an internal update to prevent infinite loop
-    if (isInternalUpdate.current) {
-      isInternalUpdate.current = false;
-      return;
-    }
-
     if (!value || value.trim() === '') {
-      return; // Don't reset if value is empty
+      return; // Don't process empty values
     }
 
-    // Parse existing value to find country and number (only when value prop changes from outside)
+    // Parse existing value to find country and number (only on mount)
     const country = COUNTRIES.find(c => value.startsWith(c.dialCode));
     if (country) {
       setSelectedCountry(country);
@@ -77,8 +70,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       const formatted = formatPhoneNumber(phoneOnly, country.format);
       setPhoneNumber(formatted);
     }
-  }, [value]); // Listen to value changes but with protection
-  */
+  }, []); // Only run on mount - no dependencies to prevent loops
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,32 +101,19 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   };
 
   const handlePhoneChange = (input: string) => {
-    console.log('handlePhoneChange called with:', input); // Debug log
-    
-    // Temporarily just allow any input to test
-    setPhoneNumber(input);
-    onChange(selectedCountry.dialCode + input.replace(/\D/g, ''));
-    
-    // Original logic commented out for testing
-    /*
     const digits = input.replace(/\D/g, '');
     const maxLength = selectedCountry.format.replace(/\D/g, '').length;
-    
-    console.log('digits:', digits, 'maxLength:', maxLength); // Debug log
     
     // Limit input to maximum allowed digits for this country
     const limitedDigits = digits.slice(0, maxLength);
     
     const formatted = formatPhoneNumber(limitedDigits, selectedCountry.format);
-    console.log('formatted:', formatted); // Debug log
-    
     setPhoneNumber(formatted);
     
     // Set flag to prevent useEffect from triggering
     isInternalUpdate.current = true;
     const fullNumber = selectedCountry.dialCode + limitedDigits;
     onChange(fullNumber);
-    */
   };
 
   const handleCountrySelect = (country: Country) => {
@@ -215,14 +194,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         <input
           type="tel"
           value={phoneNumber}
-          onChange={(e) => {
-            console.log('Input onChange triggered:', e.target.value);
-            handlePhoneChange(e.target.value);
-          }}
-          onInput={(e) => {
-            console.log('Input onInput triggered:', (e.target as HTMLInputElement).value);
-          }}
-          onFocus={() => console.log('Input focused')}
+          onChange={(e) => handlePhoneChange(e.target.value)}
           placeholder={selectedCountry.placeholder}
           className={`flex-1 px-4 py-3 border border-gray-200 rounded-r-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
             error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
