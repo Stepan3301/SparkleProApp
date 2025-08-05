@@ -14,7 +14,36 @@ import PhoneNumberInput from '../../components/ui/PhoneNumberInput';
 
 const personalInfoSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
-  phoneNumber: z.string().optional(),
+  phoneNumber: z.string().optional().refine((val) => {
+    if (!val || val.trim() === '') return true; // Allow empty/optional
+    
+    // Check if it starts with a valid country code and has proper length
+    const countryCodes = ['+7', '+375', '+380', '+998', '+994', '+995', '+374', '+373', '+996', '+992', '+993', '+971', '+966', '+965', '+974', '+973', '+968'];
+    const hasValidPrefix = countryCodes.some(code => val.startsWith(code));
+    if (!hasValidPrefix) return false;
+    
+    // Check length based on country code
+    const digits = val.replace(/\D/g, '');
+    if (val.startsWith('+7')) return digits.length === 11; // Russia/Kazakhstan
+    if (val.startsWith('+375')) return digits.length === 12; // Belarus
+    if (val.startsWith('+380')) return digits.length === 12; // Ukraine
+    if (val.startsWith('+998')) return digits.length === 12; // Uzbekistan
+    if (val.startsWith('+994')) return digits.length === 12; // Azerbaijan
+    if (val.startsWith('+995')) return digits.length === 12; // Georgia
+    if (val.startsWith('+374')) return digits.length === 11; // Armenia
+    if (val.startsWith('+373')) return digits.length === 11; // Moldova
+    if (val.startsWith('+996')) return digits.length === 12; // Kyrgyzstan
+    if (val.startsWith('+992')) return digits.length === 12; // Tajikistan
+    if (val.startsWith('+993')) return digits.length === 11; // Turkmenistan
+    if (val.startsWith('+971')) return digits.length === 12; // UAE
+    if (val.startsWith('+966')) return digits.length === 12; // Saudi Arabia
+    if (val.startsWith('+965')) return digits.length === 11; // Kuwait
+    if (val.startsWith('+974')) return digits.length === 11; // Qatar
+    if (val.startsWith('+973')) return digits.length === 12; // Bahrain
+    if (val.startsWith('+968')) return digits.length === 12; // Oman
+    
+    return false;
+  }, { message: "Please enter a valid phone number with correct country format" }),
 });
 
 type PersonalInfoFormData = z.infer<typeof personalInfoSchema>;

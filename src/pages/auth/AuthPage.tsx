@@ -19,7 +19,34 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
+  phone: z.string().refine((val) => {
+    // Check if it starts with a valid country code and has proper length
+    const countryCodes = ['+7', '+375', '+380', '+998', '+994', '+995', '+374', '+373', '+996', '+992', '+993', '+971', '+966', '+965', '+974', '+973', '+968'];
+    const hasValidPrefix = countryCodes.some(code => val.startsWith(code));
+    if (!hasValidPrefix) return false;
+    
+    // Check length based on country code
+    const digits = val.replace(/\D/g, '');
+    if (val.startsWith('+7')) return digits.length === 11; // Russia/Kazakhstan
+    if (val.startsWith('+375')) return digits.length === 12; // Belarus
+    if (val.startsWith('+380')) return digits.length === 12; // Ukraine
+    if (val.startsWith('+998')) return digits.length === 12; // Uzbekistan
+    if (val.startsWith('+994')) return digits.length === 12; // Azerbaijan
+    if (val.startsWith('+995')) return digits.length === 12; // Georgia
+    if (val.startsWith('+374')) return digits.length === 11; // Armenia
+    if (val.startsWith('+373')) return digits.length === 11; // Moldova
+    if (val.startsWith('+996')) return digits.length === 12; // Kyrgyzstan
+    if (val.startsWith('+992')) return digits.length === 12; // Tajikistan
+    if (val.startsWith('+993')) return digits.length === 11; // Turkmenistan
+    if (val.startsWith('+971')) return digits.length === 12; // UAE
+    if (val.startsWith('+966')) return digits.length === 12; // Saudi Arabia
+    if (val.startsWith('+965')) return digits.length === 11; // Kuwait
+    if (val.startsWith('+974')) return digits.length === 11; // Qatar
+    if (val.startsWith('+973')) return digits.length === 12; // Bahrain
+    if (val.startsWith('+968')) return digits.length === 12; // Oman
+    
+    return false;
+  }, 'Please enter a valid phone number with correct country format'),
   address: z.string().min(5, 'Please enter a valid address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   termsAccepted: z.boolean().refine(val => val === true, {

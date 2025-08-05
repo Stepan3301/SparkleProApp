@@ -103,10 +103,15 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
 
   const handlePhoneChange = (input: string) => {
     const digits = input.replace(/\D/g, '');
-    const formatted = formatPhoneNumber(digits, selectedCountry.format);
+    const maxLength = selectedCountry.format.replace(/\D/g, '').length;
+    
+    // Limit input to maximum allowed digits for this country
+    const limitedDigits = digits.slice(0, maxLength);
+    
+    const formatted = formatPhoneNumber(limitedDigits, selectedCountry.format);
     setPhoneNumber(formatted);
     
-    const fullNumber = selectedCountry.dialCode + digits;
+    const fullNumber = selectedCountry.dialCode + limitedDigits;
     onChange(fullNumber);
   };
 
@@ -122,8 +127,8 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
 
   const validatePhoneNumber = (): boolean => {
     const digits = phoneNumber.replace(/\D/g, '');
-    const minLength = selectedCountry.format.replace(/\D/g, '').length;
-    return digits.length >= minLength;
+    const expectedLength = selectedCountry.format.replace(/\D/g, '').length;
+    return digits.length === expectedLength;
   };
 
   return (
@@ -204,7 +209,14 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
       {/* Validation Message */}
       {phoneNumber && !validatePhoneNumber() && !error && (
         <p className="text-orange-500 text-sm mt-1">
-          Please enter a valid {selectedCountry.name} phone number
+          Please enter a valid {selectedCountry.name} phone number ({selectedCountry.format.replace(/#/g, 'X')})
+        </p>
+      )}
+      
+      {/* Success Message */}
+      {phoneNumber && validatePhoneNumber() && !error && (
+        <p className="text-green-500 text-sm mt-1">
+          ✅ Valid {selectedCountry.name} phone number
         </p>
       )}
     </div>
