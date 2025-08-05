@@ -217,13 +217,6 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
           Please enter a valid {selectedCountry.name} phone number ({selectedCountry.format.replace(/#/g, 'X')})
         </p>
       )}
-      
-      {/* Success Message */}
-      {inputValue && isValid() && !error && (
-        <p className="text-green-500 text-sm mt-1">
-          ✅ Valid {selectedCountry.name} phone number
-        </p>
-      )}
     </div>
   );
 };
