@@ -379,7 +379,7 @@ const ProfilePage: React.FC = () => {
           >
             <div className="shine-effect"></div>
             <ArrowRightOnRectangleIcon className="w-5 h-5 relative z-10" />
-            <span className="relative z-10">Sign Out</span>
+                            <span className="relative z-10">Log Out</span>
           </button>
         </div>
 

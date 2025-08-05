@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { 
   ArrowLeftIcon, 
   UserIcon,
-  PhoneIcon,
   EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import PhoneNumberInput from '../../components/ui/PhoneNumberInput';
 
 const personalInfoSchema = z.object({
   fullName: z.string().min(2, { message: "Full name must be at least 2 characters." }),
@@ -26,7 +26,7 @@ const PersonalInfoPage: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<PersonalInfoFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, control } = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
   });
 
@@ -151,19 +151,17 @@ const PersonalInfoPage: React.FC = () => {
               <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
                 Phone Number
               </label>
-              <div className="relative">
-                <input
-                  id="phoneNumber"
-                  type="tel"
-                  {...register('phoneNumber')}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-gray-900"
-                  placeholder="Enter your phone number"
-                />
-                <PhoneIcon className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
-              </div>
-              {errors.phoneNumber && (
-                <p className="mt-2 text-sm text-red-500">{errors.phoneNumber.message}</p>
-              )}
+              <Controller
+                name="phoneNumber"
+                control={control}
+                render={({ field }) => (
+                  <PhoneNumberInput
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    error={errors.phoneNumber?.message}
+                  />
+                )}
+              />
             </div>
 
             {/* Email (Read-only) */}

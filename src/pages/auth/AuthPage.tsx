@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../contexts/AuthContext';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
+import PhoneNumberInput from '../../components/ui/PhoneNumberInput';
 import Lottie from 'lottie-react';
 import failedLoginAnimation from '../../assets/animations/failed-login.json';
 import successAnimation from '../../assets/animations/success.json';
@@ -592,21 +593,18 @@ const AuthPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <input 
-                type="tel" 
-                className="form-input" 
-                placeholder=" " 
-                {...signupForm.register('phone')}
+              <Controller
+                name="phone"
+                control={signupForm.control}
+                render={({ field }) => (
+                  <PhoneNumberInput
+                    value={field.value || ''}
+                    onChange={field.onChange}
+                    error={signupForm.formState.errors.phone?.message}
+                    required={true}
+                  />
+                )}
               />
-              <div className="input-icon">
-                <svg className="icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"/>
-                </svg>
-              </div>
-              <label className="floating-label">Phone Number</label>
-              {signupForm.formState.errors.phone && (
-                <div className="error-message">{signupForm.formState.errors.phone.message}</div>
-              )}
             </div>
 
             <div className="form-group">
