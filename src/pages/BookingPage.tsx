@@ -1011,8 +1011,8 @@ const BookingPage: React.FC = () => {
                       const recommendedCleaners = getRecommendation(serviceKey, selectedPropertySize).recommended_cleaners;
                       
                       return (
-                        <div className="grid grid-cols-3 gap-2">
-                          {[2, 3, 4].map((count) => {
+                        <div className="grid grid-cols-4 gap-2">
+                          {[1, 2, 3, 4].map((count) => {
                             const isRecommended = count === recommendedCleaners;
                             return (
                               <Button
