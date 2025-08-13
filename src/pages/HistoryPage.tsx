@@ -368,6 +368,30 @@ const HistoryPage: React.FC = () => {
                 </h2>
                 <p className="text-emerald-100 text-sm">Booking #{selectedBooking.id}</p>
               </div>
+
+              {/* Action Buttons - positioned symmetrically below header */}
+              <div className="flex justify-between items-center mt-6 relative z-10">
+                <Button
+                  variant="secondary"
+                  shape="bubble"
+                  size="sm"
+                  onClick={() => orderAgain(selectedBooking)}
+                  leftIcon={<ArrowPathIcon className="w-4 h-4" />}
+                  className="bg-sky-500 hover:bg-sky-600 text-white border-sky-500 hover:border-sky-600"
+                >
+                  Order Again
+                </Button>
+                <Button
+                  variant="secondary"
+                  shape="bubble"
+                  size="sm"
+                  onClick={() => cancelBooking(selectedBooking.id)}
+                  leftIcon={<TrashIcon className="w-4 h-4" />}
+                  className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600"
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
 
             {/* Modal Content */}
@@ -516,29 +540,7 @@ const HistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 mt-4">
-                <Button
-                  variant="secondary"
-                  shape="bubble"
-                  size="md"
-                  onClick={() => orderAgain(selectedBooking)}
-                  leftIcon={<ArrowPathIcon className="w-5 h-5" />}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700"
-                >
-                  Order Again
-                </Button>
-                <Button
-                  variant="secondary"
-                  shape="bubble"
-                  size="md"
-                  onClick={() => cancelBooking(selectedBooking.id)}
-                  leftIcon={<TrashIcon className="w-5 h-5" />}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700"
-                >
-                  Cancel Booking
-                </Button>
-              </div>
+
             </div>
           </div>
         </div>
