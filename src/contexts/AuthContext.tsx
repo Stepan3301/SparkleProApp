@@ -57,7 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .from('profiles')
           .insert({
             id: userId,
-            role: 'customer'
+            role: 'customer',
+            member_since: new Date().toISOString()
           });
         
         if (!insertError) {
@@ -65,7 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: userId,
             full_name: null,
             phone_number: null,
-            role: 'customer'
+            role: 'customer',
+            member_since: new Date().toISOString()
           });
         }
       }

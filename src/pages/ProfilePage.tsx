@@ -21,6 +21,7 @@ const ProfilePage: React.FC = () => {
   const { user, signOut } = useAuth();
   const { t } = useSimpleTranslation();
   const [stats, setStats] = useState({ bookings: 0, addresses: 0, rating: 5.0 });
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +52,8 @@ const ProfilePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch both counts in parallel for better performance
-      const [bookingsResult, addressesResult] = await Promise.all([
+      // Fetch profile and stats in parallel for better performance
+      const [bookingsResult, addressesResult, profileResult] = await Promise.all([
         supabase
           .from('bookings')
           .select('*', { count: 'exact', head: true })
@@ -60,11 +61,17 @@ const ProfilePage: React.FC = () => {
         supabase
           .from('addresses')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', user.id),
+        supabase
+          .from('profiles')
+          .select('member_since, full_name, phone_number')
+          .eq('id', user.id)
+          .single()
       ]);
 
       const { count: bookingsCount, error: bookingsError } = bookingsResult;
       const { count: addressesCount, error: addressesError } = addressesResult;
+      const { data: profileData, error: profileError } = profileResult;
 
       if (bookingsError) {
         console.error('Error fetching bookings count:', bookingsError);
@@ -76,12 +83,20 @@ const ProfilePage: React.FC = () => {
         throw addressesError;
       }
 
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Error fetching profile:', profileError);
+        // Don't throw profile error, just log it
+      }
+
       // Update stats with real data
       setStats({
         bookings: bookingsCount || 0,
         addresses: addressesCount || 0,
         rating: 5.0 // This could be calculated from reviews if you have a reviews system
       });
+
+      // Update profile data
+      setProfile(profileData);
 
     } catch (error) {
       console.error('Error fetching user stats:', error);
@@ -104,6 +119,29 @@ const ProfilePage: React.FC = () => {
   const getUserInitials = () => {
     const name = getUserName();
     return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const formatMemberSince = () => {
+    if (!profile?.member_since) {
+      // Fallback to user creation date if available, otherwise use 2024
+      return 'Active member since 2024';
+    }
+
+    try {
+      const date = new Date(profile.member_since);
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      
+      const month = monthNames[date.getMonth()];
+      const year = date.getFullYear();
+      
+      return `Active member since ${month} ${year}`;
+    } catch (error) {
+      console.error('Error formatting member date:', error);
+      return 'Active member since 2024';
+    }
   };
 
   const mainMenuItems = [
@@ -248,7 +286,7 @@ const ProfilePage: React.FC = () => {
              <p className="text-indigo-100 text-sm mb-2">{user?.email}</p>
              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-1 w-fit">
                <div className="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
-               <span className="text-xs text-white">Active member since 2024</span>
+               <span className="text-xs text-white">{formatMemberSince()}</span>
              </div>
            </div>
            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl flex items-center justify-center text-white text-lg font-bold relative overflow-hidden shadow-lg shadow-emerald-400/30 ml-4">
