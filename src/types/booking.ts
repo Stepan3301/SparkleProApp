@@ -15,6 +15,7 @@ export interface Profile {
   id: string;
   full_name?: string;
   phone_number?: string;
+  role?: 'customer' | 'admin';
   member_since?: string;
   created_at: string;
   updated_at: string;

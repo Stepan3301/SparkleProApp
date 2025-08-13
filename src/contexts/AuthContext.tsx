@@ -1,13 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-interface Profile {
-  id: string;
-  full_name: string | null;
-  phone_number: string | null;
-  role: 'customer' | 'admin';
-}
+import { Profile } from '../types/booking';
 
 interface AuthContextType {
   user: User | null;
@@ -53,21 +47,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(data);
       } else {
         // Create default profile if none exists
+        const now = new Date().toISOString();
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: userId,
             role: 'customer',
-            member_since: new Date().toISOString()
+            member_since: now,
+            created_at: now,
+            updated_at: now
           });
         
         if (!insertError) {
+          const now = new Date().toISOString();
           setProfile({
             id: userId,
-            full_name: null,
-            phone_number: null,
+            full_name: undefined,
+            phone_number: undefined,
             role: 'customer',
-            member_since: new Date().toISOString()
+            member_since: now,
+            created_at: now,
+            updated_at: now
           });
         }
       }
