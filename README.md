@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# SparklePro - Professional Cleaning Services App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a React-based web application for SparklePro cleaning services, built with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
 

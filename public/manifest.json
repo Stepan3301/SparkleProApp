@@ -1,15 +1,15 @@
 {
-  "short_name": "CleanApp",
-  "name": "Professional Cleaning Service",
+  "short_name": "SparklePro",
+  "name": "SparklePro - Professional Cleaning Services",
   "icons": [
     {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "sparkleproapp-logo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#10b981",
   "background_color": "#ffffff"
 }
