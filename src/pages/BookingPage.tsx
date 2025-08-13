@@ -185,7 +185,7 @@ const BookingPage: React.FC = () => {
   // Watch for changes in newAddress to keep state in sync
   const watchedNewAddress = watch('newAddress');
 
-  // Handle URL parameters for pre-selected service
+  // Handle URL parameters for pre-selected service and order again data
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const serviceParam = urlParams.get('service');
@@ -201,6 +201,39 @@ const BookingPage: React.FC = () => {
       if (categoryKey) {
         setSelectedMainCategory(categoryKey);
         // Stay on step 1 but with category pre-selected
+      }
+    }
+
+    // Handle order again data from localStorage
+    const orderAgainData = localStorage.getItem('orderAgainData');
+    if (orderAgainData) {
+      try {
+        const data = JSON.parse(orderAgainData);
+        
+        // Pre-fill the form with order again data
+        if (data.propertySize) {
+          setSelectedPropertySize(data.propertySize);
+        }
+        if (data.cleanersCount) {
+          setSelectedCleaners(data.cleanersCount);
+        }
+        if (data.ownMaterials !== undefined) {
+          setOwnMaterials(data.ownMaterials);
+        }
+        if (data.selectedAddons && data.selectedAddons.length > 0) {
+          setSelectedAddons(data.selectedAddons);
+        }
+        
+        // Navigate to step 3 (scheduling) if specified
+        if (data.step === 3) {
+          setCurrentStep(3);
+        }
+        
+        // Clear the localStorage data
+        localStorage.removeItem('orderAgainData');
+      } catch (error) {
+        console.error('Error parsing order again data:', error);
+        localStorage.removeItem('orderAgainData');
       }
     }
   }, [location.search]);

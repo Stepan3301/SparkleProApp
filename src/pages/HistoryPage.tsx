@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
 import { 
@@ -136,6 +136,50 @@ const HistoryPage: React.FC = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedBooking(null);
+  };
+
+  const cancelBooking = async (bookingId: number) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      
+      // Close modal
+      closeModal();
+      
+      // Show success notification
+      alert('Booking cancelled successfully!');
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert('Failed to cancel booking. Please try again.');
+    }
+  };
+
+  const orderAgain = (booking: Booking) => {
+    // Navigate to booking page with pre-filled data
+    const bookingData = {
+      propertySize: booking.property_size,
+      sizePrice: booking.size_price,
+      cleanersCount: booking.cleaners_count,
+      ownMaterials: booking.own_materials,
+      selectedAddons: booking.addons,
+      step: 3 // Start at step 3 (scheduling)
+    };
+    
+    // Store in localStorage for the booking page to use
+    localStorage.setItem('orderAgainData', JSON.stringify(bookingData));
+    
+    // Navigate to booking page
+    navigate('/booking');
+    
+    // Close modal
+    closeModal();
   };
 
   const toggleStack = () => {
@@ -470,6 +514,30 @@ const HistoryPage: React.FC = () => {
                     {selectedBooking.total_price}
                   </div>
                 </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 mt-4">
+                <Button
+                  variant="secondary"
+                  shape="bubble"
+                  size="md"
+                  onClick={() => orderAgain(selectedBooking)}
+                  leftIcon={<ArrowPathIcon className="w-5 h-5" />}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white border-blue-600 hover:border-blue-700"
+                >
+                  Order Again
+                </Button>
+                <Button
+                  variant="secondary"
+                  shape="bubble"
+                  size="md"
+                  onClick={() => cancelBooking(selectedBooking.id)}
+                  leftIcon={<TrashIcon className="w-5 h-5" />}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700"
+                >
+                  Cancel Booking
+                </Button>
               </div>
             </div>
           </div>
