@@ -15,6 +15,7 @@ import NotificationsPage from './pages/profile/NotificationsPage';
 import PaymentMethodsPage from './pages/profile/PaymentMethodsPage';
 import PrivacySecurityPage from './pages/profile/PrivacySecurityPage';
 import HelpSupportPage from './pages/profile/HelpSupportPage';
+import { scrollToTop } from './utils/scrollToTop';
 import './App.css';
 
 // Component to handle scroll reset on route change
@@ -22,7 +23,8 @@ function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Use the utility function for better compatibility
+    scrollToTop();
   }, [pathname]);
 
   return null;

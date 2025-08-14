@@ -29,6 +29,7 @@ import {
   RecommendationResult
 } from '../utils/recommendationAlgorithm';
 import { useSimpleTranslation } from '../utils/i18n';
+import { scrollToTop } from '../utils/scrollToTop';
 
 // Form validation schema for step 5 (was step 4)
 const contactSchema = z.object({
@@ -227,6 +228,8 @@ const BookingPage: React.FC = () => {
         // Navigate to step 3 (scheduling) if specified
         if (data.step === 3) {
           setCurrentStep(3);
+          // Scroll to top when changing steps
+          scrollToTop();
         }
         
         // Clear the localStorage data
@@ -465,10 +468,14 @@ const BookingPage: React.FC = () => {
     }
     
     setCurrentStep(currentStep + 1);
+    // Scroll to top when changing steps
+    scrollToTop();
   };
 
   const prevStep = () => {
     setCurrentStep(currentStep - 1);
+    // Scroll to top when changing steps
+    scrollToTop();
   };
 
   // Calculations - Updated for new service structure
@@ -633,6 +640,8 @@ const BookingPage: React.FC = () => {
 
       // Show success and redirect
       setCurrentStep(5); // Success step
+      // Scroll to top when changing steps
+      scrollToTop();
       setTimeout(() => {
         navigate('/history');
       }, 3000);
@@ -721,6 +730,9 @@ const BookingPage: React.FC = () => {
                       setSelectedCleaners(null);
                       setSelectedHours(null);
                       setRecommendation(null);
+                      
+                      // Scroll to top when changing selections
+                      scrollToTop();
                     }}
                   >
                     <div className="text-center">
