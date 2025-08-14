@@ -299,6 +299,12 @@ const BookingPage: React.FC = () => {
     }
   }, [currentStep, user, profile]);
 
+  // Force re-render when payment method changes to update floating cart
+  useEffect(() => {
+    // This effect triggers re-render when selectedPaymentMethod changes
+    // This ensures the floating cart updates with VAT and cash fees
+  }, [selectedPaymentMethod]);
+
   const fetchUserData = async () => {
     if (!user) return;
 
@@ -1488,6 +1494,130 @@ const BookingPage: React.FC = () => {
               </div>
             </form>
 
+            {/* Order Review Section */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Order Review</h3>
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Service Type:</span>
+                  <span className="font-semibold text-gray-900">
+                    {selectedService?.name || 'Service'}
+                  </span>
+                </div>
+                
+                {selectedPropertySize && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Property Size:</span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1)}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedCleaners && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Number of Cleaners:</span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedCleaners} cleaner{selectedCleaners > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedHours && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Duration:</span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedHours} hour{selectedHours > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Materials:</span>
+                  <span className="font-semibold text-gray-900">
+                    {ownMaterials ? 'Customer provided' : 'Cleaner provided'}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Date & Time:</span>
+                  <span className="font-semibold text-gray-900">
+                    {serviceDate && serviceTime ? `${new Date(serviceDate).toLocaleDateString('en-US', { 
+                      weekday: 'short', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })} at ${serviceTime}` : 'Not selected'}
+                  </span>
+                </div>
+                
+                {selectedAddons.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Extra Services:</span>
+                    <span className="font-semibold text-gray-900">
+                      {selectedAddons.map(addon => addon.name).join(', ')}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Summary Section */}
+            <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">💰 Payment Summary</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Service Price:</span>
+                  <span className="font-semibold text-gray-900">
+                    <DirhamIcon size="sm" />
+                    {calculatePricing().basePrice}
+                  </span>
+                </div>
+                
+                {selectedAddons.length > 0 && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Extra Services:</span>
+                    <span className="font-semibold text-gray-900">
+                      <DirhamIcon size="sm" />
+                      {calculatePricing().addonsTotal}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">VAT (5%):</span>
+                  <span className="font-semibold text-gray-900">
+                    <DirhamIcon size="sm" />
+                    {Math.round(calculatePricing().total * 0.05)}
+                  </span>
+                </div>
+                
+                {selectedPaymentMethod === 'cash' && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Cash Payment Fee:</span>
+                    <span className="font-semibold text-gray-900">
+                      <DirhamIcon size="sm" />
+                      5
+                    </span>
+                  </div>
+                )}
+                
+                <div className="pt-3 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-gray-900">Total:</span>
+                    <span className="text-xl font-bold text-primary">
+                      <DirhamIcon size="sm" />
+                      {(() => {
+                        const baseTotal = calculatePricing().total;
+                        const vat = Math.round(baseTotal * 0.05);
+                        const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
+                        return baseTotal + vat + cashFee;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Payment Section */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">💳 Payment Method</h3>
@@ -1876,12 +2006,19 @@ const BookingPage: React.FC = () => {
                   <div className="text-primary">
                     <DirhamIcon size="lg" color="inherit" />
                   </div>
-                  <span className="text-2xl font-bold text-gray-900">{calculatePricing().total}</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    {(() => {
+                      const baseTotal = calculatePricing().total;
+                      const vat = Math.round(baseTotal * 0.05);
+                      const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
+                      return baseTotal + vat + cashFee;
+                    })()}
+                  </span>
                 </div>
                 <div className="text-sm text-gray-600">
                   {selectedMainCategory === 'packages' ? (
                     <>
-                                             {selectedPropertySize ? selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1) : 'Unknown'} • Package Service • {ownMaterials ? 'Own materials' : 'Materials provided'}
+                      {selectedPropertySize ? selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1) : 'Unknown'} • Package Service • {ownMaterials ? 'Own materials' : 'Materials provided'}
                       {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
                     </>
                   ) : selectedService.price_per_hour && selectedPropertySize && selectedCleaners && selectedHours ? (
@@ -1895,6 +2032,11 @@ const BookingPage: React.FC = () => {
                       {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
                     </>
                   )}
+                </div>
+                {/* Show VAT and fees info */}
+                <div className="text-xs text-gray-500 mt-1">
+                  <span>+5% VAT</span>
+                  {selectedPaymentMethod === 'cash' && <span className="ml-2">+5 AED cash fee</span>}
                 </div>
               </div>
             </div>
