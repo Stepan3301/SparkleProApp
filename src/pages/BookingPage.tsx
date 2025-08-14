@@ -11,6 +11,7 @@ import Button from '../components/ui/Button';
 import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
+import EnableNotificationsCard from '../components/EnableNotificationsCard';
 // Removed unused import: maskCardNumber
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
 import Lottie from 'lottie-react';
@@ -1856,6 +1857,15 @@ const BookingPage: React.FC = () => {
               <div className="mt-6 space-y-2">
                 <p className="text-emerald-600 font-medium">🌟 Thank you for choosing SparklePro!</p>
                 <p className="text-sm text-gray-500">Redirecting to booking history in 3 seconds...</p>
+              </div>
+
+              {/* Notification Permission Request */}
+              <div className="mt-6">
+                <EnableNotificationsCard 
+                  variant="banner"
+                  onSuccess={() => console.log('Notifications enabled after booking success!')}
+                  onDecline={() => console.log('User declined notifications after booking success')}
+                />
               </div>
 
               {/* Sparkle Animation */}
