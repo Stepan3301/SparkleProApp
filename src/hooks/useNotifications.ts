@@ -336,7 +336,11 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     // Don't show if running in Safari tab (not PWA)
     if (state.isSafariTab) return false;
     
-    return true;
+    // For iOS PWA, always allow prompting after user gesture
+    if (state.isIOSPWA) return true;
+    
+    // For other platforms, check if permission is default
+    return state.permission === 'default';
   };
 
   return {

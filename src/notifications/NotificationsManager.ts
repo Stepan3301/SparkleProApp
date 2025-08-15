@@ -128,10 +128,20 @@ class NotificationsManager {
     }
 
     try {
-      const isSubscribed = await OneSignal.Notifications.isPushSupported();
+      // Check if push notifications are supported
       const isPushSupported = OneSignal.Notifications.isPushSupported();
-      // Get permission from browser API since OneSignal might not expose it directly
+      
+      // Check if user is actually subscribed by checking permission and player ID
       const permission = Notification.permission;
+      const playerId = OneSignal.User.onesignalId;
+      const isSubscribed = permission === 'granted' && !!playerId;
+
+      console.log('Subscription state check:', { 
+        isPushSupported, 
+        permission, 
+        playerId, 
+        isSubscribed 
+      });
 
       return {
         isSubscribed,
@@ -299,10 +309,26 @@ class NotificationsManager {
    * Check if running as iOS PWA
    */
   public isIOSPWA(): boolean {
-    return (
-      (window.navigator as any).standalone === true ||
-      window.matchMedia('(display-mode: standalone)').matches
-    );
+    const userAgent = window.navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+    
+    if (!isIOS) return false;
+    
+    // Check if running in standalone mode (added to home screen)
+    const isStandalone = (window.navigator as any).standalone === true;
+    const isDisplayModeStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    
+    const result = isStandalone || isDisplayModeStandalone;
+    
+    console.log('iOS PWA Detection:', {
+      isIOS,
+      isStandalone,
+      isDisplayModeStandalone,
+      result,
+      userAgent: userAgent.substring(0, 100) + '...'
+    });
+    
+    return result;
   }
 
   /**
@@ -312,18 +338,41 @@ class NotificationsManager {
     const userAgent = window.navigator.userAgent;
     const isIOS = /iPad|iPhone|iPod/.test(userAgent);
     const isSafari = /Safari/.test(userAgent) && !/Chrome/.test(userAgent);
-    return isIOS && isSafari && !this.isIOSPWA();
+    const isIOSPWA = this.isIOSPWA();
+    
+    const result = isIOS && isSafari && !isIOSPWA;
+    
+    console.log('Safari Tab Detection:', {
+      isIOS,
+      isSafari,
+      isIOSPWA,
+      result,
+      userAgent: userAgent.substring(0, 100) + '...'
+    });
+    
+    return result;
   }
 
   /**
    * Check if push notifications are supported
    */
   public isPushSupported(): boolean {
-    return (
-      'serviceWorker' in navigator &&
-      'PushManager' in window &&
-      'Notification' in window
-    );
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const hasPushManager = 'PushManager' in window;
+    const hasNotification = 'Notification' in window;
+    
+    const result = hasServiceWorker && hasPushManager && hasNotification;
+    
+    console.log('Push Support Check:', {
+      hasServiceWorker,
+      hasPushManager,
+      hasNotification,
+      result,
+      isIOSPWA: this.isIOSPWA(),
+      isSafariTab: this.isSafariTab()
+    });
+    
+    return result;
   }
 
   /**

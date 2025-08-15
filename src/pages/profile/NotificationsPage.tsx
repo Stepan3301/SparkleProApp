@@ -6,8 +6,10 @@ import {
   DevicePhoneMobileIcon,
   EnvelopeIcon,
   CheckCircleIcon,
-  ClockIcon
+  ClockIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface NotificationSetting {
   id: string;
@@ -20,6 +22,21 @@ interface NotificationSetting {
 
 const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const {
+    isSupported,
+    isSubscribed,
+    isLoading,
+    error,
+    isIOSPWA,
+    isSafariTab,
+    platform,
+    permission,
+    shouldShowPrompt,
+    requestPermission,
+    sendTestNotification,
+    resetError,
+  } = useNotifications();
+  
   const [settings, setSettings] = useState<NotificationSetting[]>([
     {
       id: 'booking_confirmation',
@@ -95,6 +112,121 @@ const NotificationsPage: React.FC = () => {
 
       {/* Content */}
       <div className="p-5">
+        {/* Push Notification Status Card */}
+        <div className="bg-white rounded-2xl p-6 mb-6 border-2 border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                isSubscribed ? 'bg-green-100 text-green-600' : 
+                !isSupported ? 'bg-red-100 text-red-600' :
+                isSafariTab ? 'bg-orange-100 text-orange-600' :
+                'bg-gray-100 text-gray-600'
+              }`}>
+                {isSubscribed ? <CheckCircleIcon className="w-5 h-5" /> :
+                 !isSupported ? <ExclamationTriangleIcon className="w-5 h-5" /> :
+                 <BellIcon className="w-5 h-5" />}
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-gray-900">
+                  Push Notifications
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {isSubscribed ? 'Active and working' :
+                   !isSupported ? 'Not supported on this device' :
+                   isSafariTab ? 'Install app to Home Screen to enable' :
+                   permission === 'denied' ? 'Blocked - enable in browser settings' :
+                   'Ready to enable'}
+                </p>
+              </div>
+            </div>
+            {isSubscribed && (
+              <div className="text-right">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  ✓ Enabled
+                </span>
+                <p className="text-xs text-gray-500 mt-1">Platform: {platform}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <ExclamationTriangleIcon className="w-4 h-4 text-red-600" />
+                <span className="text-sm text-red-800">{error}</span>
+                <button
+                  onClick={resetError}
+                  className="ml-auto text-red-600 hover:text-red-800 text-sm underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* iOS Safari Tab Message */}
+          {isSafariTab && (
+            <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <ExclamationTriangleIcon className="w-4 h-4 text-orange-600 mt-0.5" />
+                <div>
+                  <p className="text-sm text-orange-800 font-medium">Install to Home Screen Required</p>
+                  <p className="text-xs text-orange-700 mt-1">
+                    To receive notifications on iOS, install this app to your Home Screen using Safari's share menu.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            {/* Enable/Status Button */}
+            {!isSubscribed && isSupported && !isSafariTab && permission !== 'denied' && (
+              <button
+                onClick={requestPermission}
+                disabled={isLoading}
+                className="flex-1 px-4 py-2 bg-primary text-white rounded-xl font-medium hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isLoading ? 'Enabling...' : 'Enable Push Notifications'}
+              </button>
+            )}
+
+            {/* Test Button */}
+            {isSubscribed && (
+              <button
+                onClick={sendTestNotification}
+                disabled={isLoading}
+                className="px-4 py-2 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isLoading ? 'Sending...' : 'Send Test'}
+              </button>
+            )}
+
+            {/* Debug Info (only in development) */}
+            {process.env.NODE_ENV === 'development' && (
+              <button
+                onClick={() => {
+                  console.log('Notification Debug Info:', {
+                    isSupported,
+                    isSubscribed,
+                    permission,
+                    isIOSPWA,
+                    isSafariTab,
+                    platform,
+                    shouldShowPrompt,
+                    userAgent: navigator.userAgent
+                  });
+                }}
+                className="px-3 py-2 bg-gray-500 text-white rounded-xl text-sm hover:bg-gray-600 transition-all"
+              >
+                Debug
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Info Card */}
         <div className="bg-gradient-to-r from-primary to-primary-light rounded-2xl p-6 mb-6 text-white">
           <div className="flex items-center gap-3 mb-3">
