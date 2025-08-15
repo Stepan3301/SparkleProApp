@@ -149,38 +149,43 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page" style={{ minHeight: '100vh', height: '100vh', overflow: 'hidden' }}>
       <style>{`
         .auth-page {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
           min-height: 100vh;
+          height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
           position: relative;
         }
-
+        html, body, #root {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          background: none !important;
+        }
         .bubbles {
           position: absolute;
           width: 100%;
           height: 100%;
           z-index: 0;
         }
-
         .bubble {
           position: absolute;
           background: rgba(255, 255, 255, 0.1);
           border-radius: 50%;
           animation: float 6s ease-in-out infinite;
         }
-
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
           50% { transform: translateY(-20px) rotate(180deg); }
         }
-
         .auth-container {
           background: rgba(255, 255, 255, 0.95);
           backdrop-filter: blur(10px);
@@ -194,7 +199,6 @@ const AuthPage: React.FC = () => {
           transform: translateY(0);
           transition: transform 0.3s ease;
         }
-
         .auth-container:hover {
           transform: translateY(-5px);
         }
