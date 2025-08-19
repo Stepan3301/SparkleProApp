@@ -65,7 +65,7 @@ const ProfilePage: React.FC = () => {
           .eq('user_id', user.id),
         supabase
           .from('profiles')
-          .select('member_since, full_name, phone_number')
+          .select('member_since, full_name, phone_number, avatar_url')
           .eq('id', user.id)
           .single()
       ]);
@@ -114,7 +114,8 @@ const ProfilePage: React.FC = () => {
   };
 
   const getUserName = () => {
-    return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+    // Priority: database profile full_name > user metadata > email
+    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   };
 
   const getUserInitials = () => {
@@ -290,10 +291,30 @@ const ProfilePage: React.FC = () => {
                <span className="text-xs text-white">{formatMemberSince()}</span>
              </div>
            </div>
-           <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl flex items-center justify-center text-white text-lg font-bold relative overflow-hidden shadow-lg shadow-emerald-400/30 ml-4">
-             <div className="avatar-shine"></div>
-             <span className="relative z-10">{getUserInitials()}</span>
-           </div>
+                     <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl flex items-center justify-center text-white text-lg font-bold relative overflow-hidden shadow-lg shadow-emerald-400/30 ml-4">
+            <div className="avatar-shine"></div>
+            {profile?.avatar_url ? (
+              <img
+                src={`${profile.avatar_url}?t=${Date.now()}`}
+                alt="Profile Avatar"
+                className="w-full h-full object-cover rounded-2xl relative z-10"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextElement) {
+                    nextElement.style.display = 'flex';
+                  }
+                }}
+              />
+            ) : null}
+            <span 
+              className="relative z-10 w-full h-full flex items-center justify-center" 
+              style={{ display: profile?.avatar_url ? 'none' : 'flex' }}
+            >
+              {getUserInitials()}
+            </span>
+          </div>
          </div>
 
         {/* Stats Row */}

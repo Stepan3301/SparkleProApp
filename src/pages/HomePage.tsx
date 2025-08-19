@@ -79,6 +79,7 @@ const HomePage: React.FC = () => {
   const [services, setServices] = useState<ServiceData[]>([]);
   const [popularServices, setPopularServices] = useState<ServiceData[]>([]);
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   // Service Detail Modal State
@@ -93,6 +94,7 @@ const HomePage: React.FC = () => {
         try {
           await Promise.all([
             fetchUserStats(),
+            fetchProfile(),
             fetchActiveBookings(),
             fetchServices(),
             fetchPopularServices()
@@ -137,6 +139,29 @@ const HomePage: React.FC = () => {
       });
     } catch (error) {
       console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
     }
   };
 
@@ -314,7 +339,8 @@ const HomePage: React.FC = () => {
   };
 
   const getUserName = () => {
-    return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+    // Priority: database profile full_name > user metadata > email
+    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   };
 
   const getServiceImage = (booking: any) => {
