@@ -31,6 +31,7 @@ import {
 } from '../utils/recommendationAlgorithm';
 import { useSimpleTranslation } from '../utils/i18n';
 import { scrollToTop } from '../utils/scrollToTop';
+import SEO from '../components/seo/SEO';
 
 // Form validation schema for step 5 (was step 4)
 const contactSchema = z.object({
@@ -1887,8 +1888,17 @@ const BookingPage: React.FC = () => {
     }
   };
 
+  const bookingPageSEO = {
+    title: "Book Cleaning Service",
+    description: "Book your professional cleaning service online. Choose your service type, select date and time, and get instant confirmation. Easy online booking in UAE.",
+    keywords: "book cleaning service UAE, online cleaning booking Dubai, schedule cleaning Abu Dhabi",
+    type: "website" as const,
+    noIndex: true // Booking pages typically shouldn't be indexed
+  };
+
   return (
     <>
+      <SEO {...bookingPageSEO} />
       <style>
         {`
           .animate-fadeIn {

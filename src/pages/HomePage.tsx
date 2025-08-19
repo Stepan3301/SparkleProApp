@@ -21,6 +21,7 @@ import {
   DocumentTextIcon as DocumentSolid,
   UserIcon as UserSolid
 } from '@heroicons/react/24/solid';
+import SEO from '../components/seo/SEO';
 
 interface UserStats {
   totalBookings: number;
@@ -382,457 +383,474 @@ const HomePage: React.FC = () => {
     setSelectedService(null);
   };
 
+  const homePageSEO = {
+    title: "Professional Cleaning Services in UAE",
+    description: "Book professional cleaning services in UAE with SparklePro. Regular cleaning, deep cleaning, move-in/move-out, and office cleaning. Trusted by 1000+ customers.",
+    keywords: "cleaning services UAE, professional cleaners Dubai, house cleaning Abu Dhabi, maid service UAE, deep cleaning Dubai",
+    type: "website" as const,
+    structuredData: {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "SparklePro - Professional Cleaning Services UAE",
+      "description": "Book professional cleaning services in UAE with SparklePro. Regular cleaning, deep cleaning, move-in/move-out, and office cleaning.",
+      "url": "https://sparklepro.ae/home"
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <style>{`
-        .header-gradient {
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .header-gradient::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          right: -20%;
-          width: 100%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-          animation: shimmer 6s infinite;
-        }
-        
-        @keyframes shimmer {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        .quick-book-gradient {
-          background: linear-gradient(135deg, #10b981, #06b6d4);
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .quick-book-gradient::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-          animation: float 8s infinite ease-in-out;
-        }
-        
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(30px, -30px) rotate(120deg); }
-          66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-        
-        .service-card {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .service-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
-          transition: left 0.6s ease;
-        }
-        
-        .service-card:hover::before {
-          left: 100%;
-        }
-        
-        .service-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-        }
-        
-        .book-again-carousel {
-          display: flex;
-          overflow-x: auto;
-          scroll-snap-type: x mandatory;
-          gap: 16px;
-          padding: 4px;
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        
-        .book-again-carousel::-webkit-scrollbar {
-          display: none;
-        }
-        
-        .book-again-card {
-          flex: 0 0 280px;
-          scroll-snap-align: start;
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .book-again-card:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        
-        .book-again-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
-          transition: left 0.6s ease;
-        }
-        
-        .book-again-card:hover::before {
-          left: 100%;
-        }
-      `}</style>
+    <>
+      <SEO {...homePageSEO} />
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <style>{`
+          .header-gradient {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .header-gradient::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 6s infinite;
+          }
+          
+          @keyframes shimmer {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          .quick-book-gradient {
+            background: linear-gradient(135deg, #10b981, #06b6d4);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .quick-book-gradient::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: float 8s infinite ease-in-out;
+          }
+          
+          @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+          }
+          
+          .service-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .service-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+            transition: left 0.6s ease;
+          }
+          
+          .service-card:hover::before {
+            left: 100%;
+          }
+          
+          .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+          }
+          
+          .book-again-carousel {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 16px;
+            padding: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+          
+          .book-again-carousel::-webkit-scrollbar {
+            display: none;
+          }
+          
+          .book-again-card {
+            flex: 0 0 280px;
+            scroll-snap-align: start;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          
+          .book-again-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+          }
+          
+          .book-again-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.1), transparent);
+            transition: left 0.6s ease;
+          }
+          
+          .book-again-card:hover::before {
+            left: 100%;
+          }
+        `}</style>
 
 
 
-      {/* Review Notification */}
-      {currentReviewBooking && (
-        <ReviewNotification
-          bookingId={currentReviewBooking.id}
-          customerName={currentReviewBooking.customer_name}
-          onClose={dismissCurrentReview}
-          onSubmitted={markReviewCompleted}
-        />
-      )}
+        {/* Review Notification */}
+        {currentReviewBooking && (
+          <ReviewNotification
+            bookingId={currentReviewBooking.id}
+            customerName={currentReviewBooking.customer_name}
+            onClose={dismissCurrentReview}
+            onSubmitted={markReviewCompleted}
+          />
+        )}
 
-      {/* Header */}
-      <header className="header-gradient px-5 py-4 text-white rounded-b-[30px] relative overflow-visible">
-        <div className="header-top flex justify-between items-start mb-4 relative z-10">
-          <div className="greeting flex-1 pr-4">
-            <h1 className="text-xl font-bold mb-1 drop-shadow-sm">
-              {getGreeting()}, {getUserName()}! 👋
-            </h1>
-            <div className="location flex items-center gap-1 text-sm opacity-90">
-              <MapPinIcon className="w-3 h-3" />
-              <span>{t('home.location', 'Dubai, UAE')}</span>
+        {/* Header */}
+        <header className="header-gradient px-5 py-4 text-white rounded-b-[30px] relative overflow-visible">
+          <div className="header-top flex justify-between items-start mb-4 relative z-10">
+            <div className="greeting flex-1 pr-4">
+              <h1 className="text-xl font-bold mb-1 drop-shadow-sm">
+                {getGreeting()}, {getUserName()}! 👋
+              </h1>
+              <div className="location flex items-center gap-1 text-sm opacity-90">
+                <MapPinIcon className="w-3 h-3" />
+                <span>{t('home.location', 'Dubai, UAE')}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 relative z-[100]">
+              <LanguageSwitcher variant="header" showText={false} />
+              <Button
+                variant="secondary"
+                shape="bubble"
+                size="sm"
+                onClick={() => navigate('/profile')}
+                className="!min-w-[45px] !w-11 !h-11 !p-0 !bg-white/20 !border-white/30 !text-white hover:!bg-white/30 backdrop-blur-sm"
+              >
+                <UserIcon className="w-5 h-5" />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 relative z-[100]">
-            <LanguageSwitcher variant="header" showText={false} />
-            <Button
-              variant="secondary"
-              shape="bubble"
-              size="sm"
-              onClick={() => navigate('/profile')}
-              className="!min-w-[45px] !w-11 !h-11 !p-0 !bg-white/20 !border-white/30 !text-white hover:!bg-white/30 backdrop-blur-sm"
-            >
-              <UserIcon className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="welcome-card bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 relative z-[5]">
-          <div className="welcome-title text-base font-semibold mb-2">✨ {getPersonalizedMessage()}</div>
-          <div className="welcome-text text-sm opacity-90 leading-relaxed">
-            {userStats.totalBookings > 0 
-              ? `${userStats.totalBookings} cleaning${userStats.totalBookings > 1 ? 's' : ''} completed • ${userStats.totalAddresses} address${userStats.totalAddresses > 1 ? 'es' : ''} saved`
-              : 'Your trusted cleaning service partner in Dubai. Book your first service today!'
-            }
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="px-5 pt-6">
-        {/* Quick Book Section */}
-        <section className="quick-book-gradient rounded-2xl p-6 mb-8 text-white shadow-lg cursor-pointer transition-all hover:scale-[1.02]" onClick={() => navigate('/booking')}>
-          <div className="quick-book-content flex items-center justify-center text-center relative z-10">
-            <div className="quick-book-text">
-              <div className="quick-book-title text-xl font-bold mb-1">{t('home.quickBook', 'Quick Book')}</div>
-              <div className="quick-book-subtitle text-sm opacity-90">{t('home.quickBookSubtitle', 'Get instant cleaning in 2 taps')}</div>
+          
+          <div className="welcome-card bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 relative z-[5]">
+            <div className="welcome-title text-base font-semibold mb-2">✨ {getPersonalizedMessage()}</div>
+            <div className="welcome-text text-sm opacity-90 leading-relaxed">
+              {userStats.totalBookings > 0 
+                ? `${userStats.totalBookings} cleaning${userStats.totalBookings > 1 ? 's' : ''} completed • ${userStats.totalAddresses} address${userStats.totalAddresses > 1 ? 'es' : ''} saved`
+                : 'Your trusted cleaning service partner in Dubai. Book your first service today!'
+              }
             </div>
           </div>
-        </section>
+        </header>
 
-        {/* Active Booking / Next Booking Section - Always reserve space to prevent layout shifts */}
-        {loading ? (
-          // Skeleton placeholder - maintains consistent height during loading
-          <section className="mb-6">
-            <div className="section-title mb-4">
-              <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="h-5 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
-                  <div className="flex items-center justify-between">
-                    <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+        {/* Main Content */}
+        <main className="px-5 pt-6">
+          {/* Quick Book Section */}
+          <section className="quick-book-gradient rounded-2xl p-6 mb-8 text-white shadow-lg cursor-pointer transition-all hover:scale-[1.02]" onClick={() => navigate('/booking')}>
+            <div className="quick-book-content flex items-center justify-center text-center relative z-10">
+              <div className="quick-book-text">
+                <div className="quick-book-title text-xl font-bold mb-1">{t('home.quickBook', 'Quick Book')}</div>
+                <div className="quick-book-subtitle text-sm opacity-90">{t('home.quickBookSubtitle', 'Get instant cleaning in 2 taps')}</div>
               </div>
             </div>
           </section>
-        ) : activeBookings.length > 0 ? (
-          <section className="mb-6">
-            <div className="section-title mb-4">
-              <h2 className="text-lg font-bold text-gray-800">🔄 Your Next Cleaning</h2>
-            </div>
-            
-            {activeBookings.slice(0, 1).map((booking) => (
-              <div key={booking.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 cursor-pointer hover:shadow-md transition-all"
-                   onClick={() => navigate('/history')}>
+
+          {/* Active Booking / Next Booking Section - Always reserve space to prevent layout shifts */}
+          {loading ? (
+            // Skeleton placeholder - maintains consistent height during loading
+            <section className="mb-6">
+              <div className="section-title mb-4">
+                <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
                 <div className="flex items-center gap-4">
-                  <img
-                    src={booking.service_image_url}
-                    alt={booking.service_name}
-                    className="w-16 h-16 object-cover rounded-xl border-2 border-white shadow-sm"
-                  />
+                  <div className="w-16 h-16 bg-gray-200 rounded-xl animate-pulse"></div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{booking.service_name}</h3>
-                    <div className="text-sm text-gray-600 mb-2">
-                      📅 {new Date(booking.service_date).toLocaleDateString('en-AE', { 
-                        weekday: 'long', 
-                        month: 'short', 
-                        day: 'numeric' 
-                      })} at {booking.service_time || '09:00'}
-                    </div>
+                    <div className="h-5 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-48 mb-2 animate-pulse"></div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                        {booking.status === 'confirmed' ? 'Confirmed' : 'In Progress'}
-                      </span>
-                      <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
-                        <DirhamIcon size="sm" />{booking.total_price}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-blue-500">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </section>
-        ) : null}
-
-        {/* Smart Recommendations Section */}
-        <section className="mb-6">
-          <div className="section-title mb-4">
-            {loading ? (
-              <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
-            ) : (
-              <h2 className="text-lg font-bold text-gray-800">
-                {userStats.totalBookings > 0 ? '🎯 Based on Your History' : '⭐ Recommended for You'}
-              </h2>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {loading ? (
-              // Skeleton placeholders for services
-              Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                  <div className="w-full h-24 bg-gray-200 rounded-xl mb-3 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
-                  <div className="h-4 bg-gray-200 rounded w-16 mb-1 animate-pulse"></div>
-                  <div className="h-3 bg-gray-200 rounded w-20 animate-pulse"></div>
-                </div>
-              ))
-            ) : (
-              getRecommendedServices().map((service) => (
-                <div key={service.id} 
-                     className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer"
-                     onClick={() => handleServiceClick(service)}>
-                  <img
-                    src={service.image_url || '/regular-cleaning.jpg'}
-                    alt={service.name}
-                    className="w-full h-24 object-cover rounded-xl mb-3"
-                  />
-                  <h3 className="font-semibold text-gray-800 mb-1 text-sm">{service.name}</h3>
-                  <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
-                    From <DirhamIcon size="sm" />{service.base_price}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {userStats.totalBookings > 0 ? 'You might like this' : 'Popular choice'}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Popular Services Grid */}
-        <section className="mb-6">
-          <div className="section-title flex items-center justify-between mb-4">
-            {loading ? (
-              <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
-            ) : (
-              <>
-                <h2 className="text-lg font-bold text-gray-800">🔥 Popular Services</h2>
-                <button
-                  onClick={() => navigate('/services')}
-                  className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors"
-                >
-                  See All →
-                </button>
-              </>
-            )}
-          </div>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {loading ? (
-              // Skeleton placeholders for popular services
-              Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative">
-                  {index === 0 && (
-                    <div className="absolute top-2 right-2 w-8 h-5 bg-gray-200 rounded animate-pulse"></div>
-                  )}
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div className="flex-1">
-                      <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                      <div className="h-6 bg-gray-200 rounded w-20 animate-pulse"></div>
                       <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
                     </div>
                   </div>
-                  <div className="mt-2">
-                    <div className="h-3 bg-gray-200 rounded w-full mb-1 animate-pulse"></div>
-                    <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                  <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </section>
+          ) : activeBookings.length > 0 ? (
+            <section className="mb-6">
+              <div className="section-title mb-4">
+                <h2 className="text-lg font-bold text-gray-800">🔄 Your Next Cleaning</h2>
+              </div>
+              
+              {activeBookings.slice(0, 1).map((booking) => (
+                <div key={booking.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 cursor-pointer hover:shadow-md transition-all"
+                     onClick={() => navigate('/history')}>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={booking.service_image_url}
+                      alt={booking.service_name}
+                      className="w-16 h-16 object-cover rounded-xl border-2 border-white shadow-sm"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1">{booking.service_name}</h3>
+                      <div className="text-sm text-gray-600 mb-2">
+                        📅 {new Date(booking.service_date).toLocaleDateString('en-AE', { 
+                          weekday: 'long', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })} at {booking.service_time || '09:00'}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                          {booking.status === 'confirmed' ? 'Confirmed' : 'In Progress'}
+                        </span>
+                        <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                          <DirhamIcon size="sm" />{booking.total_price}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-blue-500">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              popularServices.map((service, index) => (
-                <div key={service.id} 
-                     className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer relative"
-                     onClick={() => handleServiceClick(service)}>
-                  {index === 0 && (
-                    <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
-                      #1
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3">
+              ))}
+            </section>
+          ) : null}
+
+          {/* Smart Recommendations Section */}
+          <section className="mb-6">
+            <div className="section-title mb-4">
+              {loading ? (
+                <div className="h-6 bg-gray-200 rounded w-48 animate-pulse"></div>
+              ) : (
+                <h2 className="text-lg font-bold text-gray-800">
+                  {userStats.totalBookings > 0 ? '🎯 Based on Your History' : '⭐ Recommended for You'}
+                </h2>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {loading ? (
+                // Skeleton placeholders for services
+                Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                    <div className="w-full h-24 bg-gray-200 rounded-xl mb-3 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-16 mb-1 animate-pulse"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20 animate-pulse"></div>
+                  </div>
+                ))
+              ) : (
+                getRecommendedServices().map((service) => (
+                  <div key={service.id} 
+                       className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer"
+                       onClick={() => handleServiceClick(service)}>
                     <img
                       src={service.image_url || '/regular-cleaning.jpg'}
                       alt={service.name}
-                      className="w-12 h-12 object-cover rounded-lg"
+                      className="w-full h-24 object-cover rounded-xl mb-3"
                     />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 text-sm mb-1">{service.name}</h3>
-                      <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
-                        <DirhamIcon size="sm" />{service.base_price}
-                      </div>
+                    <h3 className="font-semibold text-gray-800 mb-1 text-sm">{service.name}</h3>
+                    <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
+                      From <DirhamIcon size="sm" />{service.base_price}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {userStats.totalBookings > 0 ? 'You might like this' : 'Popular choice'}
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-2 leading-tight">
-                    {service.description.length > 60 
-                      ? service.description.substring(0, 60) + '...'
-                      : service.description
-                    }
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Popular Services Grid */}
+          <section className="mb-6">
+            <div className="section-title flex items-center justify-between mb-4">
+              {loading ? (
+                <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+              ) : (
+                <>
+                  <h2 className="text-lg font-bold text-gray-800">🔥 Popular Services</h2>
+                  <button
+                    onClick={() => navigate('/services')}
+                    className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors"
+                  >
+                    See All →
+                  </button>
+                </>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              {loading ? (
+                // Skeleton placeholders for popular services
+                Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 relative">
+                    {index === 0 && (
+                      <div className="absolute top-2 right-2 w-8 h-5 bg-gray-200 rounded animate-pulse"></div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                      <div className="flex-1">
+                        <div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"></div>
+                        <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div className="h-3 bg-gray-200 rounded w-full mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                popularServices.map((service, index) => (
+                  <div key={service.id} 
+                       className="service-card bg-white rounded-2xl p-4 shadow-sm border border-gray-100 cursor-pointer relative"
+                       onClick={() => handleServiceClick(service)}>
+                    {index === 0 && (
+                      <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+                        #1
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={service.image_url || '/regular-cleaning.jpg'}
+                        alt={service.name}
+                        className="w-12 h-12 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800 text-sm mb-1">{service.name}</h3>
+                        <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
+                          <DirhamIcon size="sm" />{service.base_price}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2 leading-tight">
+                      {service.description.length > 60 
+                        ? service.description.substring(0, 60) + '...'
+                        : service.description
+                      }
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Promo / Loyalty Section */}
+          <section className="mb-6">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-5 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🎁</span>
+                  <h3 className="font-bold text-lg">Special Offer!</h3>
+                </div>
+                <p className="text-sm opacity-90 mb-3">
+                  {userStats.totalBookings === 0 
+                    ? "Get 15% off your first cleaning service. Use code FIRST15"
+                    : "Invite a friend and get 10% off your next booking!"
+                  }
+                </p>
+                <button 
+                  onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : navigate('/profile')}
+                  className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  {userStats.totalBookings === 0 ? "Book Now" : "Invite Friend"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Bottom Stats for Context */}
+          <section className="mb-8">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+              <div className="grid grid-cols-3 divide-x divide-gray-200">
+                <div className="text-center px-3">
+                  <div className="text-lg font-bold text-emerald-600 mb-1">
+                    {userStats.totalBookings}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Total Booking{userStats.totalBookings !== 1 ? 's' : ''}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Promo / Loyalty Section */}
-        <section className="mb-6">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-5 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">🎁</span>
-                <h3 className="font-bold text-lg">Special Offer!</h3>
-              </div>
-              <p className="text-sm opacity-90 mb-3">
-                {userStats.totalBookings === 0 
-                  ? "Get 15% off your first cleaning service. Use code FIRST15"
-                  : "Invite a friend and get 10% off your next booking!"
-                }
-              </p>
-              <button 
-                onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : navigate('/profile')}
-                className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
-              >
-                {userStats.totalBookings === 0 ? "Book Now" : "Invite Friend"}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Bottom Stats for Context */}
-        <section className="mb-8">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <div className="grid grid-cols-3 divide-x divide-gray-200">
-              <div className="text-center px-3">
-                <div className="text-lg font-bold text-emerald-600 mb-1">
-                  {userStats.totalBookings}
+                <div className="text-center px-3">
+                  <div className="text-lg font-bold text-emerald-600 mb-1 flex items-center justify-center gap-1">
+                    {userStats.averageRating}★
+                  </div>
+                  <div className="text-xs text-gray-500">Our Rating</div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  Total Booking{userStats.totalBookings !== 1 ? 's' : ''}
+                <div className="text-center px-3">
+                  <div className="text-lg font-bold text-emerald-600 mb-1">24/7</div>
+                  <div className="text-xs text-gray-500">Support</div>
                 </div>
-              </div>
-              <div className="text-center px-3">
-                <div className="text-lg font-bold text-emerald-600 mb-1 flex items-center justify-center gap-1">
-                  {userStats.averageRating}★
-                </div>
-                <div className="text-xs text-gray-500">Our Rating</div>
-              </div>
-              <div className="text-center px-3">
-                <div className="text-lg font-bold text-emerald-600 mb-1">24/7</div>
-                <div className="text-xs text-gray-500">Support</div>
               </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 grid grid-cols-4 pt-2 pb-5 z-50">
-        <NavItem 
-          icon={<HomeSolid className="w-5 h-5" />} 
-          label={t('navigation.home', 'Home')} 
-          active 
-          onClick={() => navigate('/home')}
-        />
-        <NavItem 
-          icon={<CalendarSolid className="w-5 h-5" />} 
-          label={t('navigation.booking', 'Book')} 
-          onClick={() => navigate('/booking')}
-        />
-        <NavItem 
-          icon={<DocumentSolid className="w-5 h-5" />} 
-          label={t('navigation.history', 'History')} 
-          onClick={() => navigate('/history')}
-        />
-        <NavItem 
-          icon={<UserSolid className="w-5 h-5" />} 
-          label={t('navigation.profile', 'Profile')} 
-          onClick={() => navigate('/profile')}
-        />
-      </nav>
+        {/* Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 grid grid-cols-4 pt-2 pb-5 z-50">
+          <NavItem 
+            icon={<HomeSolid className="w-5 h-5" />} 
+            label={t('navigation.home', 'Home')} 
+            active 
+            onClick={() => navigate('/home')}
+          />
+          <NavItem 
+            icon={<CalendarSolid className="w-5 h-5" />} 
+            label={t('navigation.booking', 'Book')} 
+            onClick={() => navigate('/booking')}
+          />
+          <NavItem 
+            icon={<DocumentSolid className="w-5 h-5" />} 
+            label={t('navigation.history', 'History')} 
+            onClick={() => navigate('/history')}
+          />
+          <NavItem 
+            icon={<UserSolid className="w-5 h-5" />} 
+            label={t('navigation.profile', 'Profile')} 
+            onClick={() => navigate('/profile')}
+          />
+        </nav>
 
-      {/* Service Detail Modal */}
-      <ServiceDetailModal
-        service={selectedService}
-        serviceImage={selectedService ? selectedService.image_url || '/regular-cleaning.jpg' : ''}
-        serviceKey={selectedService ? getServiceKey(selectedService.name) : ''}
-        isOpen={isServiceModalOpen}
-        onClose={handleCloseServiceModal}
-      />
-    </div>
+        {/* Service Detail Modal */}
+        <ServiceDetailModal
+          service={selectedService}
+          serviceImage={selectedService ? selectedService.image_url || '/regular-cleaning.jpg' : ''}
+          serviceKey={selectedService ? getServiceKey(selectedService.name) : ''}
+          isOpen={isServiceModalOpen}
+          onClose={handleCloseServiceModal}
+        />
+      </div>
+    </>
   );
 };
 

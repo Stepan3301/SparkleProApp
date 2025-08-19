@@ -1,3 +1,20 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+Allow: /
+
+# Disallow private/sensitive pages
+Disallow: /profile/
+Disallow: /booking/
+Disallow: /history/
+Disallow: /auth/
+
+# Allow important pages
+Allow: /
+Allow: /home
+Allow: /services
+
+# Sitemap location
+Sitemap: https://sparklepro.ae/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
