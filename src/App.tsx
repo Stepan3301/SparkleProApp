@@ -6,7 +6,6 @@ import AuthPage from './pages/auth/AuthPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import HomePage from './pages/HomePage';
 import BookingPage from './pages/BookingPage';
-import ServicesPage from './pages/ServicesPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
 import PersonalInfoPage from './pages/profile/PersonalInfoPage';
@@ -55,11 +54,6 @@ function App() {
             <Route path="/booking" element={
               <RoleBasedRoute>
                 <BookingPage />
-              </RoleBasedRoute>
-            } />
-            <Route path="/services" element={
-              <RoleBasedRoute>
-                <ServicesPage />
               </RoleBasedRoute>
             } />
             <Route path="/history" element={

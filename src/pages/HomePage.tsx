@@ -697,12 +697,7 @@ const HomePage: React.FC = () => {
               ) : (
                 <>
                   <h2 className="text-lg font-bold text-gray-800">🔥 Popular Services</h2>
-                  <button
-                    onClick={() => navigate('/services')}
-                    className="text-sm text-blue-600 font-medium hover:text-blue-700 transition-colors"
-                  >
-                    See All →
-                  </button>
+                  {/* See All button hidden for simplified UX */}
                 </>
               )}
             </div>
