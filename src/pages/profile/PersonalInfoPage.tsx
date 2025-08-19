@@ -102,6 +102,9 @@ const PersonalInfoPage: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
+    console.log('Starting avatar upload for user:', user.id);
+    console.log('File details:', { name: file.name, type: file.type, size: file.size });
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setMessage('Please select an image file.');
@@ -118,24 +121,49 @@ const PersonalInfoPage: React.FC = () => {
     setMessage(null);
 
     try {
+      // Delete old avatar if exists
+      if (profile?.avatar_url) {
+        try {
+          const oldFileName = profile.avatar_url.split('/').pop();
+          if (oldFileName) {
+            const oldFilePath = `${user.id}/${oldFileName}`;
+            await supabase.storage
+              .from('avatars')
+              .remove([oldFilePath]);
+            console.log('Old avatar deleted:', oldFilePath);
+          }
+        } catch (deleteError) {
+          console.log('Could not delete old avatar:', deleteError);
+          // Continue with upload even if delete fails
+        }
+      }
+
       // Create a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      console.log('Uploading to path:', fileName);
 
       // Upload to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Changed to true to allow overwriting
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful:', uploadData);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName);
+
+      console.log('Public URL generated:', urlData.publicUrl);
 
       // Update profile with avatar URL
       const { error: updateError } = await supabase
@@ -147,7 +175,12 @@ const PersonalInfoPage: React.FC = () => {
           phone_number: profile?.phone_number,
         });
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('Profile updated successfully');
 
       setAvatarPreview(urlData.publicUrl);
       setProfile({ ...profile, avatar_url: urlData.publicUrl });
@@ -155,9 +188,13 @@ const PersonalInfoPage: React.FC = () => {
       setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      setMessage('Error uploading avatar. Please try again.');
+      setMessage(`Error uploading avatar: ${error.message || 'Please try again.'}`);
     } finally {
       setAvatarUploading(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
