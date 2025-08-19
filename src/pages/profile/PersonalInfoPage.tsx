@@ -87,7 +87,8 @@ const PersonalInfoPage: React.FC = () => {
         setProfile(data);
         setValue('fullName', data.full_name || '');
         setValue('phoneNumber', data.phone_number || '');
-        setAvatarPreview(data.avatar_url);
+        // Add cache-busting for existing avatar to ensure it loads properly
+        setAvatarPreview(data.avatar_url ? `${data.avatar_url}?t=${Date.now()}` : null);
       } else {
         // Set default values from user metadata
         setValue('fullName', user.user_metadata?.full_name || '');
@@ -165,12 +166,15 @@ const PersonalInfoPage: React.FC = () => {
 
       console.log('Public URL generated:', urlData.publicUrl);
 
-      // Update profile with avatar URL
+      // Add cache-busting parameter to ensure fresh image load
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Update profile with avatar URL (without cache-busting for storage)
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
-          avatar_url: urlData.publicUrl,
+          avatar_url: urlData.publicUrl, // Store clean URL in database
           full_name: profile?.full_name,
           phone_number: profile?.phone_number,
         });
@@ -182,7 +186,8 @@ const PersonalInfoPage: React.FC = () => {
 
       console.log('Profile updated successfully');
 
-      setAvatarPreview(urlData.publicUrl);
+      // Use cache-busted URL for immediate display
+      setAvatarPreview(avatarUrl);
       setProfile({ ...profile, avatar_url: urlData.publicUrl });
       setMessage('Avatar updated successfully!');
       setTimeout(() => setMessage(null), 3000);
@@ -281,6 +286,14 @@ const PersonalInfoPage: React.FC = () => {
                   src={avatarPreview}
                   alt="Profile Avatar"
                   className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                  onError={(e) => {
+                    console.log('Image failed to load:', avatarPreview);
+                    // Fallback to default avatar on error
+                    setAvatarPreview(null);
+                  }}
+                  onLoad={() => {
+                    console.log('Image loaded successfully:', avatarPreview);
+                  }}
                 />
               ) : (
                 <div className="w-20 h-20 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center">
