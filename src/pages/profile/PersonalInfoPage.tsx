@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -8,7 +8,9 @@ import * as z from 'zod';
 import { 
   ArrowLeftIcon, 
   UserIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  CameraIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import PhoneNumberInput from '../../components/ui/PhoneNumberInput';
 
@@ -54,6 +56,9 @@ const PersonalInfoPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue, control } = useForm<PersonalInfoFormData>({
     resolver: zodResolver(personalInfoSchema),
@@ -82,6 +87,7 @@ const PersonalInfoPage: React.FC = () => {
         setProfile(data);
         setValue('fullName', data.full_name || '');
         setValue('phoneNumber', data.phone_number || '');
+        setAvatarPreview(data.avatar_url);
       } else {
         // Set default values from user metadata
         setValue('fullName', user.user_metadata?.full_name || '');
@@ -89,6 +95,100 @@ const PersonalInfoPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error:', error);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setMessage('Please select an image file.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('Image size must be less than 5MB.');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setMessage(null);
+
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          avatar_url: urlData.publicUrl,
+          full_name: profile?.full_name,
+          phone_number: profile?.phone_number,
+        });
+
+      if (updateError) throw updateError;
+
+      setAvatarPreview(urlData.publicUrl);
+      setProfile({ ...profile, avatar_url: urlData.publicUrl });
+      setMessage('Avatar updated successfully!');
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      setMessage('Error uploading avatar. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user || !profile?.avatar_url) return;
+
+    setAvatarUploading(true);
+    setMessage(null);
+
+    try {
+      // Remove avatar URL from profile
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          avatar_url: null,
+          full_name: profile.full_name,
+          phone_number: profile.phone_number,
+        });
+
+      if (error) throw error;
+
+      setAvatarPreview(null);
+      setProfile({ ...profile, avatar_url: null });
+      setMessage('Avatar removed successfully!');
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: any) {
+      console.error('Error removing avatar:', error);
+      setMessage('Error removing avatar. Please try again.');
+    } finally {
+      setAvatarUploading(false);
     }
   };
 
@@ -105,6 +205,7 @@ const PersonalInfoPage: React.FC = () => {
           id: user.id,
           full_name: data.fullName,
           phone_number: data.phoneNumber,
+          avatar_url: profile?.avatar_url, // Preserve existing avatar
         });
 
       if (error) throw error;
@@ -137,11 +238,58 @@ const PersonalInfoPage: React.FC = () => {
         {/* User Avatar Section */}
         <div className="bg-white rounded-2xl p-6 mb-6">
           <div className="flex flex-col items-center text-center">
-            <div className="w-20 h-20 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4">
-              <UserIcon className="w-10 h-10 text-white" />
+            <div className="relative mb-4">
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt="Profile Avatar"
+                  className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="w-20 h-20 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center">
+                  <UserIcon className="w-10 h-10 text-white" />
+                </div>
+              )}
+              
+              {/* Upload/Camera Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors disabled:opacity-50"
+              >
+                {avatarUploading ? (
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                ) : (
+                  <CameraIcon className="w-4 h-4" />
+                )}
+              </button>
+              
+              {/* Remove Button (only show if avatar exists) */}
+              {avatarPreview && (
+                <button
+                  onClick={handleRemoveAvatar}
+                  disabled={avatarUploading}
+                  className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white shadow-lg transition-colors disabled:opacity-50"
+                >
+                  <TrashIcon className="w-3 h-3" />
+                </button>
+              )}
             </div>
+            
             <h2 className="text-lg font-bold text-gray-900">{profile?.full_name || user?.user_metadata?.full_name || 'User'}</h2>
             <p className="text-gray-600 text-sm">{user?.email}</p>
+            
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+            />
           </div>
         </div>
 
