@@ -41,7 +41,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
   return (
     <div 
-      className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[9999] flex items-center justify-center transition-opacity duration-300 ${
         fadeOut ? 'opacity-0' : 'opacity-100'
       }`}
       style={{ backgroundColor: '#ffffff' }}
@@ -51,7 +51,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         loop
         muted
         playsInline
-        className="w-auto h-auto max-w-full max-h-full object-contain"
+        className="w-32 h-32 object-contain"
         onError={(e) => {
           console.error('Video loading failed:', e);
         }}
