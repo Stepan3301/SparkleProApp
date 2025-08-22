@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import LoadingScreen from '../components/ui/LoadingScreen';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
@@ -18,6 +19,7 @@ const HistoryPage: React.FC = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -93,6 +95,10 @@ const HistoryPage: React.FC = () => {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+      // Only set initial loading to false after the first load
+      if (initialLoading) {
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -192,18 +198,25 @@ const HistoryPage: React.FC = () => {
     setIsExpanded(false);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading booking history...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
+    <>
+      {/* Loading Screen */}
+      <LoadingScreen 
+        isLoading={initialLoading} 
+        onLoadingComplete={() => {}}
+        minDuration={1000}
+      />
+      
+      {loading && !initialLoading && (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading booking history...</p>
+          </div>
+        </div>
+      )}
+      
+      {!loading && (
     <div 
       className="min-h-screen booking-stack-page flex flex-col"
       onClick={isExpanded ? collapseStack : undefined}
@@ -546,6 +559,8 @@ const HistoryPage: React.FC = () => {
         </div>
       )}
     </div>
+      )}
+    </>
   );
 };
 

@@ -22,6 +22,7 @@ import {
   UserIcon as UserSolid
 } from '@heroicons/react/24/solid';
 import SEO from '../components/seo/SEO';
+import LoadingScreen from '../components/ui/LoadingScreen';
 
 interface UserStats {
   totalBookings: number;
@@ -81,6 +82,7 @@ const HomePage: React.FC = () => {
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   
   // Service Detail Modal State
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
@@ -106,6 +108,10 @@ const HomePage: React.FC = () => {
           console.error('Error loading homepage data:', error);
         } finally {
           setLoading(false);
+          // Only set initial loading to false after the first load
+          if (initialLoading) {
+            setInitialLoading(false);
+          }
         }
       };
       
@@ -426,6 +432,14 @@ const HomePage: React.FC = () => {
   return (
     <>
       <SEO {...homePageSEO} />
+      
+      {/* Loading Screen */}
+      <LoadingScreen 
+        isLoading={initialLoading} 
+        onLoadingComplete={() => {}}
+        minDuration={2000}
+      />
+      
       <div className="min-h-screen bg-gray-50 pb-20">
         <style>{`
           .header-gradient {

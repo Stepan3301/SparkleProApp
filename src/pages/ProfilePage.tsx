@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
+import LoadingScreen from '../components/ui/LoadingScreen';
 import EnableNotificationsCard from '../components/EnableNotificationsCard';
 import { useSimpleTranslation } from '../utils/i18n';
 import { 
@@ -24,6 +25,7 @@ const ProfilePage: React.FC = () => {
   const [stats, setStats] = useState({ bookings: 0, addresses: 0, rating: 5.0 });
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -105,6 +107,10 @@ const ProfilePage: React.FC = () => {
       // Keep previous stats on error, just stop loading
     } finally {
       setLoading(false);
+      // Only set initial loading to false after the first load
+      if (initialLoading) {
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -196,7 +202,15 @@ const ProfilePage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <>
+      {/* Loading Screen */}
+      <LoadingScreen 
+        isLoading={initialLoading} 
+        onLoadingComplete={() => {}}
+        minDuration={1500}
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <style>{`
         .shimmer {
           position: absolute;
@@ -459,6 +473,7 @@ const ProfilePage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

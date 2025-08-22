@@ -11,6 +11,7 @@ import Button from '../components/ui/Button';
 import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
+import LoadingScreen from '../components/ui/LoadingScreen';
 import EnableNotificationsCard from '../components/EnableNotificationsCard';
 // Removed unused import: maskCardNumber
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
@@ -153,6 +154,7 @@ const BookingPage: React.FC = () => {
   const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(null);
   const [showSubServices, setShowSubServices] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isUsingNewAddress, setIsUsingNewAddress] = useState(false);
@@ -253,10 +255,24 @@ const BookingPage: React.FC = () => {
   // Fetch data when user is available
   useEffect(() => {
     if (user) {
-      fetchUserData();
-      fetchAddresses();
-      fetchSavedCards();
-      fetchServices();
+      const loadInitialData = async () => {
+        try {
+          await Promise.all([
+            fetchUserData(),
+            fetchAddresses(),
+            fetchSavedCards(),
+            fetchServices()
+          ]);
+        } catch (error) {
+          console.error('Error loading booking page data:', error);
+        } finally {
+          if (initialLoading) {
+            setInitialLoading(false);
+          }
+        }
+      };
+      
+      loadInitialData();
     }
   }, [user]);
 
@@ -1899,6 +1915,13 @@ const BookingPage: React.FC = () => {
   return (
     <>
       <SEO {...bookingPageSEO} />
+      
+      {/* Loading Screen */}
+      <LoadingScreen 
+        isLoading={initialLoading} 
+        onLoadingComplete={() => {}}
+        minDuration={1000}
+      />
       <style>
         {`
           .animate-fadeIn {
