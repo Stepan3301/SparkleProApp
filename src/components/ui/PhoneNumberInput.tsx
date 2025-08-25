@@ -144,7 +144,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
           <button
             type="button"
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-200 rounded-l-xl bg-gray-50 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            className="flex items-center gap-2 px-3 py-3 border border-r-0 border-gray-200 rounded-l-xl bg-white hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
           >
             <span className="text-lg">{selectedCountry.flag}</span>
             <span className="text-sm font-medium text-gray-700">{selectedCountry.dialCode}</span>
@@ -199,7 +199,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           placeholder={selectedCountry.placeholder}
-          className={`flex-1 px-4 py-3 border border-gray-200 rounded-r-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
+          className={`flex-1 px-4 py-3 border border-gray-200 rounded-r-xl bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all ${
             error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''
           }`}
           required={required}
