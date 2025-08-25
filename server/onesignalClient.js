@@ -248,6 +248,106 @@ class OneSignalClient {
       throw error;
     }
   }
+
+  /**
+   * Send new order notification to all admin users
+   */
+  async sendNewOrderNotification(orderId, orderDetails = {}) {
+    try {
+      // Get all admin users from the database
+      const adminUsers = await this.getAdminUsers();
+      
+      if (!adminUsers || adminUsers.length === 0) {
+        console.log('No admin users found for new order notification');
+        return {
+          success: false,
+          error: 'No admin users found'
+        };
+      }
+
+      const notification = {
+        title: '🆕 New Order Received!',
+        message: `Order #${orderId} - ${orderDetails.customer_name || 'Customer'} - ${orderDetails.service_date || 'Service Date'}`,
+        data: {
+          type: 'new_order',
+          orderId,
+          orderDetails
+        }
+      };
+
+      // Send to all admin users
+      const results = await Promise.all(
+        adminUsers.map(admin => 
+          this.sendToExternalUser(admin.external_user_id, notification)
+        )
+      );
+
+      const successCount = results.filter(r => r.success).length;
+      const totalCount = results.length;
+
+      return {
+        success: true,
+        notificationId: `new_order_${orderId}_${Date.now()}`,
+        recipients: successCount,
+        totalAdmins: totalCount,
+        message: `Notification sent to ${successCount}/${totalCount} admin users`
+      };
+    } catch (error) {
+      console.error('Failed to send new order notification:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Send order status change notification to customer
+   */
+  async sendOrderStatusChangeNotification(customerId, orderId, newStatus, orderDetails = {}) {
+    const statusLabels = {
+      'pending': 'Pending Confirmation',
+      'confirmed': 'Confirmed',
+      'in_progress': 'In Progress',
+      'completed': 'Completed',
+      'cancelled': 'Cancelled'
+    };
+
+    const notification = {
+      title: '📋 Order Status Updated',
+      message: `Your order #${orderId} status has changed to: ${statusLabels[newStatus] || newStatus}`,
+      data: {
+        type: 'order_status_change',
+        orderId,
+        newStatus,
+        orderDetails
+      }
+    };
+
+    return this.sendToExternalUser(customerId, notification);
+  }
+
+  /**
+   * Get all admin users from the database
+   */
+  async getAdminUsers() {
+    try {
+      // This would typically query your database
+      // For now, we'll return a mock implementation
+      // You'll need to implement this based on your database setup
+      
+      console.log('Getting admin users for notifications...');
+      
+      // Mock implementation - replace with actual database query
+      return [
+        // Example admin user structure
+        // { external_user_id: 'admin-user-id', player_id: 'onesignal-player-id' }
+      ];
+    } catch (error) {
+      console.error('Failed to get admin users:', error);
+      return [];
+    }
+  }
 }
 
 module.exports = OneSignalClient; 

@@ -337,6 +337,35 @@ const AdminDashboard: React.FC = () => {
         setSelectedBooking(prev => prev ? { ...prev, status: newStatus } : null);
       }
 
+      // Send notification to customer about status change
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/api/push/order-status-change`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            customerId: selectedBooking?.customer_id,
+            orderId: bookingId,
+            newStatus: newStatus,
+            orderDetails: {
+              customer_name: selectedBooking?.customer_name,
+              service_date: selectedBooking?.service_date,
+              total_price: selectedBooking?.total_price
+            }
+          })
+        });
+
+        if (response.ok) {
+          console.log('Customer notification sent successfully');
+        } else {
+          console.log('Failed to send customer notification');
+        }
+      } catch (error) {
+        console.error('Error sending customer notification:', error);
+        // Don't fail the status update if notification fails
+      }
+
       // Refresh stats
       fetchStats();
     } catch (error) {

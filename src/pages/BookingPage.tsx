@@ -639,6 +639,36 @@ const BookingPage: React.FC = () => {
       
       console.log('Booking created successfully:', insertData);
       
+      // Send notification to admin about new order
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/api/push/new-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: insertData[0].id,
+            orderDetails: {
+              customer_name: data.customerName,
+              service_date: serviceDate,
+              service_time: serviceTime,
+              total_price: pricing.total,
+              property_size: selectedPropertySize,
+              cleaners_count: selectedCleaners
+            }
+          })
+        });
+
+        if (response.ok) {
+          console.log('Admin notification sent successfully');
+        } else {
+          console.log('Failed to send admin notification');
+        }
+      } catch (error) {
+        console.error('Error sending admin notification:', error);
+        // Don't fail the booking if notification fails
+      }
+      
       // Insert additional services if any
       if (selectedAddons.length > 0 && insertData && insertData[0]) {
         const bookingId = insertData[0].id;

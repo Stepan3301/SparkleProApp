@@ -120,6 +120,116 @@ router.post('/test', async (req, res) => {
 });
 
 /**
+ * POST /api/push/new-order
+ * Send notification to admin when new order is created
+ */
+router.post('/new-order', async (req, res) => {
+  try {
+    const { orderId, orderDetails } = req.body;
+
+    if (!orderId || !orderDetails) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: orderId and orderDetails'
+      });
+    }
+
+    // Send new order notification to all admin users
+    const result = await oneSignalClient.sendNewOrderNotification(
+      orderId,
+      orderDetails
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'New order notification sent to admins successfully',
+        data: {
+          notificationId: result.notificationId,
+          recipients: result.recipients,
+          orderId,
+          sentAt: new Date().toISOString()
+        }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send new order notification',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Error in /new-order:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/push/order-status-change
+ * Send notification to customer when order status changes
+ */
+router.post('/order-status-change', async (req, res) => {
+  try {
+    const { customerId, orderId, newStatus, orderDetails } = req.body;
+
+    if (!customerId || !orderId || !newStatus) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: customerId, orderId, and newStatus'
+      });
+    }
+
+    // Validate status
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(newStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+      });
+    }
+
+    // Send order status change notification to customer
+    const result = await oneSignalClient.sendOrderStatusChangeNotification(
+      customerId,
+      orderId,
+      newStatus,
+      orderDetails || {}
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Order status change notification sent successfully',
+        data: {
+          notificationId: result.notificationId,
+          recipients: result.recipients,
+          orderId,
+          newStatus,
+          sentAt: new Date().toISOString()
+        }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send order status change notification',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Error in /order-status-change:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+/**
  * POST /api/push/order-status
  * Send order status notification
  */
@@ -297,6 +407,43 @@ router.delete('/cancel/:notificationId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in /cancel:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/push/admin-users
+ * Get all admin users for notifications
+ */
+router.get('/admin-users', async (req, res) => {
+  try {
+    // This would typically query your database for admin users
+    // For now, we'll return a mock implementation
+    // You'll need to implement this based on your database setup
+    
+    console.log('Getting admin users for notifications...');
+    
+    // Mock implementation - replace with actual database query
+    // Example: Query profiles table for users with role = 'admin'
+    const adminUsers = [
+      // Example admin user structure
+      // { external_user_id: 'admin-user-id', player_id: 'onesignal-player-id' }
+    ];
+    
+    res.json({
+      success: true,
+      message: 'Admin users retrieved successfully',
+      data: {
+        adminUsers,
+        count: adminUsers.length
+      }
+    });
+  } catch (error) {
+    console.error('Error getting admin users:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error',
