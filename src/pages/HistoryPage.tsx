@@ -75,6 +75,13 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchBookings();
+
+      // Set up real-time updates every 20 seconds for booking history
+      const interval = setInterval(() => {
+        fetchBookings();
+      }, 20000);
+
+      return () => clearInterval(interval);
     }
   }, [user]);
 

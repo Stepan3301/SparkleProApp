@@ -76,6 +76,13 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Set up real-time updates every 15 seconds for admin dashboard
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {

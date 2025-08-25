@@ -116,6 +116,16 @@ const HomePage: React.FC = () => {
       };
       
       loadAllData();
+
+      // Set up real-time updates every 30 seconds
+      const interval = setInterval(() => {
+        // Only refresh data, don't show loading for background updates
+        fetchUserStats();
+        fetchActiveBookings();
+        fetchRecentBookings();
+      }, 30000);
+
+      return () => clearInterval(interval);
     }
   }, [user]);
 

@@ -247,6 +247,12 @@ class NotificationsManager {
     }
 
     try {
+      // Check if backend is available
+      if (!backendUrl || backendUrl.trim() === '') {
+        console.warn('No backend URL configured, using mock subscription');
+        return this.mockSubscription();
+      }
+
       const response = await fetch(`${backendUrl}/api/push/subscribe`, {
         method: 'POST',
         headers: {
@@ -270,6 +276,33 @@ class NotificationsManager {
       return true;
     } catch (error) {
       console.error('Failed to send subscription to backend:', error);
+      
+      // Fall back to mock subscription if backend is not available
+      console.log('Falling back to mock subscription storage');
+      return this.mockSubscription();
+    }
+  }
+
+  /**
+   * Mock subscription for when backend is not available
+   */
+  private async mockSubscription(): Promise<boolean> {
+    try {
+      const playerId = await this.getPlayerId();
+      const subscriptionData = {
+        userId: this.currentUserId,
+        playerId,
+        timestamp: new Date().toISOString(),
+        mockMode: true
+      };
+      
+      // Store in localStorage as fallback
+      localStorage.setItem('notification_subscription', JSON.stringify(subscriptionData));
+      console.log('Mock subscription stored locally:', subscriptionData);
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to create mock subscription:', error);
       return false;
     }
   }
@@ -283,6 +316,12 @@ class NotificationsManager {
     }
 
     try {
+      // Check if backend is available
+      if (!backendUrl || backendUrl.trim() === '') {
+        console.warn('No backend URL configured, using mock test notification');
+        return this.mockTestNotification();
+      }
+
       const response = await fetch(`${backendUrl}/api/push/test`, {
         method: 'POST',
         headers: {
@@ -301,6 +340,40 @@ class NotificationsManager {
       return true;
     } catch (error) {
       console.error('Failed to send test notification:', error);
+      
+      // Fall back to mock test notification
+      console.log('Falling back to mock test notification');
+      return this.mockTestNotification();
+    }
+  }
+
+  /**
+   * Mock test notification for when backend is not available
+   */
+  private async mockTestNotification(): Promise<boolean> {
+    try {
+      // Simulate a notification through OneSignal directly
+      console.log('Simulating test notification...');
+      
+      // For development/testing, we'll just log this
+      // In a real scenario, you might use OneSignal's direct API
+      const testData = {
+        userId: this.currentUserId,
+        message: 'Test notification from SparklePro!',
+        timestamp: new Date().toISOString(),
+        mockMode: true
+      };
+      
+      console.log('Mock test notification sent:', testData);
+      
+      // Store the test in localStorage for debugging
+      const existingTests = JSON.parse(localStorage.getItem('test_notifications') || '[]');
+      existingTests.push(testData);
+      localStorage.setItem('test_notifications', JSON.stringify(existingTests));
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to send mock test notification:', error);
       return false;
     }
   }

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotifications } from '../hooks/useNotifications';
-import { BellIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { BellIcon, CheckCircleIcon, ExclamationTriangleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 interface EnableNotificationsCardProps {
   variant?: 'banner' | 'card' | 'inline';
@@ -9,6 +9,8 @@ interface EnableNotificationsCardProps {
   onSuccess?: () => void;
   onDecline?: () => void;
 }
+
+type ConnectionStatus = 'connected' | 'disconnected' | 'error' | 'connecting' | 'unknown';
 
 const EnableNotificationsCard: React.FC<EnableNotificationsCardProps> = ({
   variant = 'card',
@@ -32,13 +34,86 @@ const EnableNotificationsCard: React.FC<EnableNotificationsCardProps> = ({
   } = useNotifications();
 
   const [showDetails, setShowDetails] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
+  const [lastSuccessTime, setLastSuccessTime] = useState<Date | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Monitor notification status changes
+  useEffect(() => {
+    if (isSubscribed) {
+      setConnectionStatus('connected');
+    } else if (error) {
+      setConnectionStatus('error');
+    } else if (isLoading) {
+      setConnectionStatus('connecting');
+    } else {
+      setConnectionStatus('disconnected');
+    }
+  }, [isSubscribed, error, isLoading]);
+
+  // Get status display info
+  const getStatusInfo = () => {
+    switch (connectionStatus) {
+      case 'connected':
+        return {
+          icon: <CheckCircleIcon className="w-5 h-5 text-emerald-600" />,
+          text: 'Connected',
+          color: 'text-emerald-600',
+          bgColor: 'bg-emerald-50',
+          borderColor: 'border-emerald-200'
+        };
+      case 'connecting':
+        return {
+          icon: <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />,
+          text: 'Connecting...',
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50',
+          borderColor: 'border-blue-200'
+        };
+      case 'error':
+        return {
+          icon: <XCircleIcon className="w-5 h-5 text-red-600" />,
+          text: 'Error',
+          color: 'text-red-600',
+          bgColor: 'bg-red-50',
+          borderColor: 'border-red-200'
+        };
+      case 'disconnected':
+        return {
+          icon: <BellIcon className="w-5 h-5 text-gray-600" />,
+          text: 'Disconnected',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200'
+        };
+      default:
+        return {
+          icon: <BellIcon className="w-5 h-5 text-gray-400" />,
+          text: 'Unknown',
+          color: 'text-gray-400',
+          bgColor: 'bg-gray-50',
+          borderColor: 'border-gray-200'
+        };
+    }
+  };
 
   const handleEnableNotifications = async () => {
+    setConnectionStatus('connecting');
     const success = await requestPermission();
-    if (success && onSuccess) {
-      onSuccess();
-    } else if (!success && onDecline) {
-      onDecline();
+    
+    if (success) {
+      setConnectionStatus('connected');
+      setLastSuccessTime(new Date());
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 5000); // Hide after 5 seconds
+      if (onSuccess) {
+        onSuccess();
+      }
+    } else {
+      setConnectionStatus('error');
+      if (onDecline) {
+        onDecline();
+      }
     }
   };
 
@@ -57,21 +132,24 @@ const EnableNotificationsCard: React.FC<EnableNotificationsCardProps> = ({
     return null;
   }
 
-  // Don't show if user is already subscribed
-  if (isSubscribed) {
-    if (variant === 'inline') {
-      return (
-        <div className={`flex items-center gap-2 text-emerald-600 ${className}`}>
-          <CheckCircleIcon className="w-5 h-5" />
-          <span className="text-sm font-medium">Notifications enabled</span>
-        </div>
-      );
-    }
-    return null;
+  // For inline variant, show status
+  if (variant === 'inline') {
+    const statusInfo = getStatusInfo();
+    return (
+      <div className={`flex items-center gap-2 ${statusInfo.color} ${className}`}>
+        {statusInfo.icon}
+        <span className="text-sm font-medium">{statusInfo.text}</span>
+        {lastSuccessTime && connectionStatus === 'connected' && (
+          <span className="text-xs text-gray-500">
+            ({lastSuccessTime.toLocaleTimeString()})
+          </span>
+        )}
+      </div>
+    );
   }
 
-  // Don't show if we shouldn't prompt
-  if (!shouldShowPrompt) {
+  // Don't show if we shouldn't prompt (except when already connected or has error)
+  if (!shouldShowPrompt && !isSubscribed && !error) {
     return null;
   }
 
@@ -209,19 +287,42 @@ const EnableNotificationsCard: React.FC<EnableNotificationsCardProps> = ({
   }
 
   // Card variant
+  const statusInfo = getStatusInfo();
+  
   return (
     <div className={`bg-white border border-gray-200 rounded-lg p-6 shadow-sm ${className}`}>
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
+            <span className="text-sm font-medium text-emerald-800">
+              Notifications enabled successfully! You'll now receive updates about your orders.
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            <BellIcon className="w-6 h-6 text-primary" />
+          <div className={`w-12 h-12 ${statusInfo.bgColor} rounded-full flex items-center justify-center`}>
+            {connectionStatus === 'connecting' ? (
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              statusInfo.icon
+            )}
           </div>
         </div>
         
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Enable Push Notifications
-          </h3>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-lg font-medium text-gray-900">
+              Push Notifications
+            </h3>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusInfo.bgColor} ${statusInfo.color} ${statusInfo.borderColor} border`}>
+              {statusInfo.text}
+            </span>
+          </div>
           
           <p className="text-sm text-gray-600 mb-4">
             Stay updated about your cleaning service status, receive reminders, and get notified about special offers and promotions.
@@ -244,44 +345,64 @@ const EnableNotificationsCard: React.FC<EnableNotificationsCardProps> = ({
           )}
 
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleEnableNotifications}
-              disabled={isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Enabling...
-                </>
-              ) : (
-                <>
-                  <BellIcon className="w-4 h-4" />
-                  Enable Notifications
-                </>
-              )}
-            </button>
+            {/* Main action button */}
+            {!isSubscribed && (
+              <button
+                type="button"
+                onClick={handleEnableNotifications}
+                disabled={isLoading || connectionStatus === 'connecting'}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading || connectionStatus === 'connecting' ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Enabling...
+                  </>
+                ) : (
+                  <>
+                    <BellIcon className="w-4 h-4" />
+                    Enable Notifications
+                  </>
+                )}
+              </button>
+            )}
 
-            {showTestButton && isSubscribed && (
+            {/* Retry button for errors */}
+            {connectionStatus === 'error' && (
+              <button
+                type="button"
+                onClick={handleEnableNotifications}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <BellIcon className="w-4 h-4" />
+                Retry Connection
+              </button>
+            )}
+
+            {/* Test button when connected */}
+            {(showTestButton && connectionStatus === 'connected') && (
               <button
                 type="button"
                 onClick={handleTestNotification}
                 disabled={isLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <BellIcon className="w-4 h-4" />
                 Send Test
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={handleDecline}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
-            >
-              Maybe later
-            </button>
+            {/* Maybe later button (only show when not connected) */}
+            {!isSubscribed && connectionStatus !== 'connecting' && (
+              <button
+                type="button"
+                onClick={handleDecline}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Maybe later
+              </button>
+            )}
           </div>
 
           {/* Platform-specific info */}
