@@ -171,9 +171,10 @@ const ProfilePage: React.FC = () => {
       icon: <CreditCardIcon className="w-5 h-5" />,
       title: "Payment",
       description: "Cards & billing",
-      onClick: () => navigate('/profile/payment-methods'),
-      gradient: "from-amber-500 to-orange-500",
-      badge: "NEW"
+      onClick: () => {}, // Disabled - no navigation
+      gradient: "from-gray-400 to-gray-500", // Greyed out
+      badge: "Coming Soon",
+      disabled: true // Add disabled flag
     },
     {
       icon: <BellIcon className="w-5 h-5" />,
@@ -388,8 +389,12 @@ const ProfilePage: React.FC = () => {
           {mainMenuItems.map((item, index) => (
             <div
               key={item.title}
-              onClick={item.onClick}
-              className="menu-item bg-white rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:transform hover:-translate-y-1 hover:shadow-xl shadow-md border border-gray-100 relative overflow-hidden"
+              onClick={item.disabled ? undefined : item.onClick}
+              className={`menu-item bg-white rounded-2xl p-5 transition-all duration-300 shadow-md border border-gray-100 relative overflow-hidden ${
+                item.disabled 
+                  ? 'cursor-not-allowed opacity-60 grayscale' 
+                  : 'cursor-pointer hover:transform hover:-translate-y-1 hover:shadow-xl'
+              }`}
             >
               <div className="menu-item-hover"></div>
               
@@ -398,13 +403,21 @@ const ProfilePage: React.FC = () => {
               </div>
               
               <div className="relative z-10">
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.title}</h3>
-                <p className="text-xs text-gray-600">{item.description}</p>
+                <h3 className={`font-semibold text-sm mb-1 ${
+                  item.disabled ? 'text-gray-500' : 'text-gray-900'
+                }`}>{item.title}</h3>
+                <p className={`text-xs ${
+                  item.disabled ? 'text-gray-400' : 'text-gray-600'
+                }`}>{item.description}</p>
               </div>
 
               {/* Badge */}
               {item.badge && (
-                <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 text-xs font-semibold px-2 py-1 rounded-lg shadow-md">
+                <div className={`absolute top-2 right-2 text-xs font-semibold px-2 py-1 rounded-lg shadow-md ${
+                  item.disabled 
+                    ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-gray-700' 
+                    : 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900'
+                }`}>
                   {item.badge}
                 </div>
               )}

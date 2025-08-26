@@ -173,7 +173,7 @@ const BookingPage: React.FC = () => {
   const [selectedAddons, setSelectedAddons] = useState<any[]>([]);
   const [serviceDate, setServiceDate] = useState('');
   const [serviceTime, setServiceTime] = useState('');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
   const [showAddCardForm, setShowAddCardForm] = useState(false);
   const [newAddressValue, setNewAddressValue] = useState('');
   const [newAddressStreet, setNewAddressStreet] = useState('');
@@ -1669,15 +1669,15 @@ const BookingPage: React.FC = () => {
             {/* Payment Section */}
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">💳 Payment Method</h3>
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Note:</strong> Currently only cash payment is available. Apple Pay, Tabby, and credit card payments are coming soon!
+                </p>
+              </div>
               <div className="space-y-3">
-                {/* Apple Pay */}
+                {/* Apple Pay - Disabled */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    selectedPaymentMethod === 'apple_pay'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedPaymentMethod('apple_pay')}
+                  className="border-2 rounded-lg p-4 cursor-not-allowed transition-all border-gray-200 bg-gray-50 opacity-60"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1685,33 +1685,22 @@ const BookingPage: React.FC = () => {
                         <img 
                           src="/apple-pay-og.jpg" 
                           alt="Apple Pay" 
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain grayscale"
                         />
                       </div>
-                      <span className="font-medium">Apple Pay</span>
+                      <div>
+                        <span className="font-medium text-gray-500">Apple Pay</span>
+                        <p className="text-sm text-gray-400">Coming Soon</p>
+                      </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 ${
-                      selectedPaymentMethod === 'apple_pay'
-                        ? 'border-primary bg-primary'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedPaymentMethod === 'apple_pay' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gray-200">
                     </div>
                   </div>
                 </div>
 
-                {/* Tabby */}
+                {/* Tabby - Disabled */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    selectedPaymentMethod === 'tabby'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => setSelectedPaymentMethod('tabby')}
+                  className="border-2 rounded-lg p-4 cursor-not-allowed transition-all border-gray-200 bg-gray-50 opacity-60"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1719,24 +1708,15 @@ const BookingPage: React.FC = () => {
                         <img 
                           src="/tabby-logo-1.png" 
                           alt="Tabby" 
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain grayscale"
                         />
                       </div>
                       <div>
-                        <span className="font-medium">Tabby</span>
-                        <p className="text-sm text-gray-600">Pay in 4 installments</p>
+                        <span className="font-medium text-gray-500">Tabby</span>
+                        <p className="text-sm text-gray-400">Coming Soon</p>
                       </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 ${
-                      selectedPaymentMethod === 'tabby'
-                        ? 'border-primary bg-primary'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedPaymentMethod === 'tabby' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gray-200">
                     </div>
                   </div>
                 </div>
@@ -1778,82 +1758,51 @@ const BookingPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Saved Cards */}
+                {/* Saved Cards - Disabled */}
                 {savedCards.length > 0 && (
                   <div className="border-t border-gray-200 pt-4">
-                    <h4 className="text-md font-semibold text-gray-800 mb-3">💳 My Cards</h4>
+                    <h4 className="text-md font-semibold text-gray-400 mb-3">💳 My Cards (Coming Soon)</h4>
                   </div>
                 )}
                 {savedCards.map((card) => (
                   <div
                     key={card.id}
-                    className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedPaymentMethod === `card_${card.id}`
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setSelectedPaymentMethod(`card_${card.id}`)}
+                    className="border-2 rounded-lg p-4 cursor-not-allowed transition-all border-gray-200 bg-gray-50 opacity-60"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center border">
-                          <span className="text-gray-600 text-xs font-bold">
-                            {card.card_type === 'visa' ? '💳' : 
-                             card.card_type === 'mastercard' ? '💳' : 
-                             card.card_type === 'amex' ? '💳' : '💳'}
-                          </span>
+                        <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center border">
+                          <span className="text-gray-400 text-xs font-bold">💳</span>
                         </div>
                         <div>
-                          <span className="font-medium">
+                          <span className="font-medium text-gray-500">
                             •••••••••••• {card.card_number_last4}
                             {card.is_default && ' (Default)'}
                           </span>
+                          <p className="text-sm text-gray-400">Coming Soon</p>
                         </div>
                       </div>
-                      <div className={`w-5 h-5 rounded-full border-2 ${
-                        selectedPaymentMethod === `card_${card.id}`
-                          ? 'border-primary bg-primary'
-                          : 'border-gray-300'
-                      }`}>
-                        {selectedPaymentMethod === `card_${card.id}` && (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
-                          </div>
-                        )}
+                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gray-200">
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {/* Add New Card */}
+                {/* Add New Card - Disabled */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    selectedPaymentMethod === 'new_card'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => {
-                    setSelectedPaymentMethod('new_card');
-                    setShowAddCardForm(true);
-                  }}
+                  className="border-2 rounded-lg p-4 cursor-not-allowed transition-all border-gray-200 bg-gray-50 opacity-60"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white text-xs font-bold">💳</span>
+                      <div className="w-8 h-8 bg-gray-400 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-600 text-xs font-bold">💳</span>
                       </div>
-                      <span className="font-medium">Add New Card</span>
+                      <div>
+                        <span className="font-medium text-gray-500">Add New Card</span>
+                        <p className="text-sm text-gray-400">Coming Soon</p>
+                      </div>
                     </div>
-                    <div className={`w-5 h-5 rounded-full border-2 ${
-                      selectedPaymentMethod === 'new_card'
-                        ? 'border-primary bg-primary'
-                        : 'border-gray-300'
-                    }`}>
-                      {selectedPaymentMethod === 'new_card' && (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <div className="w-2 h-2 bg-white rounded-full"></div>
-                        </div>
-                      )}
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 bg-gray-200">
                     </div>
                   </div>
                 </div>
