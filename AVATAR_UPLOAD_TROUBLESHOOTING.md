@@ -1,126 +1,111 @@
 # Avatar Upload Troubleshooting Guide
 
-## Current Issue
-Users are unable to upload avatars successfully in the profile page.
+## 🚨 Current Issue
+**Error**: "new row violates row-level security policy" when trying to upload avatars
+**Status Code**: 403 (Unauthorized)
+**Root Cause**: Supabase Storage RLS policies are not properly configured
 
-## Root Cause Analysis
+## 🔧 Step-by-Step Fix
 
-### 1. **Supabase Storage Bucket Configuration**
-The `avatars` bucket needs to be properly configured:
+### Step 1: Run the SQL Script
+1. Go to your Supabase Dashboard
+2. Navigate to **SQL Editor**
+3. Copy and paste the entire contents of `avatar_upload_fix.sql`
+4. Click **Run** to execute the script
 
-#### Step 1: Verify Bucket Settings
-1. Go to Supabase Dashboard > Storage
-2. Check if `avatars` bucket exists
-3. **IMPORTANT**: The bucket must be **PUBLIC** for images to be displayed
-4. If bucket is not public:
-   - Click on `avatars` bucket
-   - Go to Settings
-   - Set "Public bucket" to `true`
+### Step 2: Verify the Fix
+After running the SQL script, you should see:
+- ✅ `avatars` bucket created/updated
+- ✅ 5 RLS policies created
+- ✅ Bucket is set to public
+- ✅ File size limit: 5MB
+- ✅ Supported formats: JPEG, PNG, GIF, WebP
 
-#### Step 2: Apply Fixed SQL Policies
-Run the SQL from `supabase-avatar-setup-fixed.sql`:
+### Step 3: Test Avatar Upload
+1. Go back to your app
+2. Try uploading an avatar image
+3. Check the console for success messages
+4. Verify the avatar appears correctly
 
+## 📋 What the SQL Script Does
+
+### 1. **Bucket Configuration**
+- Creates `avatars` bucket if it doesn't exist
+- Sets bucket to public (accessible by all users)
+- Configures 5MB file size limit
+- Allows common image formats
+
+### 2. **RLS Policies**
+- **INSERT**: Users can upload to their own folder (`user_id/filename`)
+- **SELECT**: Users can view their own avatars + public access
+- **UPDATE**: Users can update their own avatars
+- **DELETE**: Users can delete their own avatars
+- **Public Access**: Anyone can view avatars (for app display)
+
+### 3. **Security Features**
+- Users can only access files in their own folder
+- Folder structure: `avatars/user_id/filename.jpg`
+- Authenticated users only for upload/update/delete
+- Public read access for displaying avatars
+
+## 🐛 If Issues Persist
+
+### Check 1: Bucket Exists
 ```sql
--- Apply these policies in Supabase SQL Editor
--- (See supabase-avatar-setup-fixed.sql for complete script)
+SELECT * FROM storage.buckets WHERE id = 'avatars';
 ```
 
-### 2. **Frontend Code Issues Fixed**
-- Added detailed console logging for debugging
-- Changed `upsert: false` to `upsert: true` for overwriting files
-- Added old file deletion before upload
-- Improved error handling with specific error messages
-- Reset file input after upload
-
-### 3. **Testing Steps**
-
-#### Browser Console Testing:
-1. Open browser DevTools (F12)
-2. Go to Console tab
-3. Try uploading an avatar
-4. Check for any error messages:
-   - Upload errors
-   - Permission errors
-   - Network errors
-
-#### Expected Console Output:
-```
-Starting avatar upload for user: [user-id]
-File details: {name: "image.jpg", type: "image/jpeg", size: 123456}
-Uploading to path: [user-id]/[timestamp].jpg
-Upload successful: {path: "...", id: "...", fullPath: "..."}
-Public URL generated: https://[project].supabase.co/storage/v1/object/public/avatars/[user-id]/[timestamp].jpg
-Profile updated successfully
+### Check 2: RLS Policies
+```sql
+SELECT policyname, cmd, qual, with_check 
+FROM pg_policies 
+WHERE tablename = 'objects' AND schemaname = 'storage';
 ```
 
-### 4. **Common Error Messages & Solutions**
+### Check 3: RLS Enabled
+```sql
+SELECT schemaname, tablename, rowsecurity 
+FROM pg_tables 
+WHERE schemaname = 'storage' AND tablename = 'objects';
+```
 
-#### Error: "new row violates row-level security policy"
-- **Solution**: Run the fixed SQL policies
-- **Cause**: Missing or incorrect RLS policies
+### Check 4: User Authentication
+```sql
+SELECT auth.uid(), auth.role();
+```
 
-#### Error: "bucket not found" or "access denied"
-- **Solution**: Ensure bucket is public and policies are applied
-- **Cause**: Bucket misconfiguration
+## 🔍 Debug Information
 
-#### Error: "File already exists"
-- **Solution**: Code now uses `upsert: true` to overwrite
-- **Cause**: Previous upload with same filename
+### Console Logs to Check
+- "Starting avatar upload for user: [user_id]"
+- "File details: {name, type, size}"
+- "Uploading to path: [user_id]/[timestamp].[ext]"
+- "Upload successful: [data]"
+- "Public URL generated: [url]"
 
-#### Error: Network or CORS issues
-- **Solution**: Check Supabase project settings and API keys
-- **Cause**: Environment variable misconfiguration
+### Common Error Messages
+- **403 Unauthorized**: RLS policy issue (fixed by SQL script)
+- **400 Bad Request**: File format/size issue
+- **404 Not Found**: Bucket doesn't exist
+- **500 Internal Error**: Server configuration issue
 
-### 5. **Manual Verification Steps**
+## ✅ Expected Result
+After running the SQL script:
+1. Avatar upload should work without errors
+2. No more "row-level security policy" errors
+3. Avatars should display correctly in the app
+4. Users can upload, update, and delete their avatars
 
-1. **Check Environment Variables**:
-   ```bash
-   # In your .env.local file:
-   REACT_APP_SUPABASE_URL=your_supabase_url
-   REACT_APP_SUPABASE_ANON_KEY=your_anon_key
-   ```
+## 🚀 Next Steps
+1. Run the SQL script in Supabase
+2. Test avatar upload functionality
+3. Verify avatars display correctly
+4. Check that profile updates work
+5. Test avatar removal functionality
 
-2. **Test Storage Access**:
-   - Go to Supabase Dashboard > Storage > avatars
-   - Try manually uploading a file
-   - Check if you can view/download it
-
-3. **Check User Authentication**:
-   - Ensure user is properly logged in
-   - Check if `user.id` is available in console logs
-
-4. **Database Check**:
-   ```sql
-   -- Check if profiles table has avatar_url column
-   SELECT column_name, data_type 
-   FROM information_schema.columns 
-   WHERE table_name = 'profiles' AND column_name = 'avatar_url';
-   
-   -- Check current user profile
-   SELECT id, full_name, avatar_url 
-   FROM profiles 
-   WHERE id = auth.uid();
-   ```
-
-## Implementation Status
-
-✅ **Fixed Code Issues**:
-- Enhanced error handling and logging
-- Fixed upsert configuration
-- Added file cleanup
-
-✅ **Updated SQL Policies**:
-- Comprehensive storage policies
-- Public read access for avatars
-- User-specific upload/update/delete permissions
-
-🔄 **Next Steps**:
-1. Apply the fixed SQL policies
-2. Ensure bucket is public
-3. Test upload with browser console open
-4. Check specific error messages if any
-
-## Files Updated
-- `src/pages/profile/PersonalInfoPage.tsx` - Enhanced upload logic
-- `supabase-avatar-setup-fixed.sql` - Complete storage setup
-- `AVATAR_UPLOAD_TROUBLESHOOTING.md` - This troubleshooting guide
+## 📞 Need Help?
+If the issue persists after running the SQL script:
+1. Check Supabase logs for detailed error messages
+2. Verify the bucket and policies were created correctly
+3. Ensure your Supabase project has Storage enabled
+4. Check that your API keys have the correct permissions

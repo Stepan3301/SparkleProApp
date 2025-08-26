@@ -193,7 +193,30 @@ const PersonalInfoPage: React.FC = () => {
       setTimeout(() => setMessage(null), 3000);
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      setMessage(`Error uploading avatar: ${error.message || 'Please try again.'}`);
+      
+      // Provide more specific error messages based on error type
+      let errorMessage = 'Error uploading avatar: ';
+      
+      if (error.statusCode === 403) {
+        errorMessage += 'Access denied. This usually means the storage policies are not configured correctly. Please contact support.';
+      } else if (error.statusCode === 400) {
+        errorMessage += 'Invalid file format or size. Please ensure the file is an image under 5MB.';
+      } else if (error.message) {
+        errorMessage += error.message;
+      } else {
+        errorMessage += 'Please try again.';
+      }
+      
+      setMessage(errorMessage);
+      
+      // Log detailed error information for debugging
+      console.log('Detailed error info:', {
+        statusCode: error.statusCode,
+        error: error.error,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
     } finally {
       setAvatarUploading(false);
       // Reset file input
