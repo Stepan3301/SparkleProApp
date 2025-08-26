@@ -23,6 +23,8 @@ const HistoryPage: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
 
   // Add custom styles for smooth animations
   React.useEffect(() => {
@@ -89,6 +91,8 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchBookings();
+      fetchServices();
+      fetchAddresses();
 
       // Set up real-time updates every 20 seconds for booking history
       const interval = setInterval(() => {
@@ -123,6 +127,37 @@ const HistoryPage: React.FC = () => {
     }
   };
 
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name');
+
+      if (error) throw error;
+
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
+
+  const fetchAddresses = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('addresses')
+        .select('id, street')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setAddresses(data || []);
+    } catch (error) {
+      console.error('Error fetching addresses:', error);
+    }
+  };
+
   const getSizeLabel = (size: string) => {
     const option = SIZE_OPTIONS.find(opt => opt.size === size);
     return option ? option.label : size;
@@ -132,7 +167,6 @@ const HistoryPage: React.FC = () => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-AE', {
       weekday: 'short',
-      year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
@@ -143,6 +177,29 @@ const HistoryPage: React.FC = () => {
     return date.toLocaleDateString('en-AE', {
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  const getServiceName = (serviceId: number | undefined | null) => {
+    if (!serviceId) return getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
+    const service = services.find(s => s.id === serviceId);
+    return service ? service.name : getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
+  };
+
+  const getAddressName = (addressId: number | undefined | null, customAddress: string | undefined | null) => {
+    if (customAddress) return customAddress;
+    if (!addressId) return 'Saved address';
+    const address = addresses.find(a => a.id === addressId);
+    return address ? address.street : 'Saved address';
+  };
+
+  const formatTime = (timeString: string) => {
+    // Convert time to HH:MM format without seconds
+    const time = new Date(`2000-01-01T${timeString}`);
+    return time.toLocaleTimeString('en-AE', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
     });
   };
 
@@ -350,7 +407,10 @@ const HistoryPage: React.FC = () => {
                   {/* Booking Info */}
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900 text-sm truncate">
-                      {getSizeLabel(booking.property_size)} Cleaning
+                      {(() => {
+                        const service = services.find(s => s.id === booking.service_id);
+                        return service ? service.name : getSizeLabel(booking.property_size) + ' Cleaning';
+                      })()}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
                       #{booking.id} • {formatShortDate(booking.service_date)}
@@ -418,7 +478,7 @@ const HistoryPage: React.FC = () => {
               {/* Service title */}
               <div className="relative z-10 mt-8">
                 <h2 className="text-2xl font-bold mb-1">
-                  {getSizeLabel(selectedBooking.property_size)} Cleaning
+                  {getServiceName(selectedBooking.service_id)}
                 </h2>
                 <p className="text-emerald-100 text-sm">Booking #{selectedBooking.id}</p>
               </div>
@@ -452,51 +512,51 @@ const HistoryPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6">
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
-                      <CalendarIcon className="w-5 h-5 text-white" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <CalendarIcon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</div>
-                      <div className="text-sm font-semibold text-gray-900">{formatDate(selectedBooking.service_date)}</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{formatDate(selectedBooking.service_date)}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center">
-                      <ClockIcon className="w-5 h-5 text-white" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <ClockIcon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</div>
-                      <div className="text-sm font-semibold text-gray-900">{formatTimeSlot(selectedBooking.service_time)}</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{formatTime(selectedBooking.service_time)}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-white" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cleaners</div>
-                      <div className="text-sm font-semibold text-gray-900">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                      <MapPinIcon className="w-5 h-5 text-white" />
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPinIcon className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {selectedBooking.custom_address ? 'Custom address' : 'Saved address'}
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
                       </div>
                     </div>
                   </div>

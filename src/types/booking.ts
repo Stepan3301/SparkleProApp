@@ -35,6 +35,7 @@ export interface Booking {
   customer_id: string;
   
   // Service details
+  service_id?: number;
   property_size: PropertySize;
   size_price: number;
   cleaners_count: number;
