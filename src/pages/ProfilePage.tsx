@@ -207,7 +207,8 @@ const ProfilePage: React.FC = () => {
       <LoadingScreen 
         isLoading={initialLoading} 
         onLoadingComplete={() => {}}
-        minDuration={1500}
+        minDuration={1000}
+        smartLoading={true}
       />
       
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

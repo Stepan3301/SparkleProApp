@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import AuthPage from './pages/auth/AuthPage';
 import AuthCallback from './pages/auth/AuthCallback';
@@ -18,6 +18,7 @@ import { scrollToTop } from './utils/scrollToTop';
 import './App.css';
 import SEOProvider from './components/seo/SEOProvider';
 import BusinessSchema from './components/seo/BusinessSchema';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 // Component to handle scroll reset on route change
 function ScrollToTop() {
@@ -31,14 +32,26 @@ function ScrollToTop() {
   return null;
 }
 
-function App() {
+// Wrapper component to handle global loading state
+function AppContent() {
+  const { loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <LoadingScreen 
+        isLoading={true}
+        minDuration={0}
+        smartLoading={true}
+        onLoadingComplete={() => {}}
+      />
+    );
+  }
+  
   return (
-    <SEOProvider>
-      <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <BusinessSchema />
-          <Routes>
+    <Router>
+      <ScrollToTop />
+      <BusinessSchema />
+      <Routes>
             {/* Public Routes */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
@@ -107,6 +120,14 @@ function App() {
             <Route path="*" element={<Navigate to="/auth" replace />} />
           </Routes>
         </Router>
+      );
+    }
+
+function App() {
+  return (
+    <SEOProvider>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
     </SEOProvider>
   );

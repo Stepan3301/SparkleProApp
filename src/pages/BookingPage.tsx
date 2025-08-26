@@ -1950,7 +1950,8 @@ const BookingPage: React.FC = () => {
       <LoadingScreen 
         isLoading={initialLoading} 
         onLoadingComplete={() => {}}
-        minDuration={1000}
+        minDuration={800}
+        smartLoading={true}
       />
       <style>
         {`

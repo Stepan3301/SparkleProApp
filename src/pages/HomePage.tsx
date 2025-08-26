@@ -447,7 +447,8 @@ const HomePage: React.FC = () => {
       <LoadingScreen 
         isLoading={initialLoading} 
         onLoadingComplete={() => {}}
-        minDuration={2000}
+        minDuration={1000}
+        smartLoading={true}
       />
       
       <div className="min-h-screen bg-gray-50 pb-20">
