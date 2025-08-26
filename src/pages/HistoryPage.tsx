@@ -53,7 +53,21 @@ const HistoryPage: React.FC = () => {
       
       .booking-card:hover {
         box-shadow: 0 8px 25px rgba(0, 150, 136, 0.15);
-        transform: translateY(-2px) !important;
+      }
+      
+      /* Prevent hover effects on touch devices during scrolling */
+      @media (hover: hover) and (pointer: fine) {
+        .booking-card:hover {
+          box-shadow: 0 8px 25px rgba(0, 150, 136, 0.15);
+        }
+      }
+      
+      /* Ensure cards stay in place during touch interactions */
+      .booking-card {
+        touch-action: manipulation;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
       
       .rope-animation {
@@ -271,9 +285,17 @@ const HistoryPage: React.FC = () => {
             style={{
               width: '340px',
               height: isExpanded ? `${Math.max(420, bookings.length * 90 + 100)}px` : '420px',
-              cursor: !isExpanded ? 'pointer' : 'default'
+              cursor: !isExpanded ? 'pointer' : 'default',
+              overflow: 'visible',
+              position: 'relative'
             }}
             onClick={!isExpanded ? toggleStack : undefined}
+            onTouchMove={(e) => {
+              // Prevent default touch behavior that might interfere with card positioning
+              if (!isExpanded) {
+                e.preventDefault();
+              }
+            }}
           >
             {/* Stack Label */}
             <div className="absolute -top-10 left-0 text-lg font-bold text-emerald-600 z-10 transition-colors duration-300">
@@ -292,7 +314,7 @@ const HistoryPage: React.FC = () => {
               return (
                 <div
                   key={booking.id}
-                  className="booking-card absolute left-0 w-full h-20 bg-white rounded-2xl shadow-md border border-gray-100 flex items-center px-5 gap-4 cursor-pointer hover:shadow-lg"
+                  className="booking-card absolute left-0 w-full h-20 bg-white rounded-2xl shadow-md border border-gray-100 flex items-center px-5 gap-4 cursor-pointer hover:shadow-lg transition-shadow duration-300"
                   style={{
                     transform: isExpanded 
                       ? `translateY(${index * 90 + 10}px) rotate(0deg)`
@@ -304,6 +326,18 @@ const HistoryPage: React.FC = () => {
                     willChange: 'transform, opacity'
                   }}
                   onClick={(e) => handleCardClick(booking, index, e)}
+                  onTouchStart={(e) => {
+                    // Prevent hover effects during touch
+                    e.currentTarget.style.pointerEvents = 'auto';
+                  }}
+                  onTouchEnd={(e) => {
+                    // Restore pointer events after touch
+                    setTimeout(() => {
+                      if (e.currentTarget) {
+                        e.currentTarget.style.pointerEvents = isExpanded || isTopCard ? 'auto' : 'none';
+                      }
+                    }, 100);
+                  }}
                 >
                   {/* Service Icon */}
                   <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
