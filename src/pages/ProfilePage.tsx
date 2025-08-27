@@ -385,7 +385,7 @@ const ProfilePage: React.FC = () => {
 
       {/* PWA Install Prompt - Only shows for browser users */}
       <div className="px-5 -mt-2 mb-4">
-        <PWAInstallPrompt variant="banner" />
+        <PWAInstallPrompt />
       </div>
 
       {/* Content */}
