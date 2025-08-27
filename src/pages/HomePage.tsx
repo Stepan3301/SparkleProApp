@@ -23,6 +23,7 @@ import {
 } from '@heroicons/react/24/solid';
 import SEO from '../components/seo/SEO';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
 
 interface UserStats {
   totalBookings: number;
@@ -615,6 +616,11 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </header>
+
+        {/* PWA Install Prompt - Only shows for browser users */}
+        <div className="px-5 -mt-2 mb-4">
+          <PWAInstallPrompt variant="banner" />
+        </div>
 
         {/* Main Content */}
         <main className="px-5 pt-6">

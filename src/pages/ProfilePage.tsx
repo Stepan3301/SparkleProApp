@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
 import EnableNotificationsCard from '../components/EnableNotificationsCard';
 import { useSimpleTranslation } from '../utils/i18n';
 import { 
@@ -381,6 +382,11 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {/* PWA Install Prompt - Only shows for browser users */}
+      <div className="px-5 -mt-2 mb-4">
+        <PWAInstallPrompt variant="banner" />
+      </div>
 
       {/* Content */}
       <div className="px-5 -mt-5 relative z-20">
