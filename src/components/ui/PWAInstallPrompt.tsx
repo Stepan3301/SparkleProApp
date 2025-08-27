@@ -148,29 +148,18 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
                 ✕
               </button>
             </div>
-            <div className="p-4">
-              {/* Video placeholder with fallback text */}
-              <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <div className="text-4xl mb-2">📱</div>
-                  <p className="text-sm">Video guide coming soon!</p>
-                  <p className="text-xs mt-1">Follow the step-by-step instructions above</p>
-                </div>
+                          <div className="p-4">
+                <video
+                  controls
+                  className="w-full h-auto rounded-lg"
+                  onError={(e) => {
+                    console.error('Video loading failed:', e);
+                  }}
+                >
+                  <source src="/download-tohomescreen.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
               </div>
-              
-              {/* Hidden video element for future use */}
-              <video
-                controls
-                className="hidden w-full h-auto rounded-lg"
-                onError={(e) => {
-                  console.error('Video loading failed:', e);
-                }}
-              >
-                <source src="/download-guide.mov" type="video/quicktime" />
-                <source src="/download-guide.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
           </div>
         </div>
       )}
