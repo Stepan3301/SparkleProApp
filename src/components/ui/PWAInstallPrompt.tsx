@@ -10,26 +10,32 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   className = ''
 }) => {
   const [isPWA, setIsPWA] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
     // Check if app is running as PWA
     const checkPWAStatus = () => {
-      // Check if running in standalone mode (PWA)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      
-      // Check if running in fullscreen mode (iOS PWA)
-      const isFullscreen = window.navigator.standalone === true;
-      
-      // Check if running in a browser tab
-      const isInBrowser = !isStandalone && !isFullscreen;
-      
-      setIsPWA(!isInBrowser);
-      
-      // Detect iOS for Safari-specific instructions
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      setIsIOS(/iphone|ipad|ipod/.test(userAgent));
+      try {
+        // Check if running in standalone mode (PWA)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        
+        // Check if running in fullscreen mode (iOS PWA)
+        const isFullscreen = window.navigator.standalone === true;
+        
+        // Additional PWA indicators
+        const isInApp = window.location.search.includes('source=pwa') || 
+                       window.location.hash.includes('source=pwa');
+        
+        // Check if running in a browser tab
+        const isInBrowser = !isStandalone && !isFullscreen && !isInApp;
+        
+        setIsPWA(!isInBrowser);
+      } catch (error) {
+        console.warn('PWA detection failed:', error);
+        // Fallback: assume browser mode if detection fails
+        setIsPWA(false);
+        setIsIOS(false);
+      }
     };
 
     checkPWAStatus();
