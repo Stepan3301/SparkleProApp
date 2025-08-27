@@ -34,7 +34,6 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         console.warn('PWA detection failed:', error);
         // Fallback: assume browser mode if detection fails
         setIsPWA(false);
-        setIsIOS(false);
       }
     };
 
