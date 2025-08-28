@@ -1014,22 +1014,6 @@ const BookingPage: React.FC = () => {
                         className="flex items-center gap-1 px-3 py-2 bg-emerald-100 hover:bg-emerald-200 rounded-lg transition-colors border border-emerald-300 shadow-sm"
                         title="Eco-Friendly Materials Info"
                       >
-                        <img 
-                          src="/eco-friendly.svg" 
-                          alt="Eco Friendly" 
-                          className="w-5 h-5"
-                          onLoad={() => console.log('Eco-friendly SVG loaded successfully')}
-                          onError={(e) => {
-                            console.log('Eco-friendly SVG failed to load');
-                            e.currentTarget.style.display = 'none';
-                            // Show fallback
-                            const fallback = e.currentTarget.parentElement?.querySelector('.eco-fallback');
-                            if (fallback) {
-                              (fallback as HTMLElement).style.display = 'block';
-                            }
-                          }}
-                        />
-                        <span className="eco-fallback text-emerald-700 text-xs font-bold hidden">🌱 ECO</span>
                         <span className="text-emerald-700 text-xs font-medium">ECO</span>
                       </button>
                     </div>
@@ -1039,14 +1023,6 @@ const BookingPage: React.FC = () => {
                       <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg animate-fadeIn">
                         <div className="flex items-center gap-2 text-emerald-800 text-sm">
                           <span>Our materials are powered by TCL eco-friendly materials</span>
-                          <img 
-                            src="/heart-nature.svg" 
-                            alt="Nature Heart" 
-                            className="w-4 h-4 ml-1"
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
                         </div>
                       </div>
                     )}

@@ -1,7 +1,0 @@
-<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="12" cy="12" r="11" fill="#10B981" stroke="#059669" stroke-width="1"/>
-  <path d="M8 12c0 0 2-3 4-2s4 3 4 3" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-  <path d="M10 8c0 0 1 2 2 1.5s2-2.5 2-2.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-  <circle cx="12" cy="12" r="1.5" fill="white"/>
-  <text x="12" y="16" text-anchor="middle" fill="white" font-size="6" font-family="Arial">ECO</text>
-</svg> 
