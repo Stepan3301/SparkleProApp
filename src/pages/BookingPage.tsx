@@ -535,6 +535,14 @@ const BookingPage: React.FC = () => {
     return { basePrice: 0, addonsTotal: 0, total: 0 };
   };
 
+  // Calculate final price with VAT and cash fees
+  const calculateFinalPrice = (): number => {
+    const baseTotal = calculatePricing().total;
+    const vat = Math.round(baseTotal * 0.05);
+    const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
+    return baseTotal + vat + cashFee;
+  };
+
   // Handle booking submission
   const onSubmit = async (data: ContactFormData) => {
     if (!user || !selectedService) return;
@@ -576,6 +584,20 @@ const BookingPage: React.FC = () => {
       
       console.log('Clean values:', { cleanersValue, hoursValue, serviceIdValue });
 
+      // Calculate final price with VAT and cash fees (matching what's shown in UI)
+      const baseTotal = pricing.total;
+      const vat = Math.round(baseTotal * 0.05);
+      const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
+      const finalTotal = baseTotal + vat + cashFee;
+      
+      console.log('Price breakdown:', {
+        baseTotal,
+        vat,
+        cashFee,
+        finalTotal,
+        selectedPaymentMethod
+      });
+
       const bookingData = {
         customer_id: user.id,
         service_id: parseInt(serviceIdValue.toString()),
@@ -604,7 +626,9 @@ const BookingPage: React.FC = () => {
         base_price: Math.round(pricing.basePrice),
         addons_total: Math.round(pricing.addonsTotal),
         total_price: Math.round(pricing.total),
-        total_cost: parseFloat(pricing.total.toFixed(2)), // This is numeric(10,2) in schema
+        vat_amount: vat, // Store VAT amount separately
+        cash_fee: cashFee, // Store cash fee separately
+        total_cost: parseFloat(finalTotal.toFixed(2)), // Store final price with VAT and fees
         status: 'pending'
       };
 
@@ -652,7 +676,7 @@ const BookingPage: React.FC = () => {
               customer_name: data.customerName,
               service_date: serviceDate,
               service_time: serviceTime,
-              total_price: pricing.total,
+              total_price: finalTotal, // Use final price with VAT and fees
               property_size: selectedPropertySize,
               cleaners_count: selectedCleaners
             }
@@ -1652,15 +1676,10 @@ const BookingPage: React.FC = () => {
                 <div className="pt-3 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-bold text-gray-900">Total:</span>
-                    <span className="text-xl font-bold text-primary">
-                      <DirhamIcon size="sm" />
-                      {(() => {
-                        const baseTotal = calculatePricing().total;
-                        const vat = Math.round(baseTotal * 0.05);
-                        const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
-                        return baseTotal + vat + cashFee;
-                      })()}
-                    </span>
+                                      <span className="text-xl font-bold text-primary">
+                    <DirhamIcon size="sm" />
+                    {calculateFinalPrice()}
+                  </span>
                   </div>
                 </div>
               </div>
@@ -2030,12 +2049,7 @@ const BookingPage: React.FC = () => {
                     <DirhamIcon size="lg" color="inherit" />
                   </div>
                   <span className="text-2xl font-bold text-gray-900">
-                    {(() => {
-                      const baseTotal = calculatePricing().total;
-                      const vat = Math.round(baseTotal * 0.05);
-                      const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
-                      return baseTotal + vat + cashFee;
-                    })()}
+                    {calculateFinalPrice()}
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">
