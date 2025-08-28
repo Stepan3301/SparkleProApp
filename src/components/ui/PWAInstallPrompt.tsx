@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface PWAInstallPromptProps {
   variant?: 'card' | 'banner';
@@ -12,6 +12,8 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   const [isPWA, setIsPWA] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     // Check if app is running as PWA
@@ -71,10 +73,21 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
 
   const handleVideoClick = () => {
     setShowVideo(true);
+    setVideoError(false);
   };
 
   const handleCloseVideo = () => {
     setShowVideo(false);
+    setVideoError(false);
+  };
+
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    console.error('Video loading failed:', e);
+    setVideoError(true);
+  };
+
+  const handleVideoLoad = () => {
+    setVideoError(false);
   };
 
   return (
@@ -148,18 +161,44 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
                 ✕
               </button>
             </div>
-                          <div className="p-4">
+            <div className="p-4">
+              {videoError ? (
+                // Fallback content when video fails to load
+                <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <div className="text-4xl mb-2">📱</div>
+                    <p className="text-sm font-medium mb-2">Video guide temporarily unavailable</p>
+                    <p className="text-xs mb-3">Please follow the step-by-step instructions above</p>
+                    <button
+                      onClick={() => {
+                        setVideoError(false);
+                        if (videoRef.current) {
+                          videoRef.current.load();
+                        }
+                      }}
+                      className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Video player
                 <video
+                  ref={videoRef}
                   controls
                   className="w-full h-auto rounded-lg"
-                  onError={(e) => {
-                    console.error('Video loading failed:', e);
-                  }}
+                  onError={handleVideoError}
+                  onLoadedData={handleVideoLoad}
+                  preload="metadata"
                 >
                   <source src="/download-tohomescreen.mp4" type="video/mp4" />
+                  <source src="/download-guide.mp4" type="video/mp4" />
+                  <source src="/download-guide.mov" type="video/quicktime" />
                   Your browser does not support the video tag.
                 </video>
-              </div>
+              )}
+            </div>
           </div>
         </div>
       )}
