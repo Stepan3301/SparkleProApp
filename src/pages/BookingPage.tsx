@@ -1173,6 +1173,12 @@ const BookingPage: React.FC = () => {
                         💡 {recommendation.efficiency_message}
                       </div>
                     )}
+                    {/* Custom message for 1 cleaner */}
+                    {selectedCleaners === 1 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
+                        🧹 Single cleaner option - perfect for small spaces and focused cleaning
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1183,14 +1189,11 @@ const BookingPage: React.FC = () => {
                     {(() => {
                       const serviceKey = getServiceKey(selectedService.name);
                       const recommendedHours = getRecommendation(serviceKey, selectedPropertySize, selectedCleaners).recommended_hours;
-                      const hourOptions = [];
-                      for (let i = 2; i <= 7; i += 0.5) {
-                        hourOptions.push(i);
-                      }
+                      const hourOptions = [2, 3, 4, 5]; // Only integer hours
                       
                       return (
                         <div className="grid grid-cols-4 gap-2">
-                          {hourOptions.slice(0, 8).map((hours) => {
+                          {hourOptions.map((hours) => {
                             const isRecommended = hours === recommendedHours;
                             return (
                               <Button
@@ -1222,11 +1225,7 @@ const BookingPage: React.FC = () => {
                         </div>
                       );
                     })()}
-                    {recommendation && selectedHours && (
-                      <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 text-sm text-sky-800">
-                        ⏱️ Estimated completion time with {selectedCleaners} cleaners: {selectedHours} hours
-                      </div>
-                    )}
+
                   </div>
                 )}
 
