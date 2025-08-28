@@ -63,6 +63,9 @@ export interface Booking {
   base_price: number;
   addons_total: number;
   total_price: number;
+  total_cost?: number; // Final total including VAT and cash fees
+  vat_amount?: number; // VAT amount (5% of base price)
+  cash_fee?: number; // Cash payment fee (5 AED if cash, 0 if other payment methods)
   
   // Status
   status: BookingStatus;

@@ -421,7 +421,7 @@ const HistoryPage: React.FC = () => {
                   {/* Price */}
                   <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm flex-shrink-0">
                     <DirhamIcon size="sm" />
-                    {booking.total_price}
+                    {booking.total_cost || booking.total_price}
                   </div>
                 </div>
               );
@@ -646,11 +646,29 @@ const HistoryPage: React.FC = () => {
                       </span>
                     </div>
                   )}
+                  {selectedBooking.vat_amount && selectedBooking.vat_amount > 0 && (
+                    <div className="flex justify-between items-center py-2 border-b border-white/20">
+                      <span className="text-emerald-100">VAT (5%):</span>
+                      <span className="font-semibold flex items-center gap-1">
+                        <DirhamIcon size="sm" />
+                        {selectedBooking.vat_amount}
+                      </span>
+                    </div>
+                  )}
+                  {selectedBooking.cash_fee && selectedBooking.cash_fee > 0 && (
+                    <div className="flex justify-between items-center py-2 border-b border-white/20">
+                      <span className="text-emerald-100">Cash fee:</span>
+                      <span className="font-semibold flex items-center gap-1">
+                        <DirhamIcon size="sm" />
+                        {selectedBooking.cash_fee}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold flex items-center justify-center gap-2">
                     <DirhamIcon size="lg" />
-                    {selectedBooking.total_price}
+                    {selectedBooking.total_cost || selectedBooking.total_price}
                   </div>
                 </div>
               </div>
