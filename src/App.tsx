@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import AdminRouteGuard from './components/AdminRouteGuard';
 import AuthPage from './pages/auth/AuthPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import HomePage from './pages/HomePage';
@@ -88,9 +89,9 @@ function AppContent() {
             <Route path="/login" element={<Navigate to="/auth" replace />} />
             {/* Protected Routes with Role-Based Access */}
             <Route path="/home" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <HomePage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/admin" element={
               <RoleBasedRoute>
@@ -98,45 +99,45 @@ function AppContent() {
               </RoleBasedRoute>
             } />
             <Route path="/booking" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <BookingPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/history" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <HistoryPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <ProfilePage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             {/* Profile Sub-routes */}
             <Route path="/profile/personal-info" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <PersonalInfoPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile/addresses" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <AddressesPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile/notifications" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <NotificationsPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile/payment-methods" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <PaymentMethodsPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile/privacy-security" element={
-              <RoleBasedRoute>
+              <AdminRouteGuard>
                 <PrivacySecurityPage />
-              </RoleBasedRoute>
+              </AdminRouteGuard>
             } />
             <Route path="/profile/help-support" element={
               <RoleBasedRoute>
