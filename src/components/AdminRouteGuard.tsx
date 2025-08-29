@@ -13,7 +13,15 @@ interface AdminRouteGuardProps {
  * they will be automatically redirected to /admin
  */
 const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, profile } = useAuth();
+
+  // Debug logging
+  console.log('AdminRouteGuard: Component rendered');
+  console.log('AdminRouteGuard: Loading state:', loading);
+  console.log('AdminRouteGuard: User exists:', !!user);
+  console.log('AdminRouteGuard: User ID:', user?.id);
+  console.log('AdminRouteGuard: Profile role:', profile?.role);
+  console.log('AdminRouteGuard: isAdmin value:', isAdmin);
 
   // Show loading screen while authentication is being determined
   if (loading) {
@@ -35,6 +43,9 @@ const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
   // If user is admin, redirect to admin dashboard
   if (isAdmin) {
     console.log('AdminRouteGuard: Admin user detected, redirecting to /admin');
+    console.log('AdminRouteGuard: User ID:', user?.id);
+    console.log('AdminRouteGuard: Profile role:', profile?.role);
+    console.log('AdminRouteGuard: isAdmin value:', isAdmin);
     return <Navigate to="/admin" replace />;
   }
 
