@@ -1804,13 +1804,26 @@ const BookingPage: React.FC = () => {
 
       case 5:
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm">
-            {/* Success Lottie Animation with transparent background */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+            {/* Shining particles background effect */}
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Multiple shining particles */}
+              <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-gradient-to-r from-blue-200 to-transparent rounded-full animate-pulse opacity-60"></div>
+              <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-gradient-to-r from-emerald-200 to-transparent rounded-full animate-pulse opacity-40"></div>
+              <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-gradient-to-r from-purple-200 to-transparent rounded-full animate-pulse opacity-50"></div>
+              <div className="absolute top-2/3 right-1/4 w-2 h-2 bg-gradient-to-r from-blue-200 to-transparent rounded-full animate-pulse opacity-70"></div>
+              <div className="absolute top-3/4 left-1/3 w-1 h-1 bg-gradient-to-r from-emerald-200 to-transparent rounded-full animate-pulse opacity-30"></div>
+              <div className="absolute top-1/6 right-1/2 w-2 h-2 bg-gradient-to-r from-purple-200 to-transparent rounded-full animate-pulse opacity-60"></div>
+              <div className="absolute top-2/3 left-1/6 w-1 h-1 bg-gradient-to-r from-blue-200 to-transparent rounded-full animate-pulse opacity-50"></div>
+              <div className="absolute top-1/4 right-1/6 w-3 h-3 bg-gradient-to-r from-emerald-200 to-transparent rounded-full animate-pulse opacity-40"></div>
+            </div>
+            
+            {/* Success Lottie Animation */}
             <div className="text-center relative z-10">
               <div className="mb-6">
                 <Lottie
                   animationData={bookingSuccessAnimation}
-                  loop={true}
+                  loop={false}
                   autoplay={true}
                   style={{ width: 160, height: 160 }}
                   className="mx-auto"
@@ -1819,7 +1832,7 @@ const BookingPage: React.FC = () => {
               
               {/* Thank you message */}
               <div className="text-center">
-                <p className="text-emerald-600 font-medium text-lg">🌟 Thank you for choosing SparklePro!</p>
+                <p className="text-black font-medium text-lg">Thank you for choosing SparklePro!</p>
               </div>
             </div>
           </div>
