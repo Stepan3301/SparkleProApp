@@ -127,10 +127,10 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // Fetch users stats
+      // Fetch users stats - only use columns that exist in your database
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
-        .select('created_at, role');
+        .select('role, member_since');
 
       if (usersError) {
         console.error('Error fetching users for stats:', usersError);
@@ -172,7 +172,7 @@ const AdminDashboard: React.FC = () => {
         
         const totalUsers = usersData.length;
         const newUsersThisMonth = usersData.filter(u => 
-          u.created_at.startsWith(thisMonth)
+          u.member_since && u.member_since.startsWith(thisMonth)
         ).length;
         const activeClients = usersData.filter(u => u.role === 'customer').length;
 
@@ -506,7 +506,11 @@ const AdminDashboard: React.FC = () => {
                 {/* Bookings List */}
                 <div className="space-y-4">
                   {bookings.map((booking) => (
-                    <div key={booking.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4 border-l-4 border-l-emerald-500">
+                    <div 
+                      key={booking.id} 
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 border-l-4 border-l-emerald-500 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => viewBooking(booking)}
+                    >
                       <div className="flex justify-between items-start mb-3">
                         <div className="font-semibold text-emerald-600 text-sm">#{booking.id}</div>
                         {getStatusBadge(booking.status)}
@@ -533,7 +537,10 @@ const AdminDashboard: React.FC = () => {
                       
                       <div className="flex gap-2 justify-end">
                         <button
-                          onClick={() => viewBooking(booking)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent card click when button is clicked
+                            viewBooking(booking);
+                          }}
                           className="flex items-center gap-1 px-3 py-1 bg-sky-500 text-white rounded-lg text-xs hover:bg-sky-600 transition-colors"
                         >
                           <EyeIcon className="w-3 h-3" />
