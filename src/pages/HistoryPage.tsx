@@ -476,16 +476,16 @@ const HistoryPage: React.FC = () => {
                 </span>
               </div>
               
-              {/* Service title - Positioned higher to avoid overlap with buttons */}
-              <div className="absolute top-16 left-6 right-6 z-10">
+              {/* Service title - Positioned even higher for better visual balance */}
+              <div className="absolute top-12 left-6 right-6 z-10">
                 <h2 className="text-2xl font-bold mb-1 text-center">
                   {getServiceName(selectedBooking.service_id)}
                 </h2>
                 <p className="text-emerald-100 text-sm text-center">Booking #{selectedBooking.id}</p>
               </div>
 
-              {/* Action Buttons - Positioned lower to avoid overlap with service title */}
-              <div className="absolute bottom-4 left-6 right-6 flex justify-between items-center z-20">
+              {/* Action Buttons - Positioned even lower for better separation */}
+              <div className="absolute bottom-2 left-6 right-6 flex justify-between items-center z-20">
                 <Button
                   variant="primary"
                   shape="bubble"
