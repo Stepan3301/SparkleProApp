@@ -12,15 +12,12 @@ import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
 import LoadingScreen from '../components/ui/LoadingScreen';
-import EnableNotificationsCard from '../components/EnableNotificationsCard';
-// Removed unused import: maskCardNumber
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
 import Lottie from 'lottie-react';
 import bookingSuccessAnimation from '../assets/animations/booking-success.json';
 import { 
   Address, 
   Profile
-  // Removed unused: Addon, calculateBookingTotal
 } from '../types/booking';
 import { 
   getRecommendation, 
@@ -1807,66 +1804,22 @@ const BookingPage: React.FC = () => {
 
       case 5:
         return (
-          <div className="text-center py-8 relative overflow-hidden">
-            {/* Background Celebration Effects */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-0 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
-              <div className="absolute top-1/4 right-1/4 w-3 h-3 bg-green-400 rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-              <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-blue-400 rounded-full animate-ping" style={{ animationDelay: '1.5s' }}></div>
-              <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '2s' }}></div>
-            </div>
-
-            {/* Success Lottie Animation */}
-            <div className="mb-6 relative z-10">
-              <Lottie
-                animationData={bookingSuccessAnimation}
-                loop={true}
-                autoplay={true}
-                style={{ width: 160, height: 160 }}
-                className="mx-auto rounded-2xl shadow-2xl border-4 border-white"
-              />
-            </div>
-
-            {/* Success Content */}
-            <div className="relative z-10 space-y-4">
-              <div className="text-6xl mb-4 animate-bounce">🎉</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">
-                <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                  Booking Confirmed!
-                </span>
-              </h2>
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-6 mx-4">
-                <p className="text-lg text-green-800 font-semibold mb-2">
-                  ✅ Your cleaning service has been scheduled successfully!
-                </p>
-                <p className="text-green-700">
-                  We'll call you shortly to confirm the details and timing.
-                </p>
-              </div>
-              
-              <div className="mt-6 space-y-2">
-                <p className="text-emerald-600 font-medium">🌟 Thank you for choosing SparklePro!</p>
-                <p className="text-sm text-gray-500">Redirecting to booking history in 3 seconds...</p>
-              </div>
-
-              {/* Notification Permission Request */}
-              <div className="mt-6">
-                <EnableNotificationsCard 
-                  variant="banner"
-                  onSuccess={() => console.log('Notifications enabled after booking success!')}
-                  onDecline={() => console.log('User declined notifications after booking success')}
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm">
+            {/* Success Lottie Animation with transparent background */}
+            <div className="text-center relative z-10">
+              <div className="mb-6">
+                <Lottie
+                  animationData={bookingSuccessAnimation}
+                  loop={true}
+                  autoplay={true}
+                  style={{ width: 160, height: 160 }}
+                  className="mx-auto"
                 />
               </div>
-
-              {/* Sparkle Animation */}
-              <div className="flex justify-center mt-4 space-x-2">
-                {[...Array(5)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"
-                    style={{ animationDelay: `${i * 0.2}s` }}
-                  ></div>
-                ))}
+              
+              {/* Thank you message */}
+              <div className="text-center">
+                <p className="text-emerald-600 font-medium text-lg">🌟 Thank you for choosing SparklePro!</p>
               </div>
             </div>
           </div>
