@@ -453,8 +453,8 @@ const HistoryPage: React.FC = () => {
             className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header - Fixed height for consistent layout */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative overflow-hidden h-48">
+            {/* Modal Header - Increased height and better element spacing */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative overflow-hidden h-56">
               {/* Decorative background */}
               <div className="absolute inset-0 bg-white opacity-10">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white opacity-20 transform translate-x-16 -translate-y-16"></div>
@@ -469,23 +469,23 @@ const HistoryPage: React.FC = () => {
                 <XMarkIcon className="w-5 h-5" />
               </button>
               
-              {/* Status badge - Top left, no conflicts */}
+              {/* Status badge - Top left, positioned to avoid overlap */}
               <div className="absolute top-4 left-4 z-20">
                 <span className="bg-white/90 backdrop-blur-sm text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
                   {getBookingStatusLabel(selectedBooking.status)}
                 </span>
               </div>
               
-              {/* Service title - Centered in middle section */}
-              <div className="absolute top-1/2 left-6 right-6 transform -translate-y-1/2 z-10">
+              {/* Service title - Positioned below status badge with proper spacing */}
+              <div className="absolute top-20 left-6 right-6 z-10">
                 <h2 className="text-2xl font-bold mb-1 text-center">
                   {getServiceName(selectedBooking.service_id)}
                 </h2>
                 <p className="text-emerald-100 text-sm text-center">Booking #{selectedBooking.id}</p>
               </div>
 
-              {/* Action Buttons - Fixed positioning at bottom */}
-              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-20">
+              {/* Action Buttons - Lowered position with more space */}
+              <div className="absolute bottom-8 left-6 right-6 flex justify-between items-center z-20">
                 <Button
                   variant="primary"
                   shape="bubble"
