@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import AdminDashboard from '../pages/admin/AdminDashboard';
 import LoadingScreen from './ui/LoadingScreen';
 
 interface RoleBasedRouteProps {
@@ -9,7 +8,7 @@ interface RoleBasedRouteProps {
 }
 
 const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({ children }) => {
-  const { user, profile, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -25,12 +24,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({ children }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // If user is admin, show admin dashboard
-  if (isAdmin) {
-    return <AdminDashboard />;
-  }
-
-  // If user is customer, show customer pages
+  // Show the requested page (admin routing is handled in root route)
   return <>{children}</>;
 };
 

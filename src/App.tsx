@@ -5,6 +5,7 @@ import RoleBasedRoute from './components/RoleBasedRoute';
 import AuthPage from './pages/auth/AuthPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import HomePage from './pages/HomePage';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import BookingPage from './pages/BookingPage';
 import HistoryPage from './pages/HistoryPage';
 import ProfilePage from './pages/ProfilePage';
@@ -30,6 +31,33 @@ function ScrollToTop() {
   }, [pathname]);
 
   return null;
+}
+
+// Component to redirect based on user role
+function RootRedirect() {
+  const { user, loading, isAdmin } = useAuth();
+
+  if (loading) {
+    return (
+      <LoadingScreen 
+        isLoading={true}
+        minDuration={0}
+        smartLoading={true}
+        onLoadingComplete={() => {}}
+      />
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect admin users to admin dashboard, regular users to home
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  } else {
+    return <Navigate to="/home" replace />;
+  }
 }
 
 // Wrapper component to handle global loading state
@@ -62,6 +90,11 @@ function AppContent() {
             <Route path="/home" element={
               <RoleBasedRoute>
                 <HomePage />
+              </RoleBasedRoute>
+            } />
+            <Route path="/admin" element={
+              <RoleBasedRoute>
+                <AdminDashboard />
               </RoleBasedRoute>
             } />
             <Route path="/booking" element={
@@ -111,11 +144,7 @@ function AppContent() {
               </RoleBasedRoute>
             } />
             {/* Root route - redirect to home if authenticated */}
-            <Route path="/" element={
-              <RoleBasedRoute>
-                <Navigate to="/home" replace />
-              </RoleBasedRoute>
-            } />
+            <Route path="/" element={<RootRedirect />} />
             {/* Catch-all route - redirect to auth */}
             <Route path="*" element={<Navigate to="/auth" replace />} />
           </Routes>
