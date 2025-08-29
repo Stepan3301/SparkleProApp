@@ -453,8 +453,8 @@ const HistoryPage: React.FC = () => {
             className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative overflow-hidden">
+            {/* Modal Header - Fixed height for consistent layout */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative overflow-hidden h-48">
               {/* Decorative background */}
               <div className="absolute inset-0 bg-white opacity-10">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white opacity-20 transform translate-x-16 -translate-y-16"></div>
@@ -476,16 +476,16 @@ const HistoryPage: React.FC = () => {
                 </span>
               </div>
               
-              {/* Service title */}
-              <div className="relative z-10 mt-8">
+              {/* Service title - Fixed positioning */}
+              <div className="absolute bottom-20 left-6 right-6 z-10">
                 <h2 className="text-2xl font-bold mb-1">
                   {getServiceName(selectedBooking.service_id)}
                 </h2>
                 <p className="text-emerald-100 text-sm">Booking #{selectedBooking.id}</p>
               </div>
 
-              {/* Action Buttons - positioned symmetrically below header */}
-              <div className="flex justify-between items-center mt-6 relative z-10">
+              {/* Action Buttons - Fixed positioning at bottom */}
+              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
                 <Button
                   variant="secondary"
                   shape="bubble"
