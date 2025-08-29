@@ -21,9 +21,30 @@ const AuthCallback: React.FC = () => {
         }
 
         if (data.session) {
-          console.log('Auth callback - Session found, redirecting to home'); // Debug log
-          // User is authenticated, redirect to home
-          navigate('/home');
+          console.log('Auth callback - Session found, checking user role...'); // Debug log
+          
+          // Get user profile to check role
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.session.user.id)
+            .single();
+          
+          if (profileError) {
+            console.error('Error fetching profile:', profileError);
+            // Fallback to home if profile fetch fails
+            navigate('/home');
+            return;
+          }
+          
+          // Redirect based on user role
+          if (profileData?.role === 'admin') {
+            console.log('Auth callback - Admin user, redirecting to admin dashboard');
+            navigate('/admin');
+          } else {
+            console.log('Auth callback - Customer user, redirecting to home');
+            navigate('/home');
+          }
         } else {
           console.log('Auth callback - No session found, redirecting to auth'); // Debug log
           // No session found, redirect to auth

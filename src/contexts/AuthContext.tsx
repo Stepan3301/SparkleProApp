@@ -144,6 +144,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = profile?.role === 'admin';
+  
+  // Debug logging for admin role detection
+  useEffect(() => {
+    if (user && profile) {
+      console.log('AuthContext - User ID:', user.id);
+      console.log('AuthContext - Profile role:', profile.role);
+      console.log('AuthContext - isAdmin:', isAdmin);
+    }
+  }, [user, profile, isAdmin]);
 
   const value = {
     user,
