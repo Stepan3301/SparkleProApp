@@ -35,7 +35,7 @@ interface Booking {
   property_size: string;
   service_date: string;
   service_time: string;
-  total_price: number;
+  total_cost: number;
   status: string;
   created_at: string;
   additional_notes?: string;
@@ -117,38 +117,58 @@ const AdminDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch booking stats
-      const { data: bookingsData } = await supabase
+      // Fetch booking stats with total_cost (includes VAT and fees)
+      const { data: bookingsData, error: bookingsError } = await supabase
         .from('bookings')
-        .select('status, total_price, created_at');
+        .select('status, total_cost, created_at');
+
+      if (bookingsError) {
+        console.error('Error fetching bookings for stats:', bookingsError);
+        return;
+      }
 
       // Fetch users stats
-      const { data: usersData } = await supabase
+      const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('created_at, role');
+
+      if (usersError) {
+        console.error('Error fetching users for stats:', usersError);
+        return;
+      }
 
       if (bookingsData && usersData) {
         const today = new Date().toDateString();
         const thisMonth = new Date().toISOString().slice(0, 7);
 
         const totalBookings = bookingsData.length;
-        const activeBookings = bookingsData.filter(b => ['pending', 'confirmed', 'in_progress'].includes(b.status)).length;
+        
+        // Active orders: pending and confirmed statuses
+        const activeBookings = bookingsData.filter(b => 
+          ['pending', 'confirmed'].includes(b.status)
+        ).length;
+        
         const completedToday = bookingsData.filter(b => 
           b.status === 'completed' && new Date(b.created_at).toDateString() === today
         ).length;
         
-        // Calculate monthly revenue from completed bookings only
-        const monthlyCompletedBookings = bookingsData.filter(b => 
-          b.status === 'completed' && b.created_at.startsWith(thisMonth)
-        );
-        const monthlyRevenue = monthlyCompletedBookings
-          .reduce((sum, b) => sum + (b.total_price || 0), 0); // Total price is already in AED
-        const monthlyCompletedOrders = monthlyCompletedBookings.length;
-        
-        // Total revenue from all completed bookings
+        // Total revenue: sum of total_cost for all orders except cancelled
         const totalRevenue = bookingsData
-          .filter(b => b.status === 'completed')
-          .reduce((sum, b) => sum + (b.total_price || 0), 0); // Total price is already in AED
+          .filter(b => b.status !== 'cancelled')
+          .reduce((sum, b) => sum + (b.total_cost || 0), 0);
+        
+        // Monthly revenue: sum of total_cost for all orders this month except cancelled
+        const monthlyRevenue = bookingsData
+          .filter(b => 
+            b.status !== 'cancelled' && 
+            b.created_at.startsWith(thisMonth)
+          )
+          .reduce((sum, b) => sum + (b.total_cost || 0), 0);
+        
+        // Monthly completed orders count
+        const monthlyCompletedOrders = bookingsData.filter(b => 
+          b.status === 'completed' && b.created_at.startsWith(thisMonth)
+        ).length;
         
         const totalUsers = usersData.length;
         const newUsersThisMonth = usersData.filter(u => 
@@ -163,11 +183,11 @@ const AdminDashboard: React.FC = () => {
           totalRevenue,
           monthlyRevenue,
           monthlyCompletedOrders,
-          avgRating: 4.8, // Mock data
+          avgRating: 0, // Skip for now as requested
           totalUsers,
           newUsersThisMonth,
           activeClients,
-          satisfaction: 92 // Mock data
+          satisfaction: 0 // Skip for now as requested
         });
       }
     } catch (error) {
@@ -187,17 +207,14 @@ const AdminDashboard: React.FC = () => {
           property_size,
           service_date,
           service_time,
-          total_price,
+          total_cost,
           status,
           created_at,
           additional_notes,
           cleaners_count,
           own_materials,
           address_id,
-          custom_address,
-          addons,
-          base_price,
-          addons_total
+          custom_address
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -282,7 +299,7 @@ const AdminDashboard: React.FC = () => {
           property_size,
           service_date,
           service_time,
-          total_price,
+          total_cost,
           status,
           created_at,
           additional_notes,
@@ -358,7 +375,7 @@ const AdminDashboard: React.FC = () => {
             orderDetails: {
               customer_name: selectedBooking?.customer_name,
               service_date: selectedBooking?.service_date,
-              total_price: selectedBooking?.total_price
+              total_cost: selectedBooking?.total_cost
             }
           })
         });
@@ -510,7 +527,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600 font-medium">Amount:</span>
-                          <span className="text-gray-800 font-semibold">{formatCurrency(booking.total_price || 0)}</span>
+                          <span className="text-gray-800 font-semibold">{formatCurrency(booking.total_cost || 0)}</span>
                         </div>
                       </div>
                       
@@ -676,7 +693,7 @@ const AdminDashboard: React.FC = () => {
                           <div className="text-sm text-gray-500">{booking.customer_name || 'N/A'}</div>
                         </div>
                         <div className="text-right text-sm">
-                          <div className="font-semibold text-emerald-600">{formatCurrency(booking.total_price || 0)}</div>
+                          <div className="font-semibold text-emerald-600">{formatCurrency(booking.total_cost || 0)}</div>
                           <div className="text-gray-500">{formatDate(booking.service_date)}</div>
                         </div>
                       </div>
@@ -780,7 +797,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">Total Amount:</span>
-                      <span className="font-semibold text-indigo-600">{formatCurrency(selectedBooking.total_price || 0)}</span>
+                      <span className="font-semibold text-indigo-600">{formatCurrency(selectedBooking.total_cost || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -974,7 +991,7 @@ const AdminDashboard: React.FC = () => {
                             </div>
                                                          <div className="flex justify-between">
                                <span className="text-gray-600">Amount:</span>
-                               <span className="font-semibold text-indigo-600">{formatCurrency(booking.total_price || 0)}</span>
+                               <span className="font-semibold text-indigo-600">{formatCurrency(booking.total_cost || 0)}</span>
                              </div>
                           </div>
                         </div>
