@@ -461,48 +461,46 @@ const HistoryPage: React.FC = () => {
                 <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white opacity-20 transform -translate-x-12 translate-y-12"></div>
               </div>
               
-              {/* Close button */}
+              {/* Close button - Top right */}
               <button
                 onClick={closeModal}
-                className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors z-10"
+                className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors z-20"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
               
-              {/* Status badge */}
-              <div className="absolute top-4 left-4 z-10">
+              {/* Status badge - Top left, no conflicts */}
+              <div className="absolute top-4 left-4 z-20">
                 <span className="bg-white/90 backdrop-blur-sm text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
                   {getBookingStatusLabel(selectedBooking.status)}
                 </span>
               </div>
               
-              {/* Service title - Fixed positioning */}
-              <div className="absolute bottom-20 left-6 right-6 z-10">
-                <h2 className="text-2xl font-bold mb-1">
+              {/* Service title - Centered in middle section */}
+              <div className="absolute top-1/2 left-6 right-6 transform -translate-y-1/2 z-10">
+                <h2 className="text-2xl font-bold mb-1 text-center">
                   {getServiceName(selectedBooking.service_id)}
                 </h2>
-                <p className="text-emerald-100 text-sm">Booking #{selectedBooking.id}</p>
+                <p className="text-emerald-100 text-sm text-center">Booking #{selectedBooking.id}</p>
               </div>
 
               {/* Action Buttons - Fixed positioning at bottom */}
-              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-10">
+              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center z-20">
                 <Button
-                  variant="secondary"
+                  variant="primary"
                   shape="bubble"
                   size="sm"
                   onClick={() => orderAgain(selectedBooking)}
                   leftIcon={<ArrowPathIcon className="w-4 h-4" />}
-                  className="bg-sky-500 hover:bg-sky-600 text-white border-sky-500 hover:border-sky-600"
                 >
                   Order Again
                 </Button>
                 <Button
-                  variant="secondary"
+                  variant="signout"
                   shape="bubble"
                   size="sm"
                   onClick={() => cancelBooking(selectedBooking.id)}
                   leftIcon={<TrashIcon className="w-4 h-4" />}
-                  className="bg-red-500 hover:bg-red-600 text-white border-red-500 hover:border-red-600"
                 >
                   Cancel
                 </Button>
