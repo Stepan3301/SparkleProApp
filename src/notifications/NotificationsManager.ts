@@ -168,7 +168,7 @@ class NotificationsManager {
 
     try {
       // Check if push notifications are supported
-      const isPushSupported = OneSignal.Notifications.isPushSupported();
+      const isPushSupported = Boolean(OneSignal.Notifications.isPushSupported());
       
       // Get current permission status
       const permission = Notification.permission;
@@ -177,11 +177,11 @@ class NotificationsManager {
       await this.waitForOneSignalReady();
       
       // Check subscription status using the correct OneSignal v5 API
-      const isOptedIn = OneSignal.User.PushSubscription.optedIn;
+      const isOptedIn = Boolean(OneSignal.User.PushSubscription.optedIn);
       const playerId = OneSignal.User.onesignalId;
       
       // User is subscribed if they have granted permission, are opted in, and have a player ID
-      const isSubscribed = permission === 'granted' && isOptedIn && !!playerId;
+      const isSubscribed = Boolean(permission === 'granted' && isOptedIn && !!playerId);
 
       console.log('Subscription state check:', { 
         isPushSupported, 
@@ -571,7 +571,7 @@ class NotificationsManager {
       const hasNotification = 'Notification' in window;
       
       // For OneSignal, also check if it's initialized
-      const oneSignalSupported = this.isInitialized && OneSignal.Notifications.isPushSupported();
+      const oneSignalSupported = Boolean(this.isInitialized && OneSignal.Notifications.isPushSupported());
       
       const result = hasServiceWorker && hasPushManager && hasNotification && oneSignalSupported;
       
