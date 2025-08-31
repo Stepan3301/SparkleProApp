@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useSimpleTranslation } from '../../utils/i18n';
 import DirhamIcon from '../../components/ui/DirhamIcon';
 // Removed unused import: Button
 import { 
@@ -47,6 +48,7 @@ interface Booking {
   base_price?: number;
   addons_total?: number;
   street?: string; // For fetched address info
+  service_id?: number; // Service ID for fetching service name
 }
 
 interface User {
@@ -60,6 +62,7 @@ interface User {
 
 const AdminDashboard: React.FC = () => {
   const { signOut, profile } = useAuth();
+  const { t } = useSimpleTranslation();
   const [activeTab, setActiveTab] = useState('orders');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -73,6 +76,7 @@ const AdminDashboard: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
+  const [services, setServices] = useState<any[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -106,7 +110,8 @@ const AdminDashboard: React.FC = () => {
       await Promise.all([
         fetchStats(),
         fetchBookings(),
-        fetchUsers()
+        fetchUsers(),
+        fetchServices()
       ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -214,7 +219,10 @@ const AdminDashboard: React.FC = () => {
           cleaners_count,
           own_materials,
           address_id,
-          custom_address
+          custom_address,
+          service_id,
+          addons,
+          base_price
         `)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -284,6 +292,23 @@ const AdminDashboard: React.FC = () => {
       setFilteredUsers(usersWithEmails);
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('services')
+        .select('id, name');
+
+      if (error) {
+        console.error('Error fetching services:', error);
+        return;
+      }
+
+      setServices(data || []);
+    } catch (error) {
+      console.error('Error fetching services:', error);
     }
   };
 
@@ -768,7 +793,7 @@ const AdminDashboard: React.FC = () => {
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Booking Details</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t('admin.bookingDetails', 'Booking Details')}</h2>
                 <button
                   onClick={closeModal}
                   className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
@@ -780,30 +805,30 @@ const AdminDashboard: React.FC = () => {
               {/* Booking Info */}
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-3">Order Information</h3>
+                  <h3 className="font-semibold text-gray-800 mb-3">{t('admin.orderInformation', 'Order Information')}</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Order ID:</span>
+                      <span className="text-gray-600">{t('admin.orderId', 'Order ID')}:</span>
                       <span className="font-semibold">#{selectedBooking.id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
+                      <span className="text-gray-600">{t('admin.status', 'Status')}:</span>
                       {getStatusBadge(selectedBooking.status)}
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Service Date:</span>
+                      <span className="text-gray-600">{t('admin.serviceDate', 'Service Date')}:</span>
                       <span className="font-semibold">{formatDate(selectedBooking.service_date)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Service Time:</span>
+                      <span className="text-gray-600">{t('admin.serviceTime', 'Service Time')}:</span>
                       <span className="font-semibold">{selectedBooking.service_time}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Property Size:</span>
+                      <span className="text-gray-600">{t('admin.propertySize', 'Property Size')}:</span>
                       <span className="font-semibold">{selectedBooking.property_size}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total Amount:</span>
+                      <span className="text-gray-600">{t('admin.totalAmount', 'Total Amount')}:</span>
                       <span className="font-semibold text-indigo-600">{formatCurrency(selectedBooking.total_cost || 0)}</span>
                     </div>
                   </div>
@@ -827,20 +852,32 @@ const AdminDashboard: React.FC = () => {
                   <h3 className="font-semibold text-gray-800 mb-3">Service Details</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Cleaners:</span>
+                      <span className="text-gray-600">{t('admin.serviceName', 'Service Name')}:</span>
+                      <span className="font-semibold">
+                        {selectedBooking.service_id ? 
+                          (() => {
+                            const service = services.find(s => s.id === selectedBooking.service_id);
+                            return service ? service.name : 'Unknown Service';
+                          })() : 
+                          `${selectedBooking.property_size || 'Unknown'} Property Cleaning`
+                        }
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t('admin.cleaners', 'Cleaners')}:</span>
                       <span className="font-semibold">{selectedBooking.cleaners_count || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Materials:</span>
+                      <span className="text-gray-600">{t('admin.materials', 'Materials')}:</span>
                       <span className="font-semibold">{selectedBooking.own_materials ? 'Customer Provided' : 'Cleaner Provided'}</span>
                     </div>
-                                          <div className="flex justify-between">
-                        <span className="text-gray-600">Base Price:</span>
-                        <span className="font-semibold">{selectedBooking.base_price ? formatCurrency(selectedBooking.base_price) : 'N/A'}</span>
-                      </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">{t('admin.basePrice', 'Base Price')}:</span>
+                      <span className="font-semibold">{selectedBooking.base_price ? formatCurrency(selectedBooking.base_price) : 'N/A'}</span>
+                    </div>
                     {selectedBooking.addons && selectedBooking.addons.length > 0 && (
                       <div>
-                        <span className="text-gray-600">Add-ons:</span>
+                        <span className="text-gray-600">{t('admin.addons', 'Add-ons')}:</span>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {selectedBooking.addons.map((addon: any, index: number) => (
                             <span
