@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useSimpleTranslation } from '../../utils/i18n';
 
 /**
  * PWA Installation Prompt Component
@@ -21,6 +22,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   variant = 'card',
   className = ''
 }) => {
+  const { t } = useSimpleTranslation();
   const [isPWA, setIsPWA] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
@@ -136,28 +138,28 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           {/* Content */}
           <div className="p-6">
             <p className="text-gray-700 mb-4 text-center">
-              Install our app to your homescreen for better experience
+              {t('pwa.installMessage', 'Install our app to your homescreen for better experience')}
             </p>
             
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
                 <span className="text-sm text-gray-700">
-                  Click "Share" <img src="/share-icon.svg" alt="Share" className="inline w-4 h-4" /> in the bottom of your Safari browser
+                  {t('pwa.step1', 'Click "Share"')} <img src="/share-icon.svg" alt="Share" className="inline w-4 h-4" /> {t('pwa.step1Suffix', 'in the bottom of your Safari browser')}
                 </span>
               </div>
               
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
                 <span className="text-sm text-gray-700">
-                  Scroll down and find "Add to Home Screen" button
+                  {t('pwa.step2', 'Scroll down and find "Add to Home Screen" button')}
                 </span>
               </div>
               
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                 <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
                 <span className="text-sm text-gray-700">
-                  Click "Add" button in the top right corner
+                  {t('pwa.step3', 'Click "Add" button in the top right corner')}
                 </span>
               </div>
             </div>
@@ -166,7 +168,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
               onClick={handleVideoClick}
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300"
             >
-              Watch video guide
+              {t('pwa.watchVideoGuide', 'Watch video guide')}
             </button>
           </div>
         </div>
