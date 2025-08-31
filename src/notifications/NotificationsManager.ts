@@ -18,6 +18,7 @@ class NotificationsManager {
   private static instance: NotificationsManager;
   private isInitialized = false;
   private currentUserId: string | null = null;
+  private initializationPromise: Promise<void> | null = null;
 
   private constructor() {}
 
@@ -37,7 +38,19 @@ class NotificationsManager {
       return;
     }
 
+    // Prevent multiple initialization attempts
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this.performInitialization(appId);
+    return this.initializationPromise;
+  }
+
+  private async performInitialization(appId: string): Promise<void> {
     try {
+      console.log('Initializing OneSignal with App ID:', appId);
+      
       await OneSignal.init({
         appId,
         allowLocalhostAsSecureOrigin: true,
@@ -70,9 +83,34 @@ class NotificationsManager {
 
       this.isInitialized = true;
       console.log('OneSignal initialized successfully');
+      
+      // Set up event listeners
+      this.setupEventListeners();
+      
     } catch (error) {
       console.error('Failed to initialize OneSignal:', error);
+      this.initializationPromise = null; // Reset so we can try again
       throw error;
+    }
+  }
+
+  /**
+   * Set up OneSignal event listeners
+   */
+  private setupEventListeners(): void {
+    try {
+      // Listen for subscription changes
+      OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+        console.log('OneSignal subscription changed:', event);
+      });
+
+      // Listen for permission changes
+      OneSignal.Notifications.addEventListener('permissionChange', (granted) => {
+        console.log('OneSignal permission changed:', granted);
+      });
+
+    } catch (error) {
+      console.error('Failed to set up OneSignal event listeners:', error);
     }
   }
 
@@ -85,9 +123,10 @@ class NotificationsManager {
     }
 
     try {
+      console.log('Setting external user ID:', userId);
       await OneSignal.login(userId);
       this.currentUserId = userId;
-      console.log('External user ID set:', userId);
+      console.log('External user ID set successfully:', userId);
     } catch (error) {
       console.error('Failed to set external user ID:', error);
       throw error;
@@ -112,7 +151,7 @@ class NotificationsManager {
   }
 
   /**
-   * Get the current subscription state
+   * Get the current subscription state - FIXED VERSION
    */
   public async getSubscriptionState(): Promise<{
     isSubscribed: boolean;
@@ -131,15 +170,24 @@ class NotificationsManager {
       // Check if push notifications are supported
       const isPushSupported = OneSignal.Notifications.isPushSupported();
       
-      // Check if user is actually subscribed by checking permission and player ID
+      // Get current permission status
       const permission = Notification.permission;
+      
+      // Wait for OneSignal to be fully ready
+      await this.waitForOneSignalReady();
+      
+      // Check subscription status using the correct OneSignal v5 API
+      const isOptedIn = OneSignal.User.PushSubscription.optedIn;
       const playerId = OneSignal.User.onesignalId;
-      const isSubscribed = permission === 'granted' && !!playerId;
+      
+      // User is subscribed if they have granted permission, are opted in, and have a player ID
+      const isSubscribed = permission === 'granted' && isOptedIn && !!playerId;
 
       console.log('Subscription state check:', { 
         isPushSupported, 
         permission, 
-        playerId, 
+        isOptedIn,
+        playerId: playerId ? 'present' : 'null',
         isSubscribed 
       });
 
@@ -159,7 +207,37 @@ class NotificationsManager {
   }
 
   /**
-   * Request notification permission
+   * Wait for OneSignal to be fully ready
+   */
+  private async waitForOneSignalReady(timeout = 5000): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      
+      const checkReady = () => {
+        try {
+          // Check if OneSignal is ready by accessing its properties
+          if (OneSignal.User && OneSignal.User.PushSubscription) {
+            resolve();
+            return;
+          }
+        } catch (error) {
+          // OneSignal not ready yet
+        }
+        
+        if (Date.now() - startTime > timeout) {
+          reject(new Error('OneSignal ready timeout'));
+          return;
+        }
+        
+        setTimeout(checkReady, 100);
+      };
+      
+      checkReady();
+    });
+  }
+
+  /**
+   * Request notification permission - IMPROVED VERSION
    */
   public async requestPermission(): Promise<NotificationPermission> {
     if (!this.isInitialized) {
@@ -167,11 +245,33 @@ class NotificationsManager {
     }
 
     try {
-      await OneSignal.Notifications.requestPermission();
-      // Get the current permission status after requesting
-      const permission = Notification.permission;
-      console.log('Permission requested, result:', permission);
-      return permission;
+      console.log('Requesting notification permission...');
+      
+      // Request permission using OneSignal
+      const permission = await OneSignal.Notifications.requestPermission();
+      
+      console.log('Permission request result:', permission);
+      
+      // If permission was granted, ensure user is opted in
+      if (permission) {
+        try {
+          // Wait a bit for OneSignal to process the permission
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if user is opted in, if not, opt them in
+          if (!OneSignal.User.PushSubscription.optedIn) {
+            console.log('User not opted in, opting in...');
+            await OneSignal.User.PushSubscription.optIn();
+          }
+          
+          console.log('User successfully opted in to notifications');
+        } catch (optInError) {
+          console.error('Failed to opt in user:', optInError);
+        }
+      }
+      
+      // Return the actual browser permission status
+      return Notification.permission;
     } catch (error) {
       console.error('Failed to request permission:', error);
       throw error;
@@ -187,6 +287,7 @@ class NotificationsManager {
     }
 
     try {
+      await this.waitForOneSignalReady();
       const playerId = OneSignal.User.onesignalId;
       return playerId || null;
     } catch (error) {
@@ -196,7 +297,7 @@ class NotificationsManager {
   }
 
   /**
-   * Subscribe to push notifications
+   * Subscribe to push notifications - IMPROVED VERSION
    */
   public async subscribe(): Promise<boolean> {
     if (!this.isInitialized) {
@@ -204,10 +305,34 @@ class NotificationsManager {
     }
 
     try {
-      // Enable notifications by setting the default notification permission
-      await OneSignal.Notifications.requestPermission();
-      console.log('Successfully subscribed to push notifications');
-      return true;
+      console.log('Starting subscription process...');
+      
+      // First request permission
+      const permission = await this.requestPermission();
+      
+      if (permission !== 'granted') {
+        console.log('Permission not granted:', permission);
+        return false;
+      }
+      
+      // Wait for OneSignal to be ready
+      await this.waitForOneSignalReady();
+      
+      // Ensure user is opted in
+      if (!OneSignal.User.PushSubscription.optedIn) {
+        console.log('Opting user in to push notifications...');
+        await OneSignal.User.PushSubscription.optIn();
+      }
+      
+      // Wait a bit more for the subscription to be processed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Verify subscription
+      const subscriptionState = await this.getSubscriptionState();
+      
+      console.log('Subscription process completed:', subscriptionState);
+      
+      return subscriptionState.isSubscribed;
     } catch (error) {
       console.error('Failed to subscribe:', error);
       return false;
@@ -223,9 +348,8 @@ class NotificationsManager {
     }
 
     try {
-      // For OneSignal v2, we can't directly disable notifications
-      // The user would need to do this through browser settings
-      console.log('Unsubscribe requested - user should disable in browser settings');
+      await OneSignal.User.PushSubscription.optOut();
+      console.log('User unsubscribed from push notifications');
       return true;
     } catch (error) {
       console.error('Failed to unsubscribe:', error);
@@ -234,19 +358,24 @@ class NotificationsManager {
   }
 
   /**
-   * Send subscription data to backend
+   * Send subscription data to backend - IMPROVED VERSION
    */
   public async sendSubscriptionToBackend(backendUrl: string): Promise<boolean> {
     if (!this.currentUserId) {
       throw new Error('No user ID set');
     }
 
-    const playerId = await this.getPlayerId();
-    if (!playerId) {
-      throw new Error('No player ID available');
-    }
-
     try {
+      // Wait for subscription to be ready
+      await this.waitForOneSignalReady();
+      
+      const playerId = await this.getPlayerId();
+      if (!playerId) {
+        throw new Error('No player ID available');
+      }
+
+      console.log('Sending subscription to backend:', { userId: this.currentUserId, playerId });
+
       // Check if backend is available
       if (!backendUrl || backendUrl.trim() === '') {
         console.warn('No backend URL configured, using mock subscription');
@@ -269,10 +398,12 @@ class NotificationsManager {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      console.log('Subscription sent to backend successfully');
+      const result = await response.json();
+      console.log('Subscription sent to backend successfully:', result);
       return true;
     } catch (error) {
       console.error('Failed to send subscription to backend:', error);
@@ -308,7 +439,7 @@ class NotificationsManager {
   }
 
   /**
-   * Send test notification
+   * Send test notification - IMPROVED VERSION
    */
   public async sendTestNotification(backendUrl: string): Promise<boolean> {
     if (!this.currentUserId) {
@@ -316,6 +447,8 @@ class NotificationsManager {
     }
 
     try {
+      console.log('Sending test notification...');
+      
       // Check if backend is available
       if (!backendUrl || backendUrl.trim() === '') {
         console.warn('No backend URL configured, using mock test notification');
@@ -333,10 +466,12 @@ class NotificationsManager {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
-      console.log('Test notification sent successfully');
+      const result = await response.json();
+      console.log('Test notification sent successfully:', result);
       return true;
     } catch (error) {
       console.error('Failed to send test notification:', error);
@@ -430,22 +565,31 @@ class NotificationsManager {
    * Check if push notifications are supported
    */
   public isPushSupported(): boolean {
-    const hasServiceWorker = 'serviceWorker' in navigator;
-    const hasPushManager = 'PushManager' in window;
-    const hasNotification = 'Notification' in window;
-    
-    const result = hasServiceWorker && hasPushManager && hasNotification;
-    
-    console.log('Push Support Check:', {
-      hasServiceWorker,
-      hasPushManager,
-      hasNotification,
-      result,
-      isIOSPWA: this.isIOSPWA(),
-      isSafariTab: this.isSafariTab()
-    });
-    
-    return result;
+    try {
+      const hasServiceWorker = 'serviceWorker' in navigator;
+      const hasPushManager = 'PushManager' in window;
+      const hasNotification = 'Notification' in window;
+      
+      // For OneSignal, also check if it's initialized
+      const oneSignalSupported = this.isInitialized && OneSignal.Notifications.isPushSupported();
+      
+      const result = hasServiceWorker && hasPushManager && hasNotification && oneSignalSupported;
+      
+      console.log('Push Support Check:', {
+        hasServiceWorker,
+        hasPushManager,
+        hasNotification,
+        oneSignalSupported,
+        result,
+        isIOSPWA: this.isIOSPWA(),
+        isSafariTab: this.isSafariTab()
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error checking push support:', error);
+      return false;
+    }
   }
 
   /**

@@ -11,6 +11,7 @@ interface NotificationState {
   isIOSPWA: boolean;
   isSafariTab: boolean;
   platform: string;
+  isInitialized: boolean;
 }
 
 interface NotificationActions {
@@ -20,6 +21,7 @@ interface NotificationActions {
   unsubscribe: () => Promise<boolean>;
   sendTestNotification: () => Promise<boolean>;
   resetError: () => void;
+  refreshState: () => Promise<void>;
   shouldShowPrompt: boolean;
 }
 
@@ -34,10 +36,12 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     isIOSPWA: false,
     isSafariTab: false,
     platform: 'unknown',
+    isInitialized: false,
   });
 
   const manager = useRef(NotificationsManager.getInstance());
-  const hasShownPrompt = useRef(false);
+  const hasInitialized = useRef(false);
+  const initializationPromise = useRef<Promise<void> | null>(null);
 
   // Check if user has declined notifications recently
   const hasDeclinedRecently = (): boolean => {
@@ -56,22 +60,11 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     localStorage.setItem('notifications_declined_at', new Date().toISOString());
   };
 
-  // Initialize notifications manager
-  const initialize = useCallback(async (): Promise<void> => {
-    if (!process.env.REACT_APP_ONESIGNAL_APP_ID) {
-      setState(prev => ({
-        ...prev,
-        error: 'OneSignal App ID not configured',
-        isLoading: false,
-      }));
-      return;
-    }
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+  // Refresh the current state
+  const refreshState = useCallback(async (): Promise<void> => {
+    if (!state.isInitialized) return;
 
     try {
-      await manager.current.initialize(process.env.REACT_APP_ONESIGNAL_APP_ID);
-      
       // Get platform info
       const platformInfo = manager.current.getPlatformInfo();
       const isIOSPWA = manager.current.isIOSPWA();
@@ -92,28 +85,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
           isIOSPWA,
           isSafariTab,
           platform: platformInfo.platform,
-          isLoading: false,
         }));
-
-        // If user is logged in, set external user ID and tags
-        if (user?.id) {
-          await manager.current.setExternalUserId(user.id);
-          
-          // Set user tags for segmentation
-          await manager.current.setTags({
-            locale: user.user_metadata?.locale || 'en',
-            platform: platformInfo.platform,
-            app_version: process.env.REACT_APP_VERSION || '1.0.0',
-            user_type: 'customer', // You can make this dynamic based on user role
-          });
-
-          // Send subscription to backend if subscribed
-          if (subscriptionState.isSubscribed) {
-            await manager.current.sendSubscriptionToBackend(
-              process.env.REACT_APP_BACKEND_BASE_URL || ''
-            );
-          }
-        }
       } else {
         setState(prev => ({
           ...prev,
@@ -121,21 +93,130 @@ export const useNotifications = (): NotificationState & NotificationActions => {
           isIOSPWA,
           isSafariTab,
           platform: platformInfo.platform,
-          isLoading: false,
         }));
       }
     } catch (error) {
-      console.error('Failed to initialize notifications:', error);
+      console.error('Failed to refresh notification state:', error);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to initialize notifications',
-        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to refresh state',
       }));
     }
+  }, [state.isInitialized]);
+
+  // Initialize notifications manager
+  const initialize = useCallback(async (): Promise<void> => {
+    if (hasInitialized.current) {
+      return;
+    }
+
+    // Prevent multiple initialization attempts
+    if (initializationPromise.current) {
+      return initializationPromise.current;
+    }
+
+    if (!process.env.REACT_APP_ONESIGNAL_APP_ID) {
+      setState(prev => ({
+        ...prev,
+        error: 'OneSignal App ID not configured',
+        isLoading: false,
+      }));
+      return;
+    }
+
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    initializationPromise.current = (async () => {
+      try {
+        console.log('Initializing OneSignal...');
+        
+        await manager.current.initialize(process.env.REACT_APP_ONESIGNAL_APP_ID!);
+        
+        setState(prev => ({ ...prev, isInitialized: true }));
+        hasInitialized.current = true;
+        
+        // Get platform info
+        const platformInfo = manager.current.getPlatformInfo();
+        const isIOSPWA = manager.current.isIOSPWA();
+        const isSafariTab = manager.current.isSafariTab();
+        
+        // Check if push notifications are supported
+        const isSupported = manager.current.isPushSupported();
+        
+        if (isSupported) {
+          // Get current subscription state
+          const subscriptionState = await manager.current.getSubscriptionState();
+          
+          setState(prev => ({
+            ...prev,
+            isSupported: true,
+            isSubscribed: subscriptionState.isSubscribed,
+            permission: subscriptionState.permission,
+            isIOSPWA,
+            isSafariTab,
+            platform: platformInfo.platform,
+            isLoading: false,
+          }));
+
+          // If user is logged in, set external user ID and tags
+          if (user?.id) {
+            try {
+              await manager.current.setExternalUserId(user.id);
+              
+              // Set user tags for segmentation
+              await manager.current.setTags({
+                locale: user.user_metadata?.locale || 'en',
+                platform: platformInfo.platform,
+                app_version: process.env.REACT_APP_VERSION || '1.0.0',
+                user_type: 'customer', // You can make this dynamic based on user role
+              });
+
+              // Send subscription to backend if subscribed
+              if (subscriptionState.isSubscribed) {
+                await manager.current.sendSubscriptionToBackend(
+                  process.env.REACT_APP_BACKEND_BASE_URL || ''
+                );
+              }
+            } catch (userError) {
+              console.error('Failed to set user data:', userError);
+              // Don't fail the entire initialization for user data errors
+            }
+          }
+        } else {
+          setState(prev => ({
+            ...prev,
+            isSupported: false,
+            isIOSPWA,
+            isSafariTab,
+            platform: platformInfo.platform,
+            isLoading: false,
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to initialize notifications:', error);
+        setState(prev => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Failed to initialize notifications',
+          isLoading: false,
+        }));
+        hasInitialized.current = false;
+        initializationPromise.current = null; // Reset so we can try again
+      }
+    })();
+
+    return initializationPromise.current;
   }, [user]);
 
   // Request notification permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
+    if (!state.isInitialized) {
+      setState(prev => ({
+        ...prev,
+        error: 'Notifications not initialized. Please try again.',
+      }));
+      return false;
+    }
+
     if (!state.isSupported) {
       setState(prev => ({
         ...prev,
@@ -144,7 +225,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
       return false;
     }
 
-    if (state.permission === 'granted') {
+    if (state.permission === 'granted' && state.isSubscribed) {
       return true;
     }
 
@@ -159,27 +240,42 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log('Requesting notification permission...');
+      
       const permission = await manager.current.requestPermission();
       
+      console.log('Permission result:', permission);
+      
+      // Wait a bit for OneSignal to process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh state to get updated subscription status
+      await refreshState();
+      
       if (permission === 'granted') {
-        // Subscribe to notifications
-        const subscribed = await manager.current.subscribe();
+        // Check if we're actually subscribed now
+        const subscriptionState = await manager.current.getSubscriptionState();
         
-        if (subscribed && user?.id) {
+        if (subscriptionState.isSubscribed && user?.id) {
           // Send subscription to backend
-          await manager.current.sendSubscriptionToBackend(
-            process.env.REACT_APP_BACKEND_BASE_URL || ''
-          );
+          try {
+            await manager.current.sendSubscriptionToBackend(
+              process.env.REACT_APP_BACKEND_BASE_URL || ''
+            );
+          } catch (backendError) {
+            console.error('Failed to send subscription to backend:', backendError);
+            // Don't fail the entire process for backend errors
+          }
         }
 
         setState(prev => ({
           ...prev,
           permission: 'granted',
-          isSubscribed: subscribed,
+          isSubscribed: subscriptionState.isSubscribed,
           isLoading: false,
         }));
 
-        return true;
+        return subscriptionState.isSubscribed;
       } else {
         // User declined
         markAsDeclined();
@@ -199,10 +295,18 @@ export const useNotifications = (): NotificationState & NotificationActions => {
       }));
       return false;
     }
-  }, [state.isSupported, state.permission, user]);
+  }, [state.isInitialized, state.isSupported, state.permission, state.isSubscribed, user, refreshState]);
 
   // Subscribe to notifications
   const subscribe = useCallback(async (): Promise<boolean> => {
+    if (!state.isInitialized) {
+      setState(prev => ({
+        ...prev,
+        error: 'Notifications not initialized. Please try again.',
+      }));
+      return false;
+    }
+
     if (!state.isSupported) {
       setState(prev => ({
         ...prev,
@@ -214,14 +318,24 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      console.log('Starting subscription process...');
+      
       const subscribed = await manager.current.subscribe();
       
       if (subscribed && user?.id) {
         // Send subscription to backend
-        await manager.current.sendSubscriptionToBackend(
-          process.env.REACT_APP_BACKEND_BASE_URL || ''
-        );
+        try {
+          await manager.current.sendSubscriptionToBackend(
+            process.env.REACT_APP_BACKEND_BASE_URL || ''
+          );
+        } catch (backendError) {
+          console.error('Failed to send subscription to backend:', backendError);
+          // Don't fail the entire process for backend errors
+        }
       }
+
+      // Refresh state to get updated status
+      await refreshState();
 
       setState(prev => ({
         ...prev,
@@ -239,11 +353,11 @@ export const useNotifications = (): NotificationState & NotificationActions => {
       }));
       return false;
     }
-  }, [state.isSupported, user]);
+  }, [state.isInitialized, state.isSupported, user, refreshState]);
 
   // Unsubscribe from notifications
   const unsubscribe = useCallback(async (): Promise<boolean> => {
-    if (!state.isSupported) {
+    if (!state.isInitialized || !state.isSupported) {
       return false;
     }
 
@@ -251,6 +365,9 @@ export const useNotifications = (): NotificationState & NotificationActions => {
 
     try {
       const unsubscribed = await manager.current.unsubscribe();
+      
+      // Refresh state
+      await refreshState();
       
       setState(prev => ({
         ...prev,
@@ -268,7 +385,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
       }));
       return false;
     }
-  }, [state.isSupported]);
+  }, [state.isInitialized, state.isSupported, refreshState]);
 
   // Send test notification
   const sendTestNotification = useCallback(async (): Promise<boolean> => {
@@ -313,14 +430,27 @@ export const useNotifications = (): NotificationState & NotificationActions => {
 
   // Initialize on mount if user is available
   useEffect(() => {
-    if (user?.id && !hasShownPrompt.current) {
+    if (user?.id && !hasInitialized.current) {
       initialize();
-      hasShownPrompt.current = true;
     }
   }, [user, initialize]);
 
+  // Periodically refresh state to catch external changes
+  useEffect(() => {
+    if (!state.isInitialized) return;
+
+    const interval = setInterval(() => {
+      refreshState();
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [state.isInitialized, refreshState]);
+
   // Check if we should show notification prompt
   const shouldShowPrompt = (): boolean => {
+    // Don't show if not initialized
+    if (!state.isInitialized) return false;
+    
     // Don't show if already subscribed
     if (state.isSubscribed) return false;
     
@@ -351,6 +481,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     unsubscribe,
     sendTestNotification,
     resetError,
+    refreshState,
     shouldShowPrompt: shouldShowPrompt(),
   };
 }; 
