@@ -239,7 +239,7 @@ class NotificationsManager {
   /**
    * Request notification permission - IMPROVED VERSION
    */
-  public async requestPermission(): Promise<NotificationPermission> {
+  public async requestPermission(): Promise<boolean> {
     if (!this.isInitialized) {
       throw new Error('OneSignal not initialized');
     }
@@ -248,30 +248,23 @@ class NotificationsManager {
       console.log('Requesting notification permission...');
       
       // Request permission using OneSignal
-      const permission = await OneSignal.Notifications.requestPermission();
+      await OneSignal.Notifications.requestPermission();
       
-      console.log('Permission request result:', permission);
+      console.log('Permission requested via OneSignal');
       
-      // If permission was granted, ensure user is opted in
-      if (permission) {
-        try {
-          // Wait a bit for OneSignal to process the permission
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Check if user is opted in, if not, opt them in
-          if (!OneSignal.User.PushSubscription.optedIn) {
-            console.log('User not opted in, opting in...');
-            await OneSignal.User.PushSubscription.optIn();
-          }
-          
-          console.log('User successfully opted in to notifications');
-        } catch (optInError) {
-          console.error('Failed to opt in user:', optInError);
-        }
+      // Wait a bit for OneSignal to process the permission
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Check if user is opted in, if not, opt them in
+      if (!OneSignal.User.PushSubscription.optedIn) {
+        console.log('User not opted in, opting in...');
+        await OneSignal.User.PushSubscription.optIn();
       }
       
-      // Return the actual browser permission status
-      return Notification.permission;
+      console.log('User successfully opted in to notifications');
+      
+      // Return true if permission was granted, false otherwise
+      return Notification.permission === 'granted';
     } catch (error) {
       console.error('Failed to request permission:', error);
       throw error;
@@ -308,10 +301,10 @@ class NotificationsManager {
       console.log('Starting subscription process...');
       
       // First request permission
-      const permission = await this.requestPermission();
+      const permissionGranted = await this.requestPermission();
       
-      if (permission !== 'granted') {
-        console.log('Permission not granted:', permission);
+      if (!permissionGranted) {
+        console.log('Permission not granted');
         return false;
       }
       

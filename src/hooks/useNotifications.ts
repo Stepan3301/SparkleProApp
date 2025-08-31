@@ -242,9 +242,9 @@ export const useNotifications = (): NotificationState & NotificationActions => {
     try {
       console.log('Requesting notification permission...');
       
-      const permission = await manager.current.requestPermission();
+      const permissionGranted = await manager.current.requestPermission();
       
-      console.log('Permission result:', permission);
+      console.log('Permission result:', permissionGranted);
       
       // Wait a bit for OneSignal to process
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -252,7 +252,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
       // Refresh state to get updated subscription status
       await refreshState();
       
-      if (permission === 'granted') {
+      if (permissionGranted) {
         // Check if we're actually subscribed now
         const subscriptionState = await manager.current.getSubscriptionState();
         
@@ -281,7 +281,7 @@ export const useNotifications = (): NotificationState & NotificationActions => {
         markAsDeclined();
         setState(prev => ({
           ...prev,
-          permission,
+          permission: 'denied',
           isLoading: false,
         }));
         return false;
