@@ -642,7 +642,7 @@ const BookingPage: React.FC = () => {
         service_time: serviceTime,
         duration_hours: parseInt(hoursValue.toString()),
         // Service details (matching schema field names)
-        property_size: selectedService.price_per_hour ? (selectedPropertySize || null) : null,
+        property_size: selectedPropertySize || null,
         size_price: selectedService.price_per_hour && selectedPropertySize ? 
           Math.round(PROPERTY_SIZE_MAP[selectedPropertySize as keyof typeof PROPERTY_SIZE_MAP]?.multiplier || 1) : null,
         cleaners_count: parseInt(cleanersValue.toString()),

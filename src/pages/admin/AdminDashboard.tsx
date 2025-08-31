@@ -107,11 +107,12 @@ const AdminDashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
+      // Fetch services first, then other data
+      await fetchServices();
       await Promise.all([
         fetchStats(),
         fetchBookings(),
-        fetchUsers(),
-        fetchServices()
+        fetchUsers()
       ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -329,7 +330,8 @@ const AdminDashboard: React.FC = () => {
           created_at,
           additional_notes,
           address_id,
-          custom_address
+          custom_address,
+          service_id
         `)
         .eq('customer_id', userId)
         .order('created_at', { ascending: false });
@@ -530,6 +532,11 @@ const AdminDashboard: React.FC = () => {
 
                 {/* Bookings List */}
                 <div className="space-y-4">
+                  {services.length === 0 && (
+                    <div className="text-center text-gray-500 py-4">
+                      Loading services...
+                    </div>
+                  )}
                   {bookings.map((booking) => (
                     <div 
                       key={booking.id} 
@@ -548,7 +555,16 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600 font-medium">Service:</span>
-                          <span className="text-gray-800 font-semibold">{booking.property_size} Property</span>
+                          <span className="text-gray-800 font-semibold">
+                            {(() => {
+                              if (booking.service_id) {
+                                const service = services.find(s => s.id === booking.service_id);
+                                return service ? service.name : `${booking.property_size || 'Unknown'} Property`;
+                              } else {
+                                return `${booking.property_size || 'Unknown'} Property`;
+                              }
+                            })()}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600 font-medium">Date:</span>
@@ -1027,7 +1043,15 @@ const AdminDashboard: React.FC = () => {
                           <div className="space-y-1 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-600">Service:</span>
-                              <span className="font-semibold">{booking.property_size} Property</span>
+                              <span className="font-semibold">
+                                {booking.service_id ? 
+                                  (() => {
+                                    const service = services.find(s => s.id === booking.service_id);
+                                    return service ? service.name : `${booking.property_size || 'Unknown'} Property`;
+                                  })() : 
+                                  `${booking.property_size || 'Unknown'} Property`
+                                }
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-600">Date:</span>

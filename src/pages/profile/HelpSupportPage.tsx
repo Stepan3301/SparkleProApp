@@ -218,7 +218,7 @@ const HelpSupportPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900">Phone Support</h4>
-                <p className="text-sm text-gray-600">+971 4 XXX XXXX</p>
+                <p className="text-sm text-gray-600">+971 52 474 9929</p>
                 <p className="text-xs text-gray-500">Available 9 AM - 6 PM, Sunday to Thursday</p>
               </div>
             </div>
@@ -229,7 +229,7 @@ const HelpSupportPage: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900">Email Support</h4>
-                <p className="text-sm text-gray-600">support@sparklepro.ae</p>
+                <p className="text-sm text-gray-600">sparklencs@gmail.com</p>
                 <p className="text-xs text-gray-500">We'll respond within 24 hours</p>
               </div>
             </div>
