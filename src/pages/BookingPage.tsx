@@ -226,6 +226,11 @@ const BookingPage: React.FC = () => {
           setSelectedAddons(data.selectedAddons);
         }
         
+        // Set the main category and service for order again
+        if (data.mainCategory) {
+          setSelectedMainCategory(data.mainCategory);
+        }
+        
         // Navigate to step 3 (scheduling) if specified
         if (data.step === 3) {
           setCurrentStep(3);
@@ -233,8 +238,14 @@ const BookingPage: React.FC = () => {
           scrollToTop();
         }
         
-        // Clear the localStorage data
-        localStorage.removeItem('orderAgainData');
+        // Store the order again data temporarily for service selection
+        // Don't clear localStorage yet - it will be cleared after service selection
+        if (data.serviceId) {
+          // Keep the data for the service selection useEffect
+        } else {
+          // Clear the localStorage data if no service ID
+          localStorage.removeItem('orderAgainData');
+        }
       } catch (error) {
         console.error('Error parsing order again data:', error);
         localStorage.removeItem('orderAgainData');
@@ -276,7 +287,28 @@ const BookingPage: React.FC = () => {
   // Handle service selection when both category and services are available
   useEffect(() => {
     if (selectedMainCategory && services.length > 0 && !selectedService) {
-      // For regular and deep cleaning, automatically select the base service (without materials)
+      // Check if we have order again data with a specific service ID first
+      const orderAgainData = localStorage.getItem('orderAgainData');
+      if (orderAgainData) {
+        try {
+          const data = JSON.parse(orderAgainData);
+          if (data.serviceId) {
+            // If we have a specific service ID from order again, use that instead
+            const targetService = services.find(s => s.id === data.serviceId);
+            if (targetService) {
+              setSelectedService(targetService);
+              // Clear the localStorage data after successful service selection
+              localStorage.removeItem('orderAgainData');
+              return; // Exit early, don't auto-select generic service
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing order again data:', error);
+          localStorage.removeItem('orderAgainData');
+        }
+      }
+      
+      // If no specific service from order again, auto-select based on category
       let targetService = null;
       if (selectedMainCategory === 'regular') {
         targetService = services.find(s => s.id === 6); // Regular Cleaning (without materials)
@@ -295,6 +327,8 @@ const BookingPage: React.FC = () => {
       }
     }
   }, [selectedMainCategory, services, selectedService, t]);
+
+
 
   // Set minimum date to tomorrow
   useEffect(() => {
@@ -1960,7 +1994,9 @@ const BookingPage: React.FC = () => {
                     (selectedMainCategory === 'specialized' && selectedService?.price_per_hour)) && 
                    (!selectedPropertySize || !selectedCleaners || !selectedHours))
                 )) ||
-                (currentStep === 3 && (!serviceDate || !serviceTime))
+                (currentStep === 3 && (!serviceDate || !serviceTime)) ||
+                // Allow navigation from step 3 to step 4 if we have order again data with service
+                (currentStep === 3 && !selectedService && !localStorage.getItem('orderAgainData'))
               }
               className="!w-auto !px-6"
             >
@@ -1979,7 +2015,9 @@ const BookingPage: React.FC = () => {
         // For specialized services with hourly pricing, need full configuration
         (selectedMainCategory === 'specialized' && selectedService.price_per_hour && selectedPropertySize && selectedCleaners && selectedHours) ||
         // For specialized services with fixed pricing, only need property size
-        (selectedMainCategory === 'specialized' && !selectedService.price_per_hour && selectedPropertySize)
+        (selectedMainCategory === 'specialized' && !selectedService.price_per_hour && selectedPropertySize) ||
+        // For order again data, show cart if we have the service and basic data
+        (localStorage.getItem('orderAgainData') && selectedService)
       ) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
           <div className="max-w-2xl mx-auto p-4">
@@ -2004,6 +2042,11 @@ const BookingPage: React.FC = () => {
                       {selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1)} • {selectedCleaners} cleaner{selectedCleaners > 1 ? 's' : ''} • {selectedHours}h • {ownMaterials ? 'Own materials' : 'Materials provided'}
                       {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
                     </>
+                  ) : localStorage.getItem('orderAgainData') ? (
+                    <>
+                      {selectedService.name} • Order Again
+                      {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
+                    </>
                   ) : (
                     <>
                       {selectedService.name} • Fixed Price Service
@@ -2024,6 +2067,8 @@ const BookingPage: React.FC = () => {
                 `Package Service • Our team handles all details`
               ) : selectedService.price_per_hour && selectedCleaners && selectedHours ? (
                 `${selectedCleaners} professional cleaner${selectedCleaners > 1 ? 's' : ''} • ${selectedHours} hours`
+              ) : localStorage.getItem('orderAgainData') ? (
+                `${selectedService.name} • Reordering previous service`
               ) : (
                 `${selectedService.name} • Professional Service`
               )}

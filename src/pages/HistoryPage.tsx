@@ -186,6 +186,19 @@ const HistoryPage: React.FC = () => {
     return service ? service.name : getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
   };
 
+  // Helper function to map service_id to main category
+  const getServiceMainCategory = (serviceId: number | undefined | null): string | null => {
+    if (!serviceId) return null;
+    
+    // Map service IDs to main categories based on the BookingPage categories
+    if ([6, 7].includes(serviceId)) return 'regular'; // Regular Cleaning (without/with materials)
+    if ([8, 9].includes(serviceId)) return 'deep'; // Deep Cleaning (without/with materials)
+    if ([10, 11, 12, 13, 14, 15, 16].includes(serviceId)) return 'packages'; // Complete Packages
+    if ([17, 18, 19].includes(serviceId)) return 'specialized'; // Specialized Services
+    
+    return null;
+  };
+
   const getAddressName = (addressId: number | undefined | null, customAddress: string | undefined | null) => {
     if (customAddress) return customAddress;
     if (!addressId) return 'Saved address';
@@ -246,8 +259,13 @@ const HistoryPage: React.FC = () => {
   };
 
   const orderAgain = (booking: Booking) => {
+    // Get the main category for the service
+    const mainCategory = getServiceMainCategory(booking.service_id);
+    
     // Navigate to booking page with pre-filled data
     const bookingData = {
+      serviceId: booking.service_id, // Include the service ID
+      mainCategory: mainCategory, // Include the main category
       propertySize: booking.property_size,
       sizePrice: booking.size_price,
       cleanersCount: booking.cleaners_count,
