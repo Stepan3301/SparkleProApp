@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+/**
+ * PWA Installation Prompt Component
+ * 
+ * This component shows a PWA installation guide specifically for iPhone users (iOS phones).
+ * It will NOT show for:
+ * - iPad users
+ * - Android users
+ * - Desktop users (Windows, macOS, Linux)
+ * - Users who already have the PWA installed
+ * 
+ * The prompt includes step-by-step instructions for adding the app to the iOS home screen.
+ */
 interface PWAInstallPromptProps {
   variant?: 'card' | 'banner';
   className?: string;
@@ -32,17 +44,29 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         // Check if running in a browser tab
         const isInBrowser = !isStandalone && !isFullscreen && !isInApp;
         
+        // Check if user is on iPhone specifically (not iPad or other iOS devices)
+        const isIPhone = /iPhone/.test(navigator.userAgent) && !/iPad/.test(navigator.userAgent);
+        
         setIsPWA(!isInBrowser);
         
-        // Show prompt after a short delay for browser users
-        if (isInBrowser) {
+        // Show prompt only for iPhone browser users after a short delay
+        if (isInBrowser && isIPhone) {
+          console.log('PWA Install Prompt: iPhone user detected, showing installation guide');
           setTimeout(() => setShowPrompt(true), 2000);
+        } else if (isInBrowser && !isIPhone) {
+          console.log('PWA Install Prompt: Non-iPhone user detected, hiding installation guide');
         }
       } catch (error) {
         console.warn('PWA detection failed:', error);
         // Fallback: assume browser mode if detection fails
+        const isIPhone = /iPhone/.test(navigator.userAgent) && !/iPad/.test(navigator.userAgent);
         setIsPWA(false);
-        setTimeout(() => setShowPrompt(true), 2000);
+        if (isIPhone) {
+          console.log('PWA Install Prompt: iPhone user detected (fallback), showing installation guide');
+          setTimeout(() => setShowPrompt(true), 2000);
+        } else {
+          console.log('PWA Install Prompt: Non-iPhone user detected (fallback), hiding installation guide');
+        }
       }
     };
 

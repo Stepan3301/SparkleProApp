@@ -3,18 +3,22 @@
 ## 📱 Feature Overview
 
 The app now includes a **PWA Installation Prompt** that automatically detects whether users are accessing the app from:
-- 🌐 **Browser** (Safari, Chrome, etc.) - Shows installation guide
+- 📱 **iPhone Browser** (Safari on iOS) - Shows installation guide
+- 🚫 **Other Devices** (iPad, Android, Desktop) - No prompt shown
 - 📱 **Installed PWA** - No prompt shown (already installed)
 
 ## 🎯 What Gets Shown
 
-### For Browser Users:
+### For iPhone Browser Users:
 1. **Installation Banner** with step-by-step guide
 2. **Step-by-step instructions**:
    - Click "Share" button in Safari browser
    - Find "Add to Home Screen" option
    - Click "Add" button
 3. **Video Guide Link** - Opens installation tutorial video
+
+### For Other Users (iPad, Android, Desktop):
+- **Nothing** - Component automatically hides itself
 
 ### For PWA Users:
 - **Nothing** - Component automatically hides itself
@@ -65,21 +69,27 @@ const isFullscreen = window.navigator.standalone === true;
 
 // Check if running in browser tab
 const isInBrowser = !isStandalone && !isFullscreen;
+
+// Check if user is on iPhone specifically (not iPad or other iOS devices)
+const isIPhone = /iPhone/.test(navigator.userAgent) && !/iPad/.test(navigator.userAgent);
 ```
 
 ### Display Logic:
-- **Browser Users**: See installation guide
+- **iPhone Browser Users**: See installation guide
+- **Other Device Users** (iPad, Android, Desktop): Component returns `null` (hidden)
 - **PWA Users**: Component returns `null` (hidden)
 - **Automatic Updates**: Listens for display mode changes
 
 ## 📱 User Experience
 
 ### Installation Flow:
-1. **User sees banner** when accessing from browser
+1. **iPhone user sees banner** when accessing from Safari browser
 2. **Reads step-by-step** instructions
 3. **Clicks "Watch video guide"** for visual help
 4. **Follows video tutorial** to install PWA
 5. **After installation**: Banner automatically disappears
+
+**Note**: This flow only applies to iPhone users. iPad, Android, and Desktop users will not see the installation prompt.
 
 ### Visual Design:
 - **Blue gradient banner** with white text
@@ -103,19 +113,31 @@ const isInBrowser = !isStandalone && !isFullscreen;
 
 ## ✅ Benefits
 
-- **Increased PWA installations** from browser users
-- **Better user experience** with clear instructions
+- **Targeted PWA installations** from iPhone users only
+- **Better user experience** with clear iOS-specific instructions
 - **Automatic detection** - no manual user input needed
 - **Professional appearance** with branded installation guide
 - **Video support** for visual learners
+- **Reduced noise** - no unnecessary prompts for non-iPhone users
+
+## 🎯 Why iPhone Only?
+
+The installation guide is specifically designed for iOS devices and shows Safari-specific instructions. Showing this prompt to Android, iPad, or Desktop users would be confusing and unhelpful since:
+- **Android users** have different installation methods
+- **iPad users** have different Safari interface
+- **Desktop users** cannot install mobile PWAs
+- **iOS instructions** are not applicable to other platforms
 
 ## 🔍 Testing
 
 ### Test Scenarios:
-1. **Browser Access**: Should show installation banner
-2. **PWA Access**: Should hide banner completely
-3. **Video Modal**: Should open and play correctly
-4. **Responsive Design**: Should work on all screen sizes
-5. **Cross-browser**: Should detect PWA status correctly
+1. **iPhone Browser Access**: Should show installation banner
+2. **iPad Browser Access**: Should hide banner completely
+3. **Android Browser Access**: Should hide banner completely
+4. **Desktop Browser Access**: Should hide banner completely
+5. **PWA Access**: Should hide banner completely
+6. **Video Modal**: Should open and play correctly
+7. **Responsive Design**: Should work on all screen sizes
+8. **Cross-browser**: Should detect PWA status correctly
 
 The feature is now fully integrated and will automatically help users install your PWA! 🎉 
