@@ -25,6 +25,9 @@ const HistoryPage: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [services, setServices] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
+  
+  // Tooltip state for detail boxes
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
   // Add custom styles for smooth animations
   React.useEffect(() => {
@@ -201,7 +204,20 @@ const HistoryPage: React.FC = () => {
   const getServiceName = (serviceId: number | undefined | null) => {
     if (!serviceId) return getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
     const service = services.find(s => s.id === serviceId);
-    return service ? service.name : getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
+    
+    if (service) {
+      let serviceName = service.name;
+      
+      // Remove redundant materials info for regular/deep cleaning services
+      if (serviceName.includes('(with materials)') || serviceName.includes('(without materials)')) {
+        serviceName = serviceName.replace(/\s*\(with materials\)/gi, '');
+        serviceName = serviceName.replace(/\s*\(without materials\)/gi, '');
+      }
+      
+      return serviceName;
+    }
+    
+    return getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
   };
 
   // Helper function to map service_id to main category
@@ -262,6 +278,7 @@ const HistoryPage: React.FC = () => {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedBooking(null);
+    setActiveTooltip(null); // Close any open tooltips
   };
 
   const cancelBooking = async (bookingId: number) => {
@@ -524,11 +541,11 @@ const HistoryPage: React.FC = () => {
           onClick={closeModal}
         >
           <div
-            className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header - Increased height and better element spacing */}
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 relative overflow-hidden h-56">
+            {/* Fixed Modal Header - Independent positioning */}
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white relative overflow-hidden flex-shrink-0" style={{ height: '200px' }}>
               {/* Decorative background */}
               <div className="absolute inset-0 bg-white opacity-10">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white opacity-20 transform translate-x-16 -translate-y-16"></div>
@@ -543,23 +560,23 @@ const HistoryPage: React.FC = () => {
                 <XMarkIcon className="w-5 h-5" />
               </button>
               
-              {/* Status badge - Top left, positioned to avoid overlap */}
+              {/* Status badge - Top left */}
               <div className="absolute top-4 left-4 z-20">
                 <span className="bg-white/90 backdrop-blur-sm text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">
                   {getBookingStatusLabel(selectedBooking.status)}
                 </span>
               </div>
               
-              {/* Service title - Positioned even higher for better visual balance */}
-              <div className="absolute top-12 left-6 right-6 z-10">
-                <h2 className="text-2xl font-bold mb-1 text-center">
+              {/* Service title - Centered */}
+              <div className="absolute inset-x-0 top-16 z-10 px-6">
+                <h2 className="text-2xl font-bold mb-1 text-center leading-tight">
                   {getServiceName(selectedBooking.service_id)}
                 </h2>
                 <p className="text-emerald-100 text-sm text-center">Booking #{selectedBooking.id}</p>
               </div>
 
-              {/* Action Buttons - Positioned even lower for better separation */}
-              <div className="absolute bottom-2 left-6 right-6 flex justify-between items-center z-20">
+              {/* Action Buttons - Bottom of header */}
+              <div className="absolute bottom-4 left-6 right-6 flex justify-between items-center z-20">
                 <Button
                   variant="primary"
                   shape="bubble"
@@ -582,57 +599,114 @@ const HistoryPage: React.FC = () => {
             </div>
 
             {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <CalendarIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</div>
-                      <div className="text-sm font-semibold text-gray-900 truncate">{formatDate(selectedBooking.service_date)}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <ClockIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</div>
-                      <div className="text-sm font-semibold text-gray-900 truncate">{formatTime(selectedBooking.service_time)}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <UserIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cleaners</div>
-                      <div className="text-sm font-semibold text-gray-900 truncate">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MapPinIcon className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</div>
-                      <div className="text-sm font-semibold text-gray-900 truncate">
-                        {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
+            <div 
+              className="flex-1 overflow-y-auto p-6"
+              onClick={(e) => {
+                // Close tooltips when clicking in content area but not on detail boxes
+                if (e.target === e.currentTarget) {
+                  setActiveTooltip(null);
+                }
+              }}
+            >
+              {/* Info Grid with Tooltips */}
+              <div className="grid grid-cols-2 gap-4 mb-6 relative">
+                {/* Date */}
+                <div className="relative">
+                  <div 
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setActiveTooltip(activeTooltip === 'date' ? null : 'date')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <CalendarIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</div>
+                        <div className="text-sm font-semibold text-gray-900 truncate">{formatDate(selectedBooking.service_date)}</div>
                       </div>
                     </div>
                   </div>
+                  {activeTooltip === 'date' && (
+                    <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                      {new Date(selectedBooking.service_date).toLocaleDateString('en-AE', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Time */}
+                <div className="relative">
+                  <div 
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setActiveTooltip(activeTooltip === 'time' ? null : 'time')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <ClockIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</div>
+                        <div className="text-sm font-semibold text-gray-900 truncate">{formatTime(selectedBooking.service_time)}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {activeTooltip === 'time' && (
+                    <div className="absolute top-0 left-0 right-0 bg-purple-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                      Service time: {formatTime(selectedBooking.service_time)}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cleaners */}
+                <div className="relative">
+                  <div 
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setActiveTooltip(activeTooltip === 'cleaners' ? null : 'cleaners')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <UserIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cleaners</div>
+                        <div className="text-sm font-semibold text-gray-900 truncate">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {activeTooltip === 'cleaners' && (
+                    <div className="absolute top-0 left-0 right-0 bg-orange-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                      {selectedBooking.cleaners_count} professional cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''} assigned
+                    </div>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div className="relative">
+                  <div 
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => setActiveTooltip(activeTooltip === 'address' ? null : 'address')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <MapPinIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</div>
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {activeTooltip === 'address' && (
+                    <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                      {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -664,25 +738,48 @@ const HistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Add-ons Section */}
-              {selectedBooking.addons && selectedBooking.addons.length > 0 && (
+              {/* Extra Services Section */}
+              {((selectedBooking.addons && selectedBooking.addons.length > 0) || selectedBooking.window_panels_count) && (
                 <div className="bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100">
-                  <h3 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Add-ons
+                    Extra Services
                   </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedBooking.addons.map((addon, index) => (
-                      <span
-                        key={index}
-                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium border border-blue-200"
-                      >
-                        {addon.name}
-                      </span>
-                    ))}
-                  </div>
+                  
+                  {/* Window Panels Info */}
+                  {selectedBooking.window_panels_count && (
+                    <div className="mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">🪟</span>
+                        <span className="font-semibold text-blue-900">Window Cleaning</span>
+                      </div>
+                      <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 inline-block">
+                        {selectedBooking.window_panels_count} window panel{selectedBooking.window_panels_count > 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Add-ons */}
+                  {selectedBooking.addons && selectedBooking.addons.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xl">➕</span>
+                        <span className="font-semibold text-blue-900">Additional Services</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedBooking.addons.map((addon, index) => (
+                          <span
+                            key={index}
+                            className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200"
+                          >
+                            {addon.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -40,6 +40,7 @@ export interface Booking {
   size_price: number;
   cleaners_count: number;
   own_materials: boolean;
+  window_panels_count?: number; // For window cleaning services
   
   // Schedule
   service_date: string; // ISO date string
