@@ -171,6 +171,19 @@ const BookingPage: React.FC = () => {
   const [serviceDate, setServiceDate] = useState('');
   const [serviceTime, setServiceTime] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
+  
+  // Window cleaning specific state
+  const [windowPanelsCount, setWindowPanelsCount] = useState<number | null>(null);
+  
+  // Helper function to check if service is window cleaning
+  const isWindowCleaningService = (serviceId: number | undefined): boolean => {
+    return serviceId ? [17, 18, 19].includes(serviceId) : false;
+  };
+  
+  // Helper function to check if service requires panels count (not full villa package)
+  const requiresPanelsCount = (serviceId: number | undefined): boolean => {
+    return serviceId ? [17, 18].includes(serviceId) : false; // Only internal (17) and external (18)
+  };
   const [showAddCardForm, setShowAddCardForm] = useState(false);
   const [newAddressValue, setNewAddressValue] = useState('');
   const [newAddressStreet, setNewAddressStreet] = useState('');
@@ -505,8 +518,15 @@ const BookingPage: React.FC = () => {
         alert('Please select a service');
         return;
       }
-      // Only validate size/cleaners for hourly services
-      if (selectedService.price_per_hour && (!selectedPropertySize || !selectedCleaners)) {
+      // Validate based on service type
+      if (isWindowCleaningService(selectedService.id)) {
+        // For window services: validate panels count (for 17,18) and materials
+        if (requiresPanelsCount(selectedService.id) && !windowPanelsCount) {
+          alert('Please select the number of window panels');
+          return;
+        }
+      } else if (selectedService.price_per_hour && (!selectedPropertySize || !selectedCleaners)) {
+        // For hourly services: validate size/cleaners
         alert('Please select property size and number of cleaners for hourly services');
         return;
       }
@@ -533,10 +553,30 @@ const BookingPage: React.FC = () => {
     scrollToTop();
   };
 
-  // Calculations - Updated for new service structure
+  // Calculations - Updated for new service structure including window services
   const calculatePricing = () => {
     if (!selectedService) {
       return { basePrice: 0, addonsTotal: 0, total: 0 };
+    }
+
+    // For window cleaning services
+    if (isWindowCleaningService(selectedService.id)) {
+      const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
+      let basePrice = 0;
+      
+      if (selectedService.id === 19) {
+        // Full villa package - fixed price
+        basePrice = parseFloat(selectedService.base_price.toString());
+      } else if (requiresPanelsCount(selectedService.id) && windowPanelsCount) {
+        // Internal/external cleaning - per panel pricing
+        basePrice = windowPanelsCount * parseFloat(selectedService.base_price.toString());
+      }
+      
+      return {
+        basePrice: Math.round(basePrice),
+        addonsTotal: Math.round(addonsTotal),
+        total: Math.round(basePrice + addonsTotal)
+      };
     }
 
     // For fixed price services (packages)
@@ -584,8 +624,15 @@ const BookingPage: React.FC = () => {
       return;
     }
 
-    // For hourly services, validate size/cleaners
-    if (selectedService.price_per_hour && (!selectedPropertySize || !selectedCleaners || !selectedHours)) {
+    // Validate configuration based on service type
+    if (isWindowCleaningService(selectedService.id)) {
+      // For window services: validate panels count (for 17,18)
+      if (requiresPanelsCount(selectedService.id) && !windowPanelsCount) {
+        alert('Please select the number of window panels');
+        return;
+      }
+    } else if (selectedService.price_per_hour && (!selectedPropertySize || !selectedCleaners || !selectedHours)) {
+      // For hourly services: validate all required fields
       alert('Please complete all service configuration (property size, cleaners, and hours)');
       return;
     }
@@ -642,11 +689,13 @@ const BookingPage: React.FC = () => {
         service_time: serviceTime,
         duration_hours: parseInt(hoursValue.toString()),
         // Service details (matching schema field names)
-        property_size: selectedPropertySize || null,
+        property_size: isWindowCleaningService(selectedService.id) ? null : (selectedPropertySize || null),
         size_price: selectedService.price_per_hour && selectedPropertySize ? 
           Math.round(PROPERTY_SIZE_MAP[selectedPropertySize as keyof typeof PROPERTY_SIZE_MAP]?.multiplier || 1) : null,
-        cleaners_count: parseInt(cleanersValue.toString()),
-        own_materials: selectedService.price_per_hour ? ownMaterials : false,
+        cleaners_count: isWindowCleaningService(selectedService.id) ? 1 : parseInt(cleanersValue.toString()),
+        own_materials: ownMaterials,
+        // Window cleaning specific field
+        window_panels_count: requiresPanelsCount(selectedService.id) ? windowPanelsCount : null,
         // Customer info
         customer_name: data.customerName || '',
         customer_phone: data.customerPhone || '',
@@ -997,8 +1046,54 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Property Size Selection (for all services) */}
-                {selectedService && (
+                {/* Window Panels Selection (for internal/external window cleaning only) */}
+                {selectedService && requiresPanelsCount(selectedService.id) && (
+                  <div className="space-y-4 mb-6 animate-fadeIn">
+                    <h3 className="font-semibold text-gray-800">Number of Window Panels</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Select the number of window panels you need cleaned
+                    </p>
+                    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                      <label className="flex items-center gap-2 text-gray-700 font-medium">
+                        Panels:
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setWindowPanelsCount(Math.max(1, (windowPanelsCount || 1) - 1))}
+                          className="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center font-bold text-gray-700 transition-colors"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={windowPanelsCount || 1}
+                          onChange={(e) => setWindowPanelsCount(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-20 text-center border-2 border-gray-200 rounded-lg py-2 font-semibold focus:border-primary focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setWindowPanelsCount(Math.min(100, (windowPanelsCount || 1) + 1))}
+                          className="w-8 h-8 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center font-bold text-gray-700 transition-colors"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    {windowPanelsCount && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+                        <p className="text-blue-800 font-medium">
+                          {windowPanelsCount} panel{windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} AED = <span className="font-bold">{windowPanelsCount * (selectedService.base_price || 0)} AED</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Property Size Selection (for non-window services) */}
+                {selectedService && !isWindowCleaningService(selectedService.id) && (
                   <div className="space-y-4 mb-6 animate-fadeIn">
                     <h3 className="font-semibold text-gray-800">Property Size</h3>
                     <div className="grid grid-cols-2 gap-3">
@@ -1031,7 +1126,15 @@ const BookingPage: React.FC = () => {
                 )}
 
                 {/* Materials Selection (for all services) */}
-                {selectedService && selectedPropertySize && (
+                {selectedService && (
+                  // Show materials for non-window services with property size selected
+                  // OR for window services (with or without panels count depending on service type)
+                  ((!isWindowCleaningService(selectedService.id) && selectedPropertySize) ||
+                   (isWindowCleaningService(selectedService.id) && (
+                     selectedService.id === 19 || // Full villa package - no panels needed
+                     (requiresPanelsCount(selectedService.id) && windowPanelsCount) // Internal/external with panels
+                   )))
+                ) && (
                   <div className="space-y-4 mb-6 animate-fadeIn">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold text-gray-800">Cleaning Materials</h3>
@@ -1080,7 +1183,7 @@ const BookingPage: React.FC = () => {
                           }
                           
                           // Update recommendation if this is not a package
-                          if (selectedMainCategory !== 'packages' && selectedCleaners && selectedHours) {
+                          if (selectedMainCategory !== 'packages' && selectedPropertySize && selectedCleaners && selectedHours) {
                             const serviceKey = getServiceKey(selectedService.name);
                             const newRec = getRecommendation(serviceKey, selectedPropertySize, selectedCleaners, selectedHours, true);
                             setRecommendation(newRec);
@@ -1115,7 +1218,7 @@ const BookingPage: React.FC = () => {
                           }
                           
                           // Update recommendation if this is not a package
-                          if (selectedMainCategory !== 'packages' && selectedCleaners && selectedHours) {
+                          if (selectedMainCategory !== 'packages' && selectedPropertySize && selectedCleaners && selectedHours) {
                             const serviceKey = getServiceKey(selectedService.name);
                             const newRec = getRecommendation(serviceKey, selectedPropertySize, selectedCleaners, selectedHours, false);
                             setRecommendation(newRec);
@@ -1132,8 +1235,8 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Number of Cleaners (only for non-package services) */}
-                {selectedService && selectedPropertySize && selectedMainCategory !== 'packages' && selectedService.price_per_hour && (
+                {/* Number of Cleaners (only for non-package and non-window services) */}
+                {selectedService && selectedPropertySize && selectedMainCategory !== 'packages' && selectedService.price_per_hour && !isWindowCleaningService(selectedService.id) && (
                   <div className="space-y-4 mb-6 animate-fadeIn">
                     <h3 className="font-semibold text-gray-800">Number of Cleaners</h3>
                     {(() => {
@@ -1189,8 +1292,8 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Number of Hours (only for non-package services) */}
-                {selectedService && selectedPropertySize && selectedCleaners && selectedMainCategory !== 'packages' && selectedService.price_per_hour && (
+                {/* Number of Hours (only for non-package and non-window services) */}
+                {selectedService && selectedPropertySize && selectedCleaners && selectedMainCategory !== 'packages' && selectedService.price_per_hour && !isWindowCleaningService(selectedService.id) && (
                   <div className="space-y-4 mb-6 animate-fadeIn">
                     <h3 className="font-semibold text-gray-800">Duration (Hours)</h3>
                     {(() => {
@@ -1236,8 +1339,43 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Fixed Price Service Notice (for packages) */}
-                {selectedService && !selectedService.price_per_hour && selectedPropertySize && (
+                {/* Window Service Price Summary */}
+                {selectedService && isWindowCleaningService(selectedService.id) && (
+                  (selectedService.id === 19 || // Full villa package
+                   (requiresPanelsCount(selectedService.id) && windowPanelsCount)) // Internal/external with panels
+                ) && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center animate-fadeIn">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-2xl">🪟</span>
+                      <h4 className="font-bold text-blue-800">Window Cleaning Service</h4>
+                    </div>
+                    {selectedService.id === 19 ? (
+                      <>
+                        <p className="text-blue-800 font-medium">
+                          Complete Villa Window Package: <span className="font-bold">{selectedService.base_price} AED</span>
+                        </p>
+                        <p className="text-blue-600 text-sm mt-1">
+                          All windows cleaned inside and outside
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-blue-800 font-medium">
+                          {windowPanelsCount} panel{windowPanelsCount && windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} AED = <span className="font-bold">{(windowPanelsCount || 0) * (selectedService.base_price || 0)} AED</span>
+                        </p>
+                        <p className="text-blue-600 text-sm mt-1">
+                          {selectedService.name} - Professional quality guaranteed
+                        </p>
+                      </>
+                    )}
+                    <p className="text-blue-600 text-xs mt-2">
+                      Materials: {ownMaterials ? 'Customer provided' : 'Professional materials included'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Fixed Price Service Notice (for non-window packages) */}
+                {selectedService && !selectedService.price_per_hour && selectedPropertySize && !isWindowCleaningService(selectedService.id) && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center animate-fadeIn">
                     <p className="text-emerald-800 font-medium">
                       Fixed-price package service: <span className="font-bold">{selectedService.base_price} AED</span>
@@ -1583,11 +1721,20 @@ const BookingPage: React.FC = () => {
                   </span>
                 </div>
                 
-                {selectedPropertySize && (
+                {selectedPropertySize && !isWindowCleaningService(selectedService?.id) && (
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Property Size:</span>
                     <span className="font-semibold text-gray-900">
                       {selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1)}
+                    </span>
+                  </div>
+                )}
+                
+                {windowPanelsCount && requiresPanelsCount(selectedService?.id) && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Window Panels:</span>
+                    <span className="font-semibold text-gray-900">
+                      {windowPanelsCount} panel{windowPanelsCount > 1 ? 's' : ''}
                     </span>
                   </div>
                 )}
@@ -2012,10 +2159,15 @@ const BookingPage: React.FC = () => {
         (selectedMainCategory === 'packages' && selectedPropertySize) ||
         // For regular/deep cleaning, need property size, cleaners, and hours  
         ((selectedMainCategory === 'regular' || selectedMainCategory === 'deep') && selectedPropertySize && selectedCleaners && selectedHours) ||
-        // For specialized services with hourly pricing, need full configuration
-        (selectedMainCategory === 'specialized' && selectedService.price_per_hour && selectedPropertySize && selectedCleaners && selectedHours) ||
-        // For specialized services with fixed pricing, only need property size
-        (selectedMainCategory === 'specialized' && !selectedService.price_per_hour && selectedPropertySize) ||
+        // For window cleaning services
+        (isWindowCleaningService(selectedService.id) && (
+          selectedService.id === 19 || // Full villa package - just need service selection
+          (requiresPanelsCount(selectedService.id) && windowPanelsCount) // Internal/external with panels
+        )) ||
+        // For other specialized services with hourly pricing, need full configuration
+        (selectedMainCategory === 'specialized' && !isWindowCleaningService(selectedService.id) && selectedService.price_per_hour && selectedPropertySize && selectedCleaners && selectedHours) ||
+        // For other specialized services with fixed pricing, only need property size
+        (selectedMainCategory === 'specialized' && !isWindowCleaningService(selectedService.id) && !selectedService.price_per_hour && selectedPropertySize) ||
         // For order again data, show cart if we have the service and basic data
         (localStorage.getItem('orderAgainData') && selectedService)
       ) && (
@@ -2032,7 +2184,15 @@ const BookingPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">
-                  {selectedMainCategory === 'packages' ? (
+                  {isWindowCleaningService(selectedService.id) ? (
+                    <>
+                      {selectedService.id === 19 
+                        ? 'Complete Villa Window Package' 
+                        : `${windowPanelsCount || 0} panel${(windowPanelsCount || 0) > 1 ? 's' : ''} • ${selectedService.name}`
+                      } • {ownMaterials ? 'Own materials' : 'Materials provided'}
+                      {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
+                    </>
+                  ) : selectedMainCategory === 'packages' ? (
                     <>
                       {selectedPropertySize ? selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1) : 'Unknown'} • Package Service • {ownMaterials ? 'Own materials' : 'Materials provided'}
                       {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
