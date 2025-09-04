@@ -77,9 +77,9 @@ const ReviewNotification: React.FC<ReviewNotificationProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end animate-fade-in">
-      <div className={`w-full bg-white rounded-t-3xl shadow-2xl transform transition-all duration-300 ${isVisible ? 'translate-y-0' : 'translate-y-full'}`}>
-        <div className="p-6">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className={`w-full max-w-md max-h-[85vh] bg-white rounded-3xl shadow-2xl transform transition-all duration-300 overflow-hidden ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
+        <div className="p-6 max-h-[85vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>

@@ -627,7 +627,7 @@ const HistoryPage: React.FC = () => {
                     </div>
                   </div>
                   {activeTooltip === 'date' && (
-                    <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
                       {new Date(selectedBooking.service_date).toLocaleDateString('en-AE', {
                         weekday: 'long',
                         year: 'numeric',
@@ -655,7 +655,7 @@ const HistoryPage: React.FC = () => {
                     </div>
                   </div>
                   {activeTooltip === 'time' && (
-                    <div className="absolute top-0 left-0 right-0 bg-purple-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
                       Service time: {formatTime(selectedBooking.service_time)}
                     </div>
                   )}
@@ -678,7 +678,7 @@ const HistoryPage: React.FC = () => {
                     </div>
                   </div>
                   {activeTooltip === 'cleaners' && (
-                    <div className="absolute top-0 left-0 right-0 bg-orange-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
                       {selectedBooking.cleaners_count} professional cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''} assigned
                     </div>
                   )}
@@ -703,7 +703,7 @@ const HistoryPage: React.FC = () => {
                     </div>
                   </div>
                   {activeTooltip === 'address' && (
-                    <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform -translate-y-full">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
                       {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
                     </div>
                   )}

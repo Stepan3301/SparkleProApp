@@ -947,7 +947,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">{t('admin.totalAmount', 'Total Amount')}:</span>
-                      <span className="font-semibold text-indigo-600">{formatCurrency(selectedBooking.total_cost || 0)}</span>
+                      <span className="font-semibold text-indigo-600">{formatCurrency(selectedBooking.total_cost || 0, 'black')}</span>
                     </div>
                   </div>
                 </div>
@@ -991,7 +991,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600">{t('admin.basePrice', 'Base Price')}:</span>
-                      <span className="font-semibold">{selectedBooking.base_price ? formatCurrency(selectedBooking.base_price) : 'N/A'}</span>
+                      <span className="font-semibold">{selectedBooking.base_price ? formatCurrency(selectedBooking.base_price, 'black') : 'N/A'}</span>
                     </div>
                     {selectedBooking.addons && selectedBooking.addons.length > 0 && (
                       <div>

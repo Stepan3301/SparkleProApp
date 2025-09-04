@@ -105,7 +105,7 @@ const getMainServiceCategories = (t: any) => [
     icon: '🏠',
     title: t('booking.services.regular', 'Regular Cleaning'),
     subtitle: t('booking.services.regularDesc', 'Perfect for weekly maintenance'),
-    price: t('booking.from', 'From') + ' 70 ' + t('booking.aed', 'AED'),
+    price: t('booking.from', 'From') + ' 35 ' + t('booking.aed', 'AED'),
     description: t('booking.services.regularDesc', 'Standard home cleaning service'),
     serviceIds: [6, 7] // Regular Cleaning (without/with materials)
   },
@@ -114,7 +114,7 @@ const getMainServiceCategories = (t: any) => [
     icon: '✨',
     title: t('booking.services.deep', 'Deep Cleaning'),
     subtitle: t('booking.services.deepDesc', 'Thorough cleaning service'),
-    price: t('booking.from', 'From') + ' 90 ' + t('booking.aed', 'AED'),
+    price: t('booking.from', 'From') + ' 45 ' + t('booking.aed', 'AED'),
     description: t('booking.services.deepDesc', 'Complete deep cleaning'),
     serviceIds: [8, 9] // Deep Cleaning (without/with materials)
   },

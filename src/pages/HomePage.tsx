@@ -858,10 +858,13 @@ const HomePage: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 mt-2 leading-tight">
-                      {service.description.length > 60 
-                        ? service.description.substring(0, 60) + '...'
-                        : service.description
-                      }
+                      {(() => {
+                        // Clean description to remove placeholder text
+                        let description = service.description.replace(/\{\{count\}\}/g, '1');
+                        return description.length > 60 
+                          ? description.substring(0, 60) + '...'
+                          : description;
+                      })()}
                     </div>
                   </div>
                 ))
