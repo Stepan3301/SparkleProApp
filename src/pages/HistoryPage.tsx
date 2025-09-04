@@ -86,86 +86,17 @@ const HistoryPage: React.FC = () => {
         50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
       }
       
-      /* Status-based animations - Smooth pulse effects */
+      /* Status-based styling without conflicting transforms */
       .booking-card.pending {
-        animation: pending-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        background: linear-gradient(to right, #f3f4f6, #ffffff) !important;
       }
       
       .booking-card.confirmed {
-        animation: confirmed-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        background: linear-gradient(to right, #e0f2fe, #ffffff) !important;
       }
       
       .booking-card.completed {
-        animation: completed-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-      
-      @keyframes pending-pulse {
-        0%, 100% { 
-          background: linear-gradient(to right, #f3f4f6, #ffffff);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transform: scale(1);
-        }
-        25% { 
-          background: linear-gradient(to right, #f1f3f4, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(0, 0, 0, 0.12);
-          transform: scale(1.002);
-        }
-        50% { 
-          background: linear-gradient(to right, #e5e7eb, #f9fafb);
-          box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.15);
-          transform: scale(1.004);
-        }
-        75% { 
-          background: linear-gradient(to right, #f1f3f4, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(0, 0, 0, 0.12);
-          transform: scale(1.002);
-        }
-      }
-      
-      @keyframes confirmed-pulse {
-        0%, 100% { 
-          background: linear-gradient(to right, #e0f2fe, #ffffff);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transform: scale(1);
-        }
-        25% { 
-          background: linear-gradient(to right, #dbeafe, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(59, 130, 246, 0.12);
-          transform: scale(1.002);
-        }
-        50% { 
-          background: linear-gradient(to right, #b3e5fc, #e1f5fe);
-          box-shadow: 0 8px 12px -3px rgba(59, 130, 246, 0.15);
-          transform: scale(1.004);
-        }
-        75% { 
-          background: linear-gradient(to right, #dbeafe, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(59, 130, 246, 0.12);
-          transform: scale(1.002);
-        }
-      }
-      
-      @keyframes completed-pulse {
-        0%, 100% { 
-          background: linear-gradient(to right, #d1fae5, #ffffff);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-          transform: scale(1);
-        }
-        25% { 
-          background: linear-gradient(to right, #bbf7d0, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(16, 185, 129, 0.12);
-          transform: scale(1.002);
-        }
-        50% { 
-          background: linear-gradient(to right, #a7f3d0, #d1fae5);
-          box-shadow: 0 8px 12px -3px rgba(16, 185, 129, 0.15);
-          transform: scale(1.004);
-        }
-        75% { 
-          background: linear-gradient(to right, #bbf7d0, #fefefe);
-          box-shadow: 0 6px 8px -2px rgba(16, 185, 129, 0.12);
-          transform: scale(1.002);
-        }
+        background: linear-gradient(to right, #d1fae5, #ffffff) !important;
       }
     `;
     document.head.appendChild(style);
@@ -306,13 +237,24 @@ const HistoryPage: React.FC = () => {
   const handleCardClick = (booking: Booking, index: number, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent stack toggle when clicking individual cards
     
-    // If collapsed, expand the stack first
-    if (!isExpanded) {
+    // If collapsed and clicking the top card (index 0), expand the stack
+    if (!isExpanded && index === 0) {
       setIsExpanded(true);
       return;
     }
     
-    // If expanded, open booking details
+    // If collapsed and clicking any other card, expand first then open details
+    if (!isExpanded && index > 0) {
+      setIsExpanded(true);
+      // Delay opening the modal to allow animation to complete
+      setTimeout(() => {
+        setSelectedBooking(booking);
+        setIsModalOpen(true);
+      }, 300);
+      return;
+    }
+    
+    // If expanded, open booking details immediately
     setSelectedBooking(booking);
     setIsModalOpen(true);
   };
@@ -447,7 +389,7 @@ const HistoryPage: React.FC = () => {
             }`}
             style={{
               width: '340px',
-              height: isExpanded ? `${Math.max(420, bookings.length * 90 + 100)}px` : `${Math.max(100, bookings.length * 15 + 80)}px`,
+              height: isExpanded ? `${Math.max(420, bookings.length * 90 + 100)}px` : `${Math.max(100, bookings.length * 4 + 80)}px`,
               cursor: !isExpanded ? 'pointer' : 'default',
               overflow: 'visible',
               position: 'relative'
@@ -477,24 +419,30 @@ const HistoryPage: React.FC = () => {
               return (
                 <div
                   key={booking.id}
-                  className={`booking-card absolute left-0 w-full h-20 rounded-2xl shadow-lg border flex items-center px-5 gap-4 cursor-pointer hover:shadow-xl transition-all duration-300 ${
+                  className={`booking-card absolute left-0 w-full h-20 rounded-2xl shadow-lg border flex items-center px-5 gap-4 cursor-pointer hover:shadow-xl transition-all duration-500 ${
                     booking.status === 'pending' 
-                      ? 'pending bg-gradient-to-r from-gray-100 to-white border-gray-200' 
+                      ? 'bg-gradient-to-r from-gray-100 to-white border-gray-200' 
                       : booking.status === 'confirmed' 
-                      ? 'confirmed bg-gradient-to-r from-sky-100 to-white border-sky-200' 
+                      ? 'bg-gradient-to-r from-sky-100 to-white border-sky-200' 
                       : booking.status === 'completed' 
-                      ? 'completed bg-gradient-to-r from-emerald-100 to-white border-emerald-200' 
+                      ? 'bg-gradient-to-r from-emerald-100 to-white border-emerald-200' 
                       : 'bg-white border-gray-100'
-                  } ${!isExpanded && index > 0 ? 'ring-1 ring-gray-200/50 shadow-lg' : ''}`}
+                  } ${!isExpanded && index > 0 ? 'ring-1 ring-gray-200/50' : ''}`}
                   style={{
+                    top: isExpanded 
+                      ? `${index * 90 + 10}px`
+                      : `${index * 4}px`,
+                    left: isExpanded 
+                      ? '0px'
+                      : `${index * 2}px`,
                     transform: isExpanded 
-                      ? `translateY(${index * 90 + 10}px) rotate(0deg)`
-                      : `translateY(${index * 15}px) translateX(${index * 3}px) rotate(${randomRotation}deg)`,
-                    opacity: isExpanded ? 1 : Math.max(0.75, 1 - index * 0.05),
-                    zIndex: isExpanded ? bookings.length - index : index + 1,
+                      ? 'rotate(0deg)'
+                      : `rotate(${randomRotation}deg)`,
+                    opacity: isExpanded ? 1 : Math.max(0.8, 1 - index * 0.1),
+                    zIndex: bookings.length - index,
                     pointerEvents: 'auto',
-                    transitionDelay: isExpanded ? `${index * 0.06}s` : `${(bookings.length - index - 1) * 0.03}s`,
-                    willChange: 'transform, opacity'
+                    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transitionDelay: isExpanded ? `${index * 0.05}s` : `${(bookings.length - index - 1) * 0.02}s`
                   }}
                   onClick={(e) => handleCardClick(booking, index, e)}
                   onTouchStart={(e) => {
@@ -502,8 +450,12 @@ const HistoryPage: React.FC = () => {
                     e.currentTarget.style.pointerEvents = 'auto';
                   }}
                   onTouchEnd={(e) => {
-                    // Keep pointer events enabled for all cards
-                    e.currentTarget.style.pointerEvents = 'auto';
+                    // Restore pointer events after touch
+                    setTimeout(() => {
+                      if (e.currentTarget) {
+                        e.currentTarget.style.pointerEvents = 'auto';
+                      }
+                    }, 100);
                   }}
                 >
                   {/* Service Icon */}
@@ -555,7 +507,7 @@ const HistoryPage: React.FC = () => {
       {/* Instructions */}
       {bookings.length > 0 && !isExpanded && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 text-sm text-gray-600 shadow-lg z-10">
-          💡 Tap top card to expand bookings
+          💡 Tap any card to expand bookings
         </div>
       )}
       
