@@ -53,6 +53,11 @@ const HistoryPage: React.FC = () => {
                     box-shadow 0.3s ease;
       }
       
+      .collapsed .booking-card:not(:first-child) {
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      
       .booking-card:hover {
         box-shadow: 0 8px 25px rgba(0, 150, 136, 0.15);
       }
@@ -442,7 +447,7 @@ const HistoryPage: React.FC = () => {
             }`}
             style={{
               width: '340px',
-              height: isExpanded ? `${Math.max(420, bookings.length * 90 + 100)}px` : '420px',
+              height: isExpanded ? `${Math.max(420, bookings.length * 90 + 100)}px` : `${Math.max(100, bookings.length * 15 + 80)}px`,
               cursor: !isExpanded ? 'pointer' : 'default',
               overflow: 'visible',
               position: 'relative'
@@ -484,8 +489,8 @@ const HistoryPage: React.FC = () => {
                   style={{
                     transform: isExpanded 
                       ? `translateY(${index * 90 + 10}px) rotate(0deg)`
-                      : `translateY(${index * 8}px) rotate(${randomRotation}deg)`,
-                    opacity: isExpanded ? 1 : Math.max(0.8, 1 - index * 0.03),
+                      : `translateY(${index * 15}px) translateX(${index * 3}px) rotate(${randomRotation}deg)`,
+                    opacity: isExpanded ? 1 : Math.max(0.75, 1 - index * 0.05),
                     zIndex: isExpanded ? bookings.length - index : index + 1,
                     pointerEvents: 'auto',
                     transitionDelay: isExpanded ? `${index * 0.06}s` : `${(bookings.length - index - 1) * 0.03}s`,
