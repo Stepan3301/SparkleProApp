@@ -205,17 +205,49 @@ const BookingPage: React.FC = () => {
     const urlParams = new URLSearchParams(location.search);
     const serviceParam = urlParams.get('service');
     
-    if (serviceParam) {
-      // Map service parameters to categories
-      let categoryKey = '';
-      if (serviceParam.includes('regular') || serviceParam === 'regular') categoryKey = 'regular';
-      else if (serviceParam.includes('deep') || serviceParam === 'deep') categoryKey = 'deep';
-      else if (serviceParam.includes('move') || serviceParam === 'move') categoryKey = 'move';
-      else if (serviceParam.includes('office') || serviceParam === 'office') categoryKey = 'office';
+    if (serviceParam && services.length > 0) {
+      console.log('Service parameter:', serviceParam);
       
-      if (categoryKey) {
-        setSelectedMainCategory(categoryKey);
-        // Stay on step 1 but with category pre-selected
+      // Find the exact service by name matching
+      const matchedService = services.find(service => {
+        const serviceName = service.name.toLowerCase();
+        const param = serviceParam.toLowerCase();
+        
+        // Direct name matching or key matching
+        return serviceName.includes(param) || 
+               serviceName.replace(/\s/g, '') === param ||
+               param.includes(serviceName.replace(/\s/g, ''));
+      });
+      
+      if (matchedService) {
+        console.log('Matched service:', matchedService);
+        
+        // Determine category based on service ID
+        let categoryKey = '';
+        if ([6, 7].includes(matchedService.id)) categoryKey = 'regular';
+        else if ([8, 9].includes(matchedService.id)) categoryKey = 'deep';
+        else if ([10, 11, 12, 13, 14, 15, 16].includes(matchedService.id)) categoryKey = 'packages';
+        else if ([17, 18, 19].includes(matchedService.id)) categoryKey = 'specialized';
+        
+        if (categoryKey) {
+          setSelectedMainCategory(categoryKey);
+          setSelectedService(matchedService);
+          console.log('Auto-selected category and service:', categoryKey, matchedService.name);
+        }
+      } else {
+        // Fallback to basic category matching
+        let categoryKey = '';
+        if (serviceParam.includes('regular') || serviceParam === 'regular') categoryKey = 'regular';
+        else if (serviceParam.includes('deep') || serviceParam === 'deep') categoryKey = 'deep';
+        else if (serviceParam.includes('move') || serviceParam === 'move') categoryKey = 'packages'; // Move is in packages
+        else if (serviceParam.includes('office') || serviceParam === 'office') categoryKey = 'regular'; // Office uses regular cleaning
+        else if (serviceParam.includes('window') || serviceParam.includes('internal') || serviceParam.includes('external')) categoryKey = 'specialized';
+        else if (serviceParam.includes('bathroom') || serviceParam.includes('kitchen') || serviceParam.includes('villa') || serviceParam.includes('apartment')) categoryKey = 'packages';
+        
+        if (categoryKey) {
+          setSelectedMainCategory(categoryKey);
+          console.log('Auto-selected category:', categoryKey);
+        }
       }
     }
 
@@ -264,7 +296,7 @@ const BookingPage: React.FC = () => {
         localStorage.removeItem('orderAgainData');
       }
     }
-  }, [location.search]);
+  }, [location.search, services]);
 
   // Synchronize newAddressValue with form field
   useEffect(() => {
@@ -1278,15 +1310,13 @@ const BookingPage: React.FC = () => {
                         </div>
                       );
                     })()}
-                    {recommendation && (
+                    {/* Unified recommendation display in green box */}
+                    {(recommendation || selectedCleaners === 1) && (
                       <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-800">
-                        💡 {recommendation.efficiency_message}
-                      </div>
-                    )}
-                    {/* Custom message for 1 cleaner */}
-                    {selectedCleaners === 1 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
-                        🧹 Single cleaner option - perfect for small spaces and focused cleaning
+                        {selectedCleaners === 1 
+                          ? "💡 Single cleaner option - perfect for small spaces and focused cleaning"
+                          : `💡 ${recommendation?.efficiency_message}`
+                        }
                       </div>
                     )}
                   </div>

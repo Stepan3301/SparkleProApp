@@ -416,11 +416,27 @@ const HomePage: React.FC = () => {
   };
 
   const getServiceKey = (serviceName: string) => {
-    if (serviceName.toLowerCase().includes('regular')) return 'regular';
-    if (serviceName.toLowerCase().includes('deep')) return 'deep';
-    if (serviceName.toLowerCase().includes('move')) return 'move';
-    if (serviceName.toLowerCase().includes('office')) return 'office';
-    return serviceName.toLowerCase().replace(/\s/g, '');
+    const name = serviceName.toLowerCase();
+    
+    // Specific service mappings for better matching
+    if (name.includes('bathroom') && name.includes('deep')) return 'bathroomdeepcleaning';
+    if (name.includes('kitchen') && name.includes('deep')) return 'kitchendeepcleaning';
+    if (name.includes('internal') && name.includes('window')) return 'internalwindowcleaning';
+    if (name.includes('external') && name.includes('window')) return 'externalwindowcleaning';
+    if (name.includes('villa') && name.includes('window')) return 'villawindowpackage';
+    if (name.includes('villa') && name.includes('deep')) return 'villadeeppackage';
+    if (name.includes('apartment') && name.includes('deep')) return 'apartmentdeeppackage';
+    if (name.includes('move') && (name.includes('in') || name.includes('out'))) return 'moveinoutcleaning';
+    if (name.includes('post') && name.includes('construction')) return 'postconstructioncleaning';
+    if (name.includes('facade')) return 'facadecleaning';
+    
+    // General category mappings
+    if (name.includes('regular')) return 'regular';
+    if (name.includes('deep') && !name.includes('bathroom') && !name.includes('kitchen') && !name.includes('villa') && !name.includes('apartment')) return 'deep';
+    if (name.includes('office')) return 'office';
+    
+    // Default: remove spaces and special characters
+    return name.replace(/[^a-z0-9]/g, '');
   };
 
   // Service Detail Modal Handlers
