@@ -6,14 +6,17 @@ import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
 import ReviewNotification from '../components/ui/ReviewNotification';
 import ServiceDetailModal from '../components/ui/ServiceDetailModal';
+import Toast from '../components/ui/Toast';
 import { useReviewNotifications } from '../hooks/useReviewNotifications';
 // Removed unused imports: SIZE_OPTIONS, ADDON_OPTIONS
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { useSimpleTranslation } from '../utils/i18n';
+import { handleReferralShare } from '../utils/shareUtils';
 import { 
   MapPinIcon, 
   UserIcon,
-  CalendarIcon
+  CalendarIcon,
+  ShareIcon
 } from '@heroicons/react/24/outline';
 import { 
   HomeIcon as HomeSolid,
@@ -88,6 +91,11 @@ const HomePage: React.FC = () => {
   // Service Detail Modal State
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
+  const [isToastVisible, setIsToastVisible] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -424,6 +432,36 @@ const HomePage: React.FC = () => {
   const handleCloseServiceModal = () => {
     setIsServiceModalOpen(false);
     setSelectedService(null);
+  };
+
+  // Toast notification helpers
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+    setIsToastVisible(true);
+  };
+
+  const hideToast = () => {
+    setIsToastVisible(false);
+  };
+
+  // Referral sharing handler
+  const handleInviteFriend = async () => {
+    const userName = profile?.full_name || profile?.email?.split('@')[0] || 'A friend';
+    
+    await handleReferralShare(
+      userName,
+      (method) => {
+        if (method === 'clipboard') {
+          showToast('Link copied to clipboard! 📋', 'success');
+        }
+        // For native sharing, no toast needed as the system handles feedback
+      },
+      (error) => {
+        console.error('Sharing failed:', error);
+        showToast('Failed to share. Please try again.', 'error');
+      }
+    );
   };
 
   const homePageSEO = {
@@ -832,10 +870,17 @@ const HomePage: React.FC = () => {
                   }
                 </p>
                 <button 
-                  onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : navigate('/profile')}
-                  className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors"
+                  onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : handleInviteFriend()}
+                  className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2"
                 >
-                  {userStats.totalBookings === 0 ? "Book Now" : "Invite Friend"}
+                  {userStats.totalBookings === 0 ? (
+                    "Book Now"
+                  ) : (
+                    <>
+                      <ShareIcon className="w-4 h-4" />
+                      Invite Friend
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -900,6 +945,14 @@ const HomePage: React.FC = () => {
           serviceKey={selectedService ? getServiceKey(selectedService.name) : ''}
           isOpen={isServiceModalOpen}
           onClose={handleCloseServiceModal}
+        />
+
+        {/* Toast Notification */}
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          isVisible={isToastVisible}
+          onClose={hideToast}
         />
       </div>
     </>
