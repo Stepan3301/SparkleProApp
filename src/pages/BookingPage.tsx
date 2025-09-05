@@ -1744,59 +1744,59 @@ const BookingPage: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Order Review</h3>
               <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Service Type:</span>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-600 flex-shrink-0">Service Type:</span>
+                  <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                     {selectedService?.name || 'Service'}
                   </span>
                 </div>
                 
                 {selectedPropertySize && !isWindowCleaningService(selectedService?.id) && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Property Size:</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0">Property Size:</span>
+                    <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                       {selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1)}
                     </span>
                   </div>
                 )}
                 
                 {windowPanelsCount && requiresPanelsCount(selectedService?.id) && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Window Panels:</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0">Window Panels:</span>
+                    <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                       {windowPanelsCount} panel{windowPanelsCount > 1 ? 's' : ''}
                     </span>
                   </div>
                 )}
                 
                 {selectedCleaners && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Number of Cleaners:</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0">Number of Cleaners:</span>
+                    <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                       {selectedCleaners} cleaner{selectedCleaners > 1 ? 's' : ''}
                     </span>
                   </div>
                 )}
                 
                 {selectedHours && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Duration:</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0">Duration:</span>
+                    <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                       {selectedHours} hour{selectedHours > 1 ? 's' : ''}
                     </span>
                   </div>
                 )}
                 
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Materials:</span>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-600 flex-shrink-0">Materials:</span>
+                  <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                     {ownMaterials ? 'Customer provided' : 'Cleaner provided'}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Date & Time:</span>
-                  <span className="font-semibold text-gray-900">
+                <div className="flex justify-between items-start">
+                  <span className="text-gray-600 flex-shrink-0">Date & Time:</span>
+                  <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
                     {serviceDate && serviceTime ? `${new Date(serviceDate).toLocaleDateString('en-US', { 
                       weekday: 'short', 
                       month: 'short', 
@@ -1806,11 +1806,15 @@ const BookingPage: React.FC = () => {
                 </div>
                 
                 {selectedAddons.length > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Extra Services:</span>
-                    <span className="font-semibold text-gray-900">
-                      {selectedAddons.map(addon => addon.name).join(', ')}
-                    </span>
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600 flex-shrink-0">Extra Services:</span>
+                    <div className="font-semibold text-gray-900 text-right flex-1 ml-2">
+                      {selectedAddons.map((addon, index) => (
+                        <div key={index} className="text-right">
+                          {addon.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

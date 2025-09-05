@@ -220,6 +220,23 @@ const HistoryPage: React.FC = () => {
     return getSizeLabel(selectedBooking?.property_size || '') + ' Cleaning';
   };
 
+  // Helper to get addon image
+  const getAddonImage = (addonId: string) => {
+    const imageMap: { [key: string]: string } = {
+      '1': '/fridge-cleaning.JPG',           // Fridge Cleaning
+      '2': '/oven-cleaning.JPG',             // Oven Cleaning  
+      '3': '/balcony-cleaning.JPG',          // Balcony Cleaning
+      '4': '/wardrobe-cabinet-cleaning.png', // Wardrobe/Cabinet Cleaning
+      '5': '/laundry-service.JPG',           // Ironing Service
+      '6': '/sofa-cleaning.png',             // Sofa Cleaning
+      '7': '/carpet-cleaning.JPG',           // Carpet Cleaning
+      '8': '/matress-cleaning.png',          // Mattress Cleaning Single
+      '9': '/matress-cleaning.png',          // Mattress Cleaning Double
+      '10': '/curtains-cleaning.JPG'         // Curtains Cleaning
+    };
+    return imageMap[addonId] || '/regular-cleaning.jpg'; // Fallback to main service image
+  };
+
   // Helper function to map service_id to main category
   const getServiceMainCategory = (serviceId: number | undefined | null): string | null => {
     if (!serviceId) return null;
@@ -738,48 +755,74 @@ const HistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Extra Services Section */}
-              {((selectedBooking.addons && selectedBooking.addons.length > 0) || selectedBooking.window_panels_count) && (
+              {/* Window Panels Section (if applicable) */}
+              {selectedBooking.window_panels_count && (
                 <div className="bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100">
                   <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="text-2xl">🪟</span>
+                    Window Cleaning Details
+                  </h3>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 inline-block">
+                    {selectedBooking.window_panels_count} window panel{selectedBooking.window_panels_count > 1 ? 's' : ''}
+                  </div>
+                </div>
+              )}
+
+              {/* Detailed Add-ons Section */}
+              {selectedBooking.addons && selectedBooking.addons.length > 0 && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
+                  <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Extra Services
+                    Additional Services
                   </h3>
                   
-                  {/* Window Panels Info */}
-                  {selectedBooking.window_panels_count && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">🪟</span>
-                        <span className="font-semibold text-blue-900">Window Cleaning</span>
+                  <div className="space-y-3">
+                    {selectedBooking.addons.map((addon, index) => (
+                      <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+                        <div className="flex items-center gap-4">
+                          {/* Service Image */}
+                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                            <img
+                              src={getAddonImage(addon.id?.toString() || '0')}
+                              alt={addon.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget;
+                                target.src = '/regular-cleaning.jpg'; // Fallback image
+                              }}
+                            />
+                          </div>
+                          
+                          {/* Service Details */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-gray-900 text-sm mb-1">{addon.name}</h4>
+                            <p className="text-gray-600 text-xs">Additional cleaning service</p>
+                          </div>
+                          
+                          {/* Price */}
+                          <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm">
+                            <DirhamIcon size="sm" />
+                            <span>{addon.price || 'N/A'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 inline-block">
-                        {selectedBooking.window_panels_count} window panel{selectedBooking.window_panels_count > 1 ? 's' : ''}
-                      </div>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                   
-                  {/* Add-ons */}
-                  {selectedBooking.addons && selectedBooking.addons.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xl">➕</span>
-                        <span className="font-semibold text-blue-900">Additional Services</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedBooking.addons.map((addon, index) => (
-                          <span
-                            key={index}
-                            className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200"
-                          >
-                            {addon.name}
-                          </span>
-                        ))}
+                  {/* Total Add-ons Price */}
+                  <div className="mt-4 pt-4 border-t border-emerald-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-emerald-900">Add-ons Total:</span>
+                      <div className="flex items-center gap-1 text-emerald-600 font-bold">
+                        <DirhamIcon size="sm" />
+                        <span>
+                          {selectedBooking.addons.reduce((total, addon) => total + (addon.price || 0), 0)}
+                        </span>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 

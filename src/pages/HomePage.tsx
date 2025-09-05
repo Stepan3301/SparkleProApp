@@ -789,7 +789,16 @@ const HomePage: React.FC = () => {
                     />
                     <h3 className="font-semibold text-gray-800 mb-1 text-sm">{service.name}</h3>
                     <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
-                      From <DirhamIcon size="sm" />{service.base_price}
+                      From <DirhamIcon size="sm" />
+                      {(() => {
+                        // Show adjusted prices for regular and deep cleaning services
+                        if (service.id === 6 || service.id === 7) { // Regular cleaning (with/without materials)
+                          return '35';
+                        } else if (service.id === 8 || service.id === 9) { // Deep cleaning (with/without materials)
+                          return '45';
+                        }
+                        return service.base_price;
+                      })()}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
                       {userStats.totalBookings > 0 ? 'You might like this' : 'Popular choice'}
@@ -853,7 +862,16 @@ const HomePage: React.FC = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800 text-sm mb-1">{service.name}</h3>
                         <div className="text-emerald-600 font-semibold text-sm flex items-center gap-1">
-                          <DirhamIcon size="sm" />{service.base_price}
+                          <DirhamIcon size="sm" />
+                          {(() => {
+                            // Show adjusted prices for regular and deep cleaning services
+                            if (service.id === 6 || service.id === 7) { // Regular cleaning (with/without materials)
+                              return '35';
+                            } else if (service.id === 8 || service.id === 9) { // Deep cleaning (with/without materials)
+                              return '45';
+                            }
+                            return service.base_price;
+                          })()}
                         </div>
                       </div>
                     </div>
