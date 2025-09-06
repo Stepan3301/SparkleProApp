@@ -18,7 +18,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
   useEffect(() => {
     const loadAnimation = async () => {
       try {
-        const response = await fetch('/delete-animation.lottie');
+        const response = await fetch('/delete-animation.json');
         const data = await response.json();
         setAnimationData(data);
       } catch (error) {
