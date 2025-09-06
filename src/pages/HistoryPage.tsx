@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
+import BookingCancelAnimation from '../components/ui/BookingCancelAnimation';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
@@ -28,6 +29,10 @@ const HistoryPage: React.FC = () => {
   
   // Tooltip state for detail boxes
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  
+  // Animation state
+  const [showCancelAnimation, setShowCancelAnimation] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
 
   // Add custom styles for smooth animations
   React.useEffect(() => {
@@ -298,26 +303,35 @@ const HistoryPage: React.FC = () => {
     setActiveTooltip(null); // Close any open tooltips
   };
 
-  const cancelBooking = async (bookingId: number) => {
+  const initiateCancelBooking = (bookingId: number) => {
+    // Store the booking ID and start the animation
+    setBookingToCancel(bookingId);
+    setShowCancelAnimation(true);
+    // Close the detail modal
+    closeModal();
+  };
+
+  const completeCancelBooking = async () => {
+    if (!bookingToCancel) return;
+
     try {
       const { error } = await supabase
         .from('bookings')
         .delete()
-        .eq('id', bookingId);
+        .eq('id', bookingToCancel);
 
       if (error) throw error;
 
       // Remove from local state
-      setBookings(prev => prev.filter(b => b.id !== bookingId));
+      setBookings(prev => prev.filter(b => b.id !== bookingToCancel));
       
-      // Close modal
-      closeModal();
-      
-      // Show success notification
-      alert('Booking cancelled successfully!');
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      alert('Failed to cancel booking. Please try again.');
+      alert('Error cancelling booking. Please try again.');
+    } finally {
+      // Reset animation state
+      setShowCancelAnimation(false);
+      setBookingToCancel(null);
     }
   };
 
@@ -607,7 +621,7 @@ const HistoryPage: React.FC = () => {
                   variant="signout"
                   shape="bubble"
                   size="sm"
-                  onClick={() => cancelBooking(selectedBooking.id)}
+                  onClick={() => initiateCancelBooking(selectedBooking.id)}
                   leftIcon={<TrashIcon className="w-4 h-4" />}
                 >
                   Cancel
@@ -890,6 +904,12 @@ const HistoryPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Cancel Animation */}
+      <BookingCancelAnimation
+        isVisible={showCancelAnimation}
+        onComplete={completeCancelBooking}
+      />
     </div>
       )}
     </>
