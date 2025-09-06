@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Lottie from 'lottie-react';
 
 interface BookingCancelAnimationProps {
@@ -12,7 +12,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
 }) => {
   const [animationData, setAnimationData] = useState(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [animationComplete, setAnimationComplete] = useState(false);
+  const lottieRef = useRef<any>(null);
 
   // Load animation data when component mounts
   useEffect(() => {
@@ -24,7 +24,6 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       } catch (error) {
         console.error('Error loading animation:', error);
         // Fallback - proceed without animation
-        setAnimationComplete(true);
         setShowSuccessMessage(true);
       }
     };
@@ -34,22 +33,31 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
     }
   }, [isVisible, animationData]);
 
+  // Set animation speed when animation is loaded
+  useEffect(() => {
+    if (lottieRef.current && animationData) {
+      // Set speed to 0.5x (half speed)
+      lottieRef.current.setSpeed(0.5);
+    }
+  }, [animationData]);
+
   // Handle animation completion
   const handleAnimationComplete = () => {
-    setAnimationComplete(true);
-    setShowSuccessMessage(true);
-    
-    // Show success message for 1.5 seconds, then complete
+    // Show success message after animation completes
     setTimeout(() => {
-      onComplete();
-    }, 1500);
+      setShowSuccessMessage(true);
+      
+      // Keep both animation and message visible for 2 seconds, then complete
+      setTimeout(() => {
+        onComplete();
+      }, 2000);
+    }, 100); // Small delay to ensure animation frame is stable
   };
 
   // Reset states when visibility changes
   useEffect(() => {
     if (!isVisible) {
       setShowSuccessMessage(false);
-      setAnimationComplete(false);
     }
   }, [isVisible]);
 
@@ -66,9 +74,10 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       <div className="relative z-10 flex flex-col items-center justify-center">
         
         {/* Lottie Animation */}
-        {!animationComplete && animationData && (
+        {animationData && (
           <div className="w-32 h-32 mb-4">
             <Lottie
+              lottieRef={lottieRef}
               animationData={animationData}
               loop={false}
               autoplay={true}
@@ -79,7 +88,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
         )}
 
         {/* Fallback if no animation data */}
-        {!animationComplete && !animationData && (
+        {!animationData && (
           <div className="w-32 h-32 mb-4 flex items-center justify-center">
             <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
