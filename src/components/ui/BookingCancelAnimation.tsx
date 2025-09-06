@@ -33,11 +33,13 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
     }
   }, [isVisible, animationData]);
 
-  // Set animation speed when animation is loaded
+  // Set animation speed and ensure proper playback when animation is loaded
   useEffect(() => {
     if (lottieRef.current && animationData) {
       // Set speed to 0.5x (half speed)
       lottieRef.current.setSpeed(0.5);
+      // Ensure animation plays from start
+      lottieRef.current.goToAndPlay(0, true);
     }
   }, [animationData]);
 
@@ -94,22 +96,20 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           </div>
         )}
 
-        {/* Success Message */}
+        {/* Success Message - matches error message styling */}
         {showSuccessMessage && (
           <div className={`transform transition-all duration-500 ease-out ${
             showSuccessMessage 
               ? 'translate-y-0 opacity-100' 
               : 'translate-y-8 opacity-0'
           }`}>
-            <div className="bg-white rounded-2xl px-8 py-4 shadow-2xl border border-gray-100">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <p className="text-gray-900 font-semibold">Successfully Cancelled</p>
+            <div className="flex items-center gap-3 px-4 py-2">
+              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
+              <p className="text-white font-semibold text-lg tracking-wide">Successfully Cancelled</p>
             </div>
           </div>
         )}
