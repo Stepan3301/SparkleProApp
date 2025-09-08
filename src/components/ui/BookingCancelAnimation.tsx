@@ -13,11 +13,9 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
   const [animationData, setAnimationData] = useState(null);
   const [showTextAnimation, setShowTextAnimation] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
-  const [visibleLetters, setVisibleLetters] = useState(0);
   const lottieRef = useRef<any>(null);
 
   const successText = "Successfully Cancelled";
-  const letters = successText.split('');
 
   // Load animation data when component mounts
   useEffect(() => {
@@ -53,37 +51,27 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
     setShowTextAnimation(true);
   };
 
-  // Text burst animation effect
+  // Simple text animation with slide up effect
   useEffect(() => {
     if (showTextAnimation) {
-      const timer = setInterval(() => {
-        setVisibleLetters(prev => {
-          if (prev >= letters.length) {
-            clearInterval(timer);
-            // After all letters are shown, start particle explosion
-            setTimeout(() => {
-              setShowParticles(true);
-              // Complete the animation after particles
-              setTimeout(() => {
-                onComplete();
-              }, 2000);
-            }, 300);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, 40); // 40ms between each letter (2x faster)
+      // Start particle explosion after a brief delay
+      const particleTimer = setTimeout(() => {
+        setShowParticles(true);
+        // Complete the animation after particles
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      }, 500); // Give text time to slide in
 
-      return () => clearInterval(timer);
+      return () => clearTimeout(particleTimer);
     }
-  }, [showTextAnimation, letters.length, onComplete]);
+  }, [showTextAnimation, onComplete]);
 
   // Reset states when visibility changes
   useEffect(() => {
     if (!isVisible) {
       setShowTextAnimation(false);
       setShowParticles(false);
-      setVisibleLetters(0);
     }
   }, [isVisible]);
 
@@ -99,7 +87,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       {/* Animation Content */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         
-        {/* Lottie Animation - Stay visible until text animation completes */}
+        {/* Lottie Animation - Disappears when particles start */}
         {animationData && !showParticles && (
           <div className="w-32 h-32 mb-4">
             <Lottie
@@ -120,57 +108,53 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           </div>
         )}
 
-        {/* Burst Text Animation */}
-        {showTextAnimation && (
-          <div className="relative flex flex-wrap justify-center items-center gap-1 px-4 py-2">
-            {letters.map((letter, index) => (
-              <span
-                key={index}
-                className={`inline-block text-white font-bold text-2xl tracking-wide transform transition-all duration-300 ${
-                  index < visibleLetters
-                    ? 'opacity-100 scale-100 translate-y-0'
-                    : 'opacity-0 scale-150 translate-y-4'
-                } ${letter === ' ' ? 'w-2' : ''}`}
+        {/* Simple Slide-Up Text Animation - Disappears when particles start */}
+        {showTextAnimation && !showParticles && (
+          <div className="relative flex justify-center items-center px-4 py-2">
+            <p 
+              className={`text-white font-bold text-2xl tracking-wide transform transition-all duration-500 ease-out ${
+                showTextAnimation 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 translate-y-8'
+              }`}
+              style={{
+                textShadow: '0 0 10px rgba(255,255,255,0.8)',
+              }}
+            >
+              {successText}
+            </p>
+          </div>
+        )}
+
+        {/* Success Particles - Show separately after both text and animation disappear */}
+        {showParticles && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
                 style={{
-                  transitionDelay: `${index * 50}ms`,
-                  textShadow: '0 0 10px rgba(255,255,255,0.8)',
+                  left: `${50 + (Math.random() - 0.5) * 200}%`,
+                  top: `${50 + (Math.random() - 0.5) * 200}%`,
+                  animationDelay: `${Math.random() * 0.5}s`,
+                  animationDuration: `${1 + Math.random()}s`,
+                }}
+              />
+            ))}
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={`star-${i}`}
+                className="absolute text-yellow-300 animate-bounce"
+                style={{
+                  left: `${30 + Math.random() * 40}%`,
+                  top: `${30 + Math.random() * 40}%`,
+                  animationDelay: `${Math.random() * 0.3}s`,
+                  fontSize: `${12 + Math.random() * 8}px`,
                 }}
               >
-                {letter === ' ' ? '\u00A0' : letter}
-              </span>
+                ✨
+              </div>
             ))}
-            
-            {/* Success Particles */}
-            {showParticles && (
-              <>
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
-                    style={{
-                      left: `${50 + (Math.random() - 0.5) * 200}%`,
-                      top: `${50 + (Math.random() - 0.5) * 200}%`,
-                      animationDelay: `${Math.random() * 0.5}s`,
-                      animationDuration: `${1 + Math.random()}s`,
-                    }}
-                  />
-                ))}
-                {[...Array(8)].map((_, i) => (
-                  <div
-                    key={`star-${i}`}
-                    className="absolute text-yellow-300 animate-bounce"
-                    style={{
-                      left: `${30 + Math.random() * 40}%`,
-                      top: `${30 + Math.random() * 40}%`,
-                      animationDelay: `${Math.random() * 0.3}s`,
-                      fontSize: `${12 + Math.random() * 8}px`,
-                    }}
-                  >
-                    ✨
-                  </div>
-                ))}
-              </>
-            )}
           </div>
         )}
       </div>
