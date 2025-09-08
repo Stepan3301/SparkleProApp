@@ -14,6 +14,7 @@ import {
   formatTimeSlot,
   SIZE_OPTIONS
 } from '../types/booking';
+import { canCancelBooking, getCancellationBlockedReason } from '../utils/bookingUtils';
 
 const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
@@ -617,15 +618,37 @@ const HistoryPage: React.FC = () => {
                 >
                   Order Again
                 </Button>
-                <Button
-                  variant="signout"
-                  shape="bubble"
-                  size="sm"
-                  onClick={() => initiateCancelBooking(selectedBooking.id)}
-                  leftIcon={<TrashIcon className="w-4 h-4" />}
-                >
-                  Cancel
-                </Button>
+                
+                {/* Cancel Button - Only show if cancellation is allowed */}
+                {canCancelBooking(selectedBooking) ? (
+                  <Button
+                    variant="signout"
+                    shape="bubble"
+                    size="sm"
+                    onClick={() => initiateCancelBooking(selectedBooking.id)}
+                    leftIcon={<TrashIcon className="w-4 h-4" />}
+                  >
+                    Cancel
+                  </Button>
+                ) : (
+                  <div className="relative group">
+                    <Button
+                      variant="signout"
+                      shape="bubble"
+                      size="sm"
+                      disabled={true}
+                      leftIcon={<TrashIcon className="w-4 h-4 opacity-50" />}
+                      className="opacity-50 cursor-not-allowed"
+                    >
+                      Cancel
+                    </Button>
+                    {/* Tooltip for why cancellation is blocked */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-30">
+                      {getCancellationBlockedReason(selectedBooking)}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

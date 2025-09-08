@@ -11,8 +11,13 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
   onComplete
 }) => {
   const [animationData, setAnimationData] = useState(null);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showTextAnimation, setShowTextAnimation] = useState(false);
+  const [showParticles, setShowParticles] = useState(false);
+  const [visibleLetters, setVisibleLetters] = useState(0);
   const lottieRef = useRef<any>(null);
+
+  const successText = "Successfully Cancelled";
+  const letters = successText.split('');
 
   // Load animation data when component mounts
   useEffect(() => {
@@ -24,7 +29,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       } catch (error) {
         console.error('Error loading animation:', error);
         // Fallback - proceed without animation
-        setShowSuccessMessage(true);
+        setShowTextAnimation(true);
       }
     };
 
@@ -43,23 +48,42 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
     }
   }, [animationData]);
 
-  // Handle animation completion
+  // Handle animation completion - start text burst animation
   const handleAnimationComplete = () => {
-    // Show success message after animation completes
-    setTimeout(() => {
-      setShowSuccessMessage(true);
-      
-      // Keep both animation and message visible for 2 seconds, then complete
-      setTimeout(() => {
-        onComplete();
-      }, 2000);
-    }, 100); // Small delay to ensure animation frame is stable
+    setShowTextAnimation(true);
   };
+
+  // Text burst animation effect
+  useEffect(() => {
+    if (showTextAnimation) {
+      const timer = setInterval(() => {
+        setVisibleLetters(prev => {
+          if (prev >= letters.length) {
+            clearInterval(timer);
+            // After all letters are shown, start particle explosion
+            setTimeout(() => {
+              setShowParticles(true);
+              // Complete the animation after particles
+              setTimeout(() => {
+                onComplete();
+              }, 2000);
+            }, 300);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 80); // 80ms between each letter
+
+      return () => clearInterval(timer);
+    }
+  }, [showTextAnimation, letters.length, onComplete]);
 
   // Reset states when visibility changes
   useEffect(() => {
     if (!isVisible) {
-      setShowSuccessMessage(false);
+      setShowTextAnimation(false);
+      setShowParticles(false);
+      setVisibleLetters(0);
     }
   }, [isVisible]);
 
@@ -76,7 +100,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       <div className="relative z-10 flex flex-col items-center justify-center">
         
         {/* Lottie Animation */}
-        {animationData && (
+        {animationData && !showTextAnimation && (
           <div className="w-32 h-32 mb-4">
             <Lottie
               lottieRef={lottieRef}
@@ -90,27 +114,63 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
         )}
 
         {/* Fallback if no animation data */}
-        {!animationData && (
+        {!animationData && !showTextAnimation && (
           <div className="w-32 h-32 mb-4 flex items-center justify-center">
             <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
         )}
 
-        {/* Success Message - matches error message styling */}
-        {showSuccessMessage && (
-          <div className={`transform transition-all duration-500 ease-out ${
-            showSuccessMessage 
-              ? 'translate-y-0 opacity-100' 
-              : 'translate-y-8 opacity-0'
-          }`}>
-            <div className="flex items-center gap-3 px-4 py-2">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="text-white font-semibold text-lg tracking-wide">Successfully Cancelled</p>
-            </div>
+        {/* Burst Text Animation */}
+        {showTextAnimation && (
+          <div className="relative flex flex-wrap justify-center items-center gap-1 px-4 py-2">
+            {letters.map((letter, index) => (
+              <span
+                key={index}
+                className={`inline-block text-white font-bold text-2xl tracking-wide transform transition-all duration-300 ${
+                  index < visibleLetters
+                    ? 'opacity-100 scale-100 translate-y-0'
+                    : 'opacity-0 scale-150 translate-y-4'
+                } ${letter === ' ' ? 'w-2' : ''}`}
+                style={{
+                  transitionDelay: `${index * 50}ms`,
+                  textShadow: '0 0 10px rgba(255,255,255,0.8)',
+                }}
+              >
+                {letter === ' ' ? '\u00A0' : letter}
+              </span>
+            ))}
+            
+            {/* Success Particles */}
+            {showParticles && (
+              <>
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
+                    style={{
+                      left: `${50 + (Math.random() - 0.5) * 200}%`,
+                      top: `${50 + (Math.random() - 0.5) * 200}%`,
+                      animationDelay: `${Math.random() * 0.5}s`,
+                      animationDuration: `${1 + Math.random()}s`,
+                    }}
+                  />
+                ))}
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={`star-${i}`}
+                    className="absolute text-yellow-300 animate-bounce"
+                    style={{
+                      left: `${30 + Math.random() * 40}%`,
+                      top: `${30 + Math.random() * 40}%`,
+                      animationDelay: `${Math.random() * 0.3}s`,
+                      fontSize: `${12 + Math.random() * 8}px`,
+                    }}
+                  >
+                    ✨
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>
