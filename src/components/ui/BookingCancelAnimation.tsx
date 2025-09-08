@@ -41,8 +41,8 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
   // Set animation speed and ensure proper playback when animation is loaded
   useEffect(() => {
     if (lottieRef.current && animationData) {
-      // Set speed to 0.5x (half speed)
-      lottieRef.current.setSpeed(0.5);
+      // Set speed to 1x (normal speed)
+      lottieRef.current.setSpeed(1);
       // Ensure animation plays from start
       lottieRef.current.goToAndPlay(0, true);
     }
@@ -72,7 +72,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           }
           return prev + 1;
         });
-      }, 80); // 80ms between each letter
+      }, 40); // 40ms between each letter (2x faster)
 
       return () => clearInterval(timer);
     }
@@ -99,8 +99,8 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       {/* Animation Content */}
       <div className="relative z-10 flex flex-col items-center justify-center">
         
-        {/* Lottie Animation */}
-        {animationData && !showTextAnimation && (
+        {/* Lottie Animation - Stay visible until text animation completes */}
+        {animationData && !showParticles && (
           <div className="w-32 h-32 mb-4">
             <Lottie
               lottieRef={lottieRef}
@@ -114,7 +114,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
         )}
 
         {/* Fallback if no animation data */}
-        {!animationData && !showTextAnimation && (
+        {!animationData && !showParticles && (
           <div className="w-32 h-32 mb-4 flex items-center justify-center">
             <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
