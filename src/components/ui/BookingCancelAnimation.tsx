@@ -12,6 +12,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
 }) => {
   const [animationData, setAnimationData] = useState(null);
   const [showTextAnimation, setShowTextAnimation] = useState(false);
+  const [textSlideUp, setTextSlideUp] = useState(false);
   const [showParticles, setShowParticles] = useState(false);
   const lottieRef = useRef<any>(null);
 
@@ -46,31 +47,36 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
     }
   }, [animationData]);
 
-  // Handle animation completion - start text burst animation
+  // Handle animation completion - start text animation
   const handleAnimationComplete = () => {
     setShowTextAnimation(true);
+    // Trigger slide-up animation after a short delay
+    setTimeout(() => {
+      setTextSlideUp(true);
+    }, 50);
   };
 
-  // Simple text animation with slide up effect
+  // Text animation with proper slide-up timing
   useEffect(() => {
-    if (showTextAnimation) {
-      // Start particle explosion after a brief delay
+    if (textSlideUp) {
+      // Keep text visible for a moment, then start particles
       const particleTimer = setTimeout(() => {
         setShowParticles(true);
         // Complete the animation after particles
         setTimeout(() => {
           onComplete();
         }, 2000);
-      }, 500); // Give text time to slide in
+      }, 800); // Give text time to be visible and appreciated
 
       return () => clearTimeout(particleTimer);
     }
-  }, [showTextAnimation, onComplete]);
+  }, [textSlideUp, onComplete]);
 
   // Reset states when visibility changes
   useEffect(() => {
     if (!isVisible) {
       setShowTextAnimation(false);
+      setTextSlideUp(false);
       setShowParticles(false);
     }
   }, [isVisible]);
@@ -108,17 +114,18 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           </div>
         )}
 
-        {/* Simple Slide-Up Text Animation - Disappears when particles start */}
+        {/* Smooth Slide-Up Text Animation - Disappears when particles start */}
         {showTextAnimation && !showParticles && (
           <div className="relative flex justify-center items-center px-4 py-2">
             <p 
-              className={`text-white font-bold text-2xl tracking-wide transform transition-all duration-500 ease-out ${
-                showTextAnimation 
+              className={`text-white font-bold text-2xl tracking-wide transform transition-all duration-700 ease-out ${
+                textSlideUp 
                   ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 translate-y-8'
+                  : 'opacity-0 translate-y-12'
               }`}
               style={{
-                textShadow: '0 0 10px rgba(255,255,255,0.8)',
+                textShadow: '0 0 15px rgba(255,255,255,0.9)',
+                filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
               }}
             >
               {successText}
@@ -126,35 +133,70 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           </div>
         )}
 
-        {/* Success Particles - Show separately after both text and animation disappear */}
+        {/* Success Particles - Better distributed and animated */}
         {showParticles && (
           <div className="absolute inset-0 flex items-center justify-center">
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
-                style={{
-                  left: `${50 + (Math.random() - 0.5) * 200}%`,
-                  top: `${50 + (Math.random() - 0.5) * 200}%`,
-                  animationDelay: `${Math.random() * 0.5}s`,
-                  animationDuration: `${1 + Math.random()}s`,
-                }}
-              />
-            ))}
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={`star-${i}`}
-                className="absolute text-yellow-300 animate-bounce"
-                style={{
-                  left: `${30 + Math.random() * 40}%`,
-                  top: `${30 + Math.random() * 40}%`,
-                  animationDelay: `${Math.random() * 0.3}s`,
-                  fontSize: `${12 + Math.random() * 8}px`,
-                }}
-              >
-                ✨
-              </div>
-            ))}
+            {/* Green Particles - Better distribution in a circle pattern */}
+            {[...Array(15)].map((_, i) => {
+              const angle = (i * 360) / 15; // Distribute evenly in circle
+              const radius = 80 + Math.random() * 40; // Vary radius for depth
+              const x = 50 + (radius * Math.cos(angle * Math.PI / 180)) / 3;
+              const y = 50 + (radius * Math.sin(angle * Math.PI / 180)) / 3;
+              
+              return (
+                <div
+                  key={i}
+                  className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
+                  style={{
+                    left: `${Math.min(Math.max(x, 10), 90)}%`,
+                    top: `${Math.min(Math.max(y, 10), 90)}%`,
+                    animationDelay: `${i * 0.1}s`,
+                    animationDuration: `${1.2 + Math.random() * 0.6}s`,
+                  }}
+                />
+              );
+            })}
+            
+            {/* Sparkle Stars - Strategic positioning */}
+            {[...Array(10)].map((_, i) => {
+              // Position stars in different quadrants to avoid clustering
+              const quadrant = i % 4;
+              let x, y;
+              
+              switch(quadrant) {
+                case 0: // Top-left
+                  x = 20 + Math.random() * 25;
+                  y = 20 + Math.random() * 25;
+                  break;
+                case 1: // Top-right
+                  x = 55 + Math.random() * 25;
+                  y = 20 + Math.random() * 25;
+                  break;
+                case 2: // Bottom-left
+                  x = 20 + Math.random() * 25;
+                  y = 55 + Math.random() * 25;
+                  break;
+                default: // Bottom-right
+                  x = 55 + Math.random() * 25;
+                  y = 55 + Math.random() * 25;
+              }
+              
+              return (
+                <div
+                  key={`star-${i}`}
+                  className="absolute text-yellow-300 animate-bounce"
+                  style={{
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    animationDelay: `${0.2 + i * 0.15}s`,
+                    fontSize: `${14 + Math.random() * 6}px`,
+                    animationDuration: `${0.8 + Math.random() * 0.4}s`,
+                  }}
+                >
+                  ✨
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

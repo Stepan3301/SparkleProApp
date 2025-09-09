@@ -347,6 +347,7 @@ const HistoryPage: React.FC = () => {
       propertySize: booking.property_size,
       sizePrice: booking.size_price,
       cleanersCount: booking.cleaners_count,
+      durationHours: booking.duration_hours, // Include the number of hours
       ownMaterials: booking.own_materials,
       selectedAddons: booking.addons,
       step: 3 // Start at step 3 (scheduling)

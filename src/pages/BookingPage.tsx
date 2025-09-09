@@ -264,6 +264,9 @@ const BookingPage: React.FC = () => {
         if (data.cleanersCount) {
           setSelectedCleaners(data.cleanersCount);
         }
+        if (data.durationHours) {
+          setSelectedHours(data.durationHours);
+        }
         if (data.ownMaterials !== undefined) {
           setOwnMaterials(data.ownMaterials);
         }

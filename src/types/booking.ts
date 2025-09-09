@@ -39,6 +39,7 @@ export interface Booking {
   property_size: PropertySize;
   size_price: number;
   cleaners_count: number;
+  duration_hours: number; // Number of hours for the service
   own_materials: boolean;
   window_panels_count?: number; // For window cleaning services
   
