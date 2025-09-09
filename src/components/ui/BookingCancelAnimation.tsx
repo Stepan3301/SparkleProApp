@@ -133,65 +133,54 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
           </div>
         )}
 
-        {/* Success Particles - Better distributed and animated */}
+        {/* Success Particles - Released from text center and flowing outward */}
         {showParticles && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* Green Particles - Better distribution in a circle pattern */}
-            {[...Array(15)].map((_, i) => {
-              const angle = (i * 360) / 15; // Distribute evenly in circle
-              const radius = 80 + Math.random() * 40; // Vary radius for depth
-              const x = 50 + (radius * Math.cos(angle * Math.PI / 180)) / 3;
-              const y = 50 + (radius * Math.sin(angle * Math.PI / 180)) / 3;
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {/* Green Particles - Released from text center with custom animations */}
+            {[...Array(12)].map((_, i) => {
+              const angle = (i * 360) / 12;
+              const finalDistance = 60 + Math.random() * 80;
+              const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
+              const finalY = Math.sin(angle * Math.PI / 180) * finalDistance;
               
               return (
                 <div
                   key={i}
-                  className="absolute w-2 h-2 bg-green-400 rounded-full animate-ping"
+                  className="absolute w-2 h-2 bg-green-400 rounded-full"
                   style={{
-                    left: `${Math.min(Math.max(x, 10), 90)}%`,
-                    top: `${Math.min(Math.max(y, 10), 90)}%`,
-                    animationDelay: `${i * 0.1}s`,
-                    animationDuration: `${1.2 + Math.random() * 0.6}s`,
-                  }}
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    animation: `particleFlow 1.5s ease-out forwards`,
+                    animationDelay: `${i * 0.05}s`,
+                    '--final-x': `${finalX}px`,
+                    '--final-y': `${finalY}px`,
+                  } as React.CSSProperties & { '--final-x': string; '--final-y': string }}
                 />
               );
             })}
             
-            {/* Sparkle Stars - Strategic positioning */}
-            {[...Array(10)].map((_, i) => {
-              // Position stars in different quadrants to avoid clustering
-              const quadrant = i % 4;
-              let x, y;
-              
-              switch(quadrant) {
-                case 0: // Top-left
-                  x = 20 + Math.random() * 25;
-                  y = 20 + Math.random() * 25;
-                  break;
-                case 1: // Top-right
-                  x = 55 + Math.random() * 25;
-                  y = 20 + Math.random() * 25;
-                  break;
-                case 2: // Bottom-left
-                  x = 20 + Math.random() * 25;
-                  y = 55 + Math.random() * 25;
-                  break;
-                default: // Bottom-right
-                  x = 55 + Math.random() * 25;
-                  y = 55 + Math.random() * 25;
-              }
+            {/* Sparkle Stars - Released from text center with rotation */}
+            {[...Array(8)].map((_, i) => {
+              const angle = (i * 360) / 8 + 22.5;
+              const finalDistance = 40 + Math.random() * 60;
+              const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
+              const finalY = Math.sin(angle * Math.PI / 180) * finalDistance;
               
               return (
                 <div
                   key={`star-${i}`}
-                  className="absolute text-yellow-300 animate-bounce"
+                  className="absolute text-yellow-300"
                   style={{
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    animationDelay: `${0.2 + i * 0.15}s`,
-                    fontSize: `${14 + Math.random() * 6}px`,
-                    animationDuration: `${0.8 + Math.random() * 0.4}s`,
-                  }}
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    fontSize: `${16 + Math.random() * 8}px`,
+                    animation: `starFlow 1.8s ease-out forwards`,
+                    animationDelay: `${0.1 + i * 0.08}s`,
+                    '--final-x': `${finalX}px`,
+                    '--final-y': `${finalY}px`,
+                  } as React.CSSProperties & { '--final-x': string; '--final-y': string }}
                 >
                   ✨
                 </div>
