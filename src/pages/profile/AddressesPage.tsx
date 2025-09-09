@@ -28,6 +28,7 @@ const AddressesPage: React.FC = () => {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
   useEffect(() => {
     fetchAddresses();
@@ -77,6 +78,27 @@ const AddressesPage: React.FC = () => {
 
   const deleteAddress = async (addressId: number) => {
     try {
+      const addressToDelete = addresses.find(addr => addr.id === addressId);
+      
+      if (!addressToDelete) {
+        console.error('Address not found');
+        return;
+      }
+
+      // If deleting the default address and there are other addresses
+      if (addressToDelete.is_default && addresses.length > 1) {
+        // Find the first non-default address to make it the new default
+        const otherAddress = addresses.find(addr => addr.id !== addressId);
+        if (otherAddress) {
+          // Set another address as default first
+          await supabase
+            .from('addresses')
+            .update({ is_default: true })
+            .eq('id', otherAddress.id);
+        }
+      }
+
+      // Now delete the address
       await supabase
         .from('addresses')
         .delete()
@@ -86,6 +108,10 @@ const AddressesPage: React.FC = () => {
     } catch (error) {
       console.error('Error deleting address:', error);
     }
+  };
+
+  const editAddress = (address: Address) => {
+    setEditingAddress(address);
   };
 
   if (loading) {
@@ -154,19 +180,24 @@ const AddressesPage: React.FC = () => {
                 key={address.id}
                 address={address}
                 onSetDefault={() => setDefaultAddress(address.id)}
-                onEdit={() => console.log('Edit address:', address.id)}
+                onEdit={() => editAddress(address)}
                 onDelete={() => deleteAddress(address.id)}
               />
             ))}
           </div>
         )}
 
-        {/* Add Address Form Modal */}
-        {showAddForm && (
+        {/* Add/Edit Address Form Modal */}
+        {(showAddForm || editingAddress) && (
           <AddAddressModal
-            onClose={() => setShowAddForm(false)}
+            address={editingAddress}
+            onClose={() => {
+              setShowAddForm(false);
+              setEditingAddress(null);
+            }}
             onSuccess={() => {
               setShowAddForm(false);
+              setEditingAddress(null);
               fetchAddresses();
             }}
           />
@@ -243,20 +274,22 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit
   </div>
 );
 
-// Add Address Modal Component
+// Add/Edit Address Modal Component
 interface AddAddressModalProps {
+  address?: Address | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess }) => {
+const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onSuccess }) => {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
-    apartment: '',
-    city: 'Dubai',
+    apartment: address?.apartment || '',
+    city: address?.city || 'Dubai',
   });
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(address?.street || '');
   const [loading, setLoading] = useState(false);
+  const isEditing = !!address;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,22 +298,37 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('addresses')
-        .insert({
-          user_id: user.id,
-          street: searchValue,
-          apartment: formData.apartment || null,
-          city: formData.city,
-          is_default: false,
-        });
+      if (isEditing && address) {
+        // Update existing address
+        const { error } = await supabase
+          .from('addresses')
+          .update({
+            street: searchValue.trim(),
+            apartment: formData.apartment.trim() || null,
+            city: formData.city,
+          })
+          .eq('id', address.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Create new address
+        const { error } = await supabase
+          .from('addresses')
+          .insert({
+            user_id: user.id,
+            street: searchValue,
+            apartment: formData.apartment || null,
+            city: formData.city,
+            is_default: false,
+          });
+
+        if (error) throw error;
+      }
 
       onSuccess();
     } catch (error) {
-      console.error('Error adding address:', error);
-      alert('Error adding address. Please try again.');
+      console.error(`Error ${isEditing ? 'updating' : 'adding'} address:`, error);
+      alert(`Error ${isEditing ? 'updating' : 'adding'} address. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -303,7 +351,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
       <div className="bg-white w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Add New Address</h2>
+          <h2 className="text-xl font-bold text-gray-900">{isEditing ? 'Edit Address' : 'Add New Address'}</h2>
           <Button
             variant="secondary"
             shape="bubble"
@@ -380,7 +428,10 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ onClose, onSuccess })
             fullWidth={true}
             className="!py-3 !shadow-lg"
           >
-            {loading ? 'Adding...' : 'Add Address'}
+            {loading 
+              ? (isEditing ? 'Updating...' : 'Adding...') 
+              : (isEditing ? 'Update Address' : 'Add Address')
+            }
           </Button>
         </form>
       </div>

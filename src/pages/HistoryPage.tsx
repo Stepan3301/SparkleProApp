@@ -793,27 +793,14 @@ const HistoryPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Window Panels Section (if applicable) */}
-              {selectedBooking.window_panels_count && (
-                <div className="bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100">
-                  <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">🪟</span>
-                    Window Cleaning Details
-                  </h3>
-                  <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 inline-block">
-                    {selectedBooking.window_panels_count} window panel{selectedBooking.window_panels_count > 1 ? 's' : ''}
-                  </div>
-                </div>
-              )}
-
-              {/* Detailed Add-ons Section */}
+              {/* Extra Services Section - Positioned after Order Details */}
               {selectedBooking.addons && selectedBooking.addons.length > 0 && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
                   <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    Additional Services
+                    Extra Services
                   </h3>
                   
                   <div className="space-y-3">
@@ -852,7 +839,7 @@ const HistoryPage: React.FC = () => {
                   {/* Total Add-ons Price */}
                   <div className="mt-4 pt-4 border-t border-emerald-200">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-emerald-900">Add-ons Total:</span>
+                      <span className="font-semibold text-emerald-900">Extra Services Total:</span>
                       <div className="flex items-center gap-1 text-emerald-600 font-bold">
                         <DirhamIcon size="sm" />
                         <span>
@@ -860,6 +847,19 @@ const HistoryPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Window Panels Section (if applicable) */}
+              {selectedBooking.window_panels_count && (
+                <div className="bg-blue-50 rounded-2xl p-5 mb-6 border border-blue-100">
+                  <h3 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                    <span className="text-2xl">🪟</span>
+                    Window Cleaning Details
+                  </h3>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm font-medium border border-blue-200 inline-block">
+                    {selectedBooking.window_panels_count} window panel{selectedBooking.window_panels_count > 1 ? 's' : ''}
                   </div>
                 </div>
               )}

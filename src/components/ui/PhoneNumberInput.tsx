@@ -56,7 +56,7 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
   const [inputValue, setInputValue] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize with existing value on mount only
+  // Initialize with existing value when value prop changes
   useEffect(() => {
     if (value && value.trim() !== '') {
       const country = COUNTRIES.find(c => value.startsWith(c.dialCode));
@@ -65,8 +65,11 @@ const PhoneNumberInput: React.FC<PhoneNumberInputProps> = ({
         const phoneOnly = value.replace(country.dialCode, '');
         setInputValue(formatNumber(phoneOnly, country.format));
       }
+    } else {
+      // Reset to empty when value is cleared
+      setInputValue('');
     }
-  }, []); // Only run once on mount
+  }, [value]); // Update when value prop changes
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

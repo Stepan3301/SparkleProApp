@@ -5,7 +5,6 @@ import { supabase } from '../lib/supabase';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
-import EnableNotificationsCard from '../components/EnableNotificationsCard';
 import { useSimpleTranslation } from '../utils/i18n';
 import { 
   UserIcon, 
@@ -433,15 +432,6 @@ const ProfilePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Notification Permission Request */}
-        <div className="mb-5">
-          <EnableNotificationsCard 
-            variant="card"
-            showTestButton={true}
-            onSuccess={() => console.log('Notifications enabled from profile!')}
-            onDecline={() => console.log('User declined notifications from profile')}
-          />
-        </div>
 
         {/* Full Width Items */}
         <div className="space-y-3 mb-8">
