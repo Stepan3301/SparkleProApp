@@ -794,7 +794,7 @@ const HistoryPage: React.FC = () => {
               </div>
 
               {/* Extra Services Section - Positioned after Order Details */}
-              {selectedBooking.addons && selectedBooking.addons.length > 0 && (
+              {((selectedBooking.addons && selectedBooking.addons.length > 0) || (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
                   <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -804,36 +804,57 @@ const HistoryPage: React.FC = () => {
                   </h3>
                   
                   <div className="space-y-3">
-                    {selectedBooking.addons.map((addon, index) => (
-                      <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+                    {selectedBooking.addons && selectedBooking.addons.length > 0 ? (
+                      selectedBooking.addons.map((addon, index) => (
+                        <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+                          <div className="flex items-center gap-4">
+                            {/* Service Image */}
+                            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                              <img
+                                src={getAddonImage(addon.id?.toString() || '0')}
+                                alt={addon.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  target.src = '/regular-cleaning.jpg'; // Fallback image
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Service Details */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 text-sm mb-1">{addon.name}</h4>
+                              <p className="text-gray-600 text-xs">Additional cleaning service</p>
+                            </div>
+                            
+                            {/* Price */}
+                            <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm">
+                              <DirhamIcon size="sm" />
+                              <span>{addon.price || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      /* Fallback when addon details aren't available but total exists */
+                      <div className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
                         <div className="flex items-center gap-4">
-                          {/* Service Image */}
-                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                            <img
-                              src={getAddonImage(addon.id?.toString() || '0')}
-                              alt={addon.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.currentTarget;
-                                target.src = '/regular-cleaning.jpg'; // Fallback image
-                              }}
-                            />
+                          <div className="w-12 h-12 rounded-lg flex-shrink-0 bg-emerald-100 flex items-center justify-center">
+                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
                           </div>
-                          
-                          {/* Service Details */}
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-gray-900 text-sm mb-1">{addon.name}</h4>
-                            <p className="text-gray-600 text-xs">Additional cleaning service</p>
+                            <h4 className="font-semibold text-gray-900 text-sm mb-1">Extra Services Added</h4>
+                            <p className="text-gray-600 text-xs">Additional services were included with this booking</p>
                           </div>
-                          
-                          {/* Price */}
                           <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm">
                             <DirhamIcon size="sm" />
-                            <span>{addon.price || 'N/A'}</span>
+                            <span>{selectedBooking.addons_total}</span>
                           </div>
                         </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                   
                   {/* Total Add-ons Price */}
@@ -843,7 +864,10 @@ const HistoryPage: React.FC = () => {
                       <div className="flex items-center gap-1 text-emerald-600 font-bold">
                         <DirhamIcon size="sm" />
                         <span>
-                          {selectedBooking.addons.reduce((total, addon) => total + (addon.price || 0), 0)}
+                          {selectedBooking.addons && selectedBooking.addons.length > 0 
+                            ? selectedBooking.addons.reduce((total, addon) => total + (addon.price || 0), 0)
+                            : selectedBooking.addons_total || 0
+                          }
                         </span>
                       </div>
                     </div>

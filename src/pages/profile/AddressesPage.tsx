@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
+import AddressSuccessAnimation from '../../components/ui/AddressSuccessAnimation';
 
 import { 
   ArrowLeftIcon, 
@@ -29,6 +30,7 @@ const AddressesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   useEffect(() => {
     fetchAddresses();
@@ -195,13 +197,26 @@ const AddressesPage: React.FC = () => {
               setShowAddForm(false);
               setEditingAddress(null);
             }}
-            onSuccess={() => {
+            onSuccess={(isNewAddress: boolean) => {
               setShowAddForm(false);
               setEditingAddress(null);
-              fetchAddresses();
+              if (isNewAddress) {
+                setShowSuccessAnimation(true);
+              } else {
+                fetchAddresses();
+              }
             }}
           />
         )}
+
+        {/* Address Success Animation */}
+        <AddressSuccessAnimation
+          isVisible={showSuccessAnimation}
+          onComplete={() => {
+            setShowSuccessAnimation(false);
+            fetchAddresses();
+          }}
+        />
       </div>
     </div>
   );
@@ -278,7 +293,7 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit
 interface AddAddressModalProps {
   address?: Address | null;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (isNewAddress: boolean) => void;
 }
 
 const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onSuccess }) => {
@@ -325,7 +340,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
         if (error) throw error;
       }
 
-      onSuccess();
+      onSuccess(!isEditing);
     } catch (error) {
       console.error(`Error ${isEditing ? 'updating' : 'adding'} address:`, error);
       alert(`Error ${isEditing ? 'updating' : 'adding'} address. Please try again.`);
