@@ -135,7 +135,7 @@ const HistoryPage: React.FC = () => {
 
     try {
       const { data, error } = await supabase
-        .from('bookings')
+        .from('booking_details_with_addons')
         .select('*')
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
@@ -794,7 +794,7 @@ const HistoryPage: React.FC = () => {
               </div>
 
               {/* Extra Services Section - Positioned after Order Details */}
-              {((selectedBooking.addons && selectedBooking.addons.length > 0) || (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
+              {((selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0) || (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
                   <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -804,8 +804,8 @@ const HistoryPage: React.FC = () => {
                   </h3>
                   
                   <div className="space-y-3">
-                    {selectedBooking.addons && selectedBooking.addons.length > 0 ? (
-                      selectedBooking.addons.map((addon, index) => (
+                    {selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0 ? (
+                      selectedBooking.detailed_addons.map((addon, index) => (
                         <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
                           <div className="flex items-center gap-4">
                             {/* Service Image */}
@@ -864,8 +864,8 @@ const HistoryPage: React.FC = () => {
                       <div className="flex items-center gap-1 text-emerald-600 font-bold">
                         <DirhamIcon size="sm" />
                         <span>
-                          {selectedBooking.addons && selectedBooking.addons.length > 0 
-                            ? selectedBooking.addons.reduce((total, addon) => total + (addon.price || 0), 0)
+                          {selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0 
+                            ? selectedBooking.detailed_addons.reduce((total, addon) => total + (addon.price || 0), 0)
                             : selectedBooking.addons_total || 0
                           }
                         </span>

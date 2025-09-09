@@ -32,13 +32,18 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
   // Animation will start automatically when loaded
 
   const handleAnimationComplete = () => {
-    setShowParticles(true);
+    // First show the text
     setShowSuccessMessage(true);
+    
+    // Then show particles after a small delay
+    setTimeout(() => {
+      setShowParticles(true);
+    }, 300);
     
     // Complete the action after showing message and particles
     setTimeout(() => {
       onComplete();
-    }, 2500);
+    }, 2800);
   };
 
   if (!isVisible) {
@@ -48,8 +53,8 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-500 bg-opacity-50 backdrop-blur-sm">
       <div className="relative flex flex-col items-center justify-center">
-        {/* Globe Lottie Animation */}
-        {animationData && !showParticles && (
+        {/* Globe Lottie Animation - stays visible until end */}
+        {animationData && (
           <div className="relative z-20">
             <Lottie
               animationData={animationData}
@@ -61,14 +66,14 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
           </div>
         )}
 
-        {/* Success Text Animation */}
+        {/* Success Text Animation - centered under globe */}
         {showSuccessMessage && (
-          <div className="relative flex justify-center items-center px-4 py-2 z-20 mt-4">
+          <div className="relative flex justify-center items-center px-4 py-2 z-20 mt-6">
             <p 
-              className={`text-white font-bold text-3xl tracking-wide transform transition-all duration-800 ease-out ${
+              className={`text-white font-bold text-3xl text-center tracking-wide transform transition-all duration-700 ease-out ${
                 showSuccessMessage 
                   ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 translate-y-8'
+                  : 'opacity-0 translate-y-12'
               }`}
               style={{
                 textShadow: '0 0 15px rgba(255,255,255,0.9)',

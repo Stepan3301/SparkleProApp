@@ -60,6 +60,14 @@ export interface Booking {
   
   // Addons
   addons: Addon[];
+  detailed_addons?: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    price: number;
+    quantity: number;
+    price_per_unit: number;
+  }>;
   
   // Pricing
   base_price: number;
