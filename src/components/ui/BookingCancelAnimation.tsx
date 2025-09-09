@@ -116,7 +116,7 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
         {showTextAnimation && (
           <div className="relative flex justify-center items-center px-4 py-2 z-20">
             <p 
-              className={`text-white font-bold text-2xl tracking-wide transform transition-all duration-800 ease-out ${
+              className={`text-white font-bold text-3xl tracking-wide transform transition-all duration-800 ease-out ${
                 textSlideUp 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-8'
@@ -136,11 +136,11 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
       {/* Background Particle Burst - Behind everything with lower z-index */}
       {showParticles && (
         <div className="absolute inset-0 pointer-events-none z-5">
-          {/* Large background burst particles flowing across entire screen */}
-          {[...Array(20)].map((_, i) => {
-            const angle = (i * 360) / 20; // More particles for fuller effect
-            const startRadius = 60; // Start from behind the animation
-            const finalDistance = 300 + Math.random() * 200; // Flow much further across background
+          {/* Large confetti burst particles exploding simultaneously */}
+          {[...Array(25)].map((_, i) => {
+            const angle = (i * 360) / 25; // Even distribution
+            const startRadius = 40; // Start closer to center for true burst effect
+            const finalDistance = 350 + Math.random() * 150; // Varied distances for natural look
             const startX = Math.cos(angle * Math.PI / 180) * startRadius;
             const startY = Math.sin(angle * Math.PI / 180) * startRadius;
             const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
@@ -149,13 +149,13 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
             return (
               <div
                 key={i}
-                className="absolute w-3 h-3 bg-green-400 rounded-full opacity-80"
+                className="absolute w-3 h-3 bg-green-400 rounded-full opacity-90"
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  animation: `backgroundBurst 2.2s ease-out forwards`,
-                  animationDelay: `${i * 0.03}s`,
+                  animation: `confettiBurst 2s ease-out forwards`,
+                  animationDelay: `0s`, // All start simultaneously!
                   '--start-x': `${startX}px`,
                   '--start-y': `${startY}px`,
                   '--final-x': `${finalX}px`,
@@ -165,11 +165,11 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
             );
           })}
           
-          {/* Background sparkle stars flowing across screen */}
-          {[...Array(15)].map((_, i) => {
-            const angle = (i * 360) / 15 + 12; // Offset for variety
-            const startRadius = 40;
-            const finalDistance = 250 + Math.random() * 150;
+          {/* Sparkle confetti bursting simultaneously */}
+          {[...Array(18)].map((_, i) => {
+            const angle = (i * 360) / 18 + 10; // Offset for variety
+            const startRadius = 35;
+            const finalDistance = 280 + Math.random() * 120;
             const startX = Math.cos(angle * Math.PI / 180) * startRadius;
             const startY = Math.sin(angle * Math.PI / 180) * startRadius;
             const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
@@ -178,14 +178,14 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
             return (
               <div
                 key={`bg-star-${i}`}
-                className="absolute text-yellow-300 opacity-70"
+                className="absolute text-yellow-300 opacity-80"
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  fontSize: `${18 + Math.random() * 10}px`,
-                  animation: `backgroundStarBurst 2.5s ease-out forwards`,
-                  animationDelay: `${0.05 + i * 0.04}s`,
+                  fontSize: `${20 + Math.random() * 8}px`,
+                  animation: `confettiStarBurst 2.2s ease-out forwards`,
+                  animationDelay: `0s`, // All burst simultaneously!
                   '--start-x': `${startX}px`,
                   '--start-y': `${startY}px`,
                   '--final-x': `${finalX}px`,
@@ -197,11 +197,11 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
             );
           })}
           
-          {/* Additional smaller particles for richness */}
-          {[...Array(25)].map((_, i) => {
-            const angle = (i * 360) / 25 + 7.2; // Small offset
-            const startRadius = 30;
-            const finalDistance = 200 + Math.random() * 250;
+          {/* Small confetti particles for richness - all burst together */}
+          {[...Array(30)].map((_, i) => {
+            const angle = (i * 360) / 30 + 6; // Small offset for variety
+            const startRadius = 25;
+            const finalDistance = 220 + Math.random() * 180;
             const startX = Math.cos(angle * Math.PI / 180) * startRadius;
             const startY = Math.sin(angle * Math.PI / 180) * startRadius;
             const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
@@ -210,13 +210,13 @@ const BookingCancelAnimation: React.FC<BookingCancelAnimationProps> = ({
             return (
               <div
                 key={`small-${i}`}
-                className="absolute w-1 h-1 bg-blue-300 rounded-full opacity-60"
+                className="absolute w-2 h-2 bg-blue-300 rounded-full opacity-70"
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  animation: `backgroundBurst 2s ease-out forwards`,
-                  animationDelay: `${0.1 + i * 0.02}s`,
+                  animation: `confettiBurst 1.8s ease-out forwards`,
+                  animationDelay: `0s`, // Simultaneous burst!
                   '--start-x': `${startX}px`,
                   '--start-y': `${startY}px`,
                   '--final-x': `${finalX}px`,
