@@ -53,6 +53,14 @@ interface Booking {
   addons_total?: number;
   street?: string; // For fetched address info
   service_id?: number; // Service ID for fetching service name
+  detailed_addons?: Array<{
+    id: number;
+    name: string;
+    description?: string;
+    price: number;
+    quantity: number;
+    unit_price: number;
+  }>;
 }
 
 interface User {
@@ -221,27 +229,8 @@ const AdminDashboard: React.FC = () => {
   const fetchBookings = async () => {
     try {
       const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          customer_id,
-          customer_name,
-          customer_phone,
-          property_size,
-          service_date,
-          service_time,
-          total_cost,
-          status,
-          created_at,
-          additional_notes,
-          cleaners_count,
-          own_materials,
-          address_id,
-          custom_address,
-          service_id,
-          addons,
-          base_price
-        `)
+        .from('admin_bookings_with_addons')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -1032,6 +1021,31 @@ const AdminDashboard: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Additional Services Section */}
+                {selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-800 mb-3">{t('admin.addons', 'Additional Services')}</h3>
+                    <div className="space-y-2">
+                      {selectedBooking.detailed_addons.map((addon: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-800">{addon.name}</span>
+                            {addon.description && (
+                              <p className="text-xs text-gray-600 mt-1">{addon.description}</p>
+                            )}
+                            <span className="text-xs text-gray-500">Qty: {addon.quantity}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm font-semibold text-gray-800">
+                              {formatCurrency(addon.price, 'black')}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {selectedBooking.additional_notes && (
                   <div className="bg-gray-50 rounded-lg p-4">
