@@ -15,8 +15,10 @@ import {
   MagnifyingGlassIcon,
   BellIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
+import SupportChat from './SupportChat';
 
 interface DashboardStats {
   totalBookings: number;
@@ -94,6 +96,7 @@ const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [unreadSupportCount, setUnreadSupportCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -130,6 +133,20 @@ const AdminDashboard: React.FC = () => {
     }
   }, [userSearchQuery, users]);
 
+  const fetchUnreadSupportCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('support_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'unread');
+
+      if (error) throw error;
+      setUnreadSupportCount(count || 0);
+    } catch (error) {
+      console.error('Error fetching unread support count:', error);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       // Fetch services first, then other data
@@ -137,7 +154,8 @@ const AdminDashboard: React.FC = () => {
       await Promise.all([
         fetchStats(),
         fetchBookings(),
-        fetchUsers()
+        fetchUsers(),
+        fetchUnreadSupportCount()
       ]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -711,6 +729,11 @@ const AdminDashboard: React.FC = () => {
               </div>
             )}
 
+            {/* Support Chat Tab */}
+            {activeTab === 'support' && (
+              <SupportChat />
+            )}
+
             {/* Analytics Tab */}
             {activeTab === 'analytics' && (
               <div>
@@ -1221,6 +1244,22 @@ const AdminDashboard: React.FC = () => {
           >
             <UsersIcon className="w-5 h-5 mb-1" />
             <span className="text-xs font-medium">Users</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all relative ${
+              activeTab === 'support' ? 'bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <div className="relative">
+              <ChatBubbleLeftRightIcon className="w-5 h-5 mb-1" />
+              {unreadSupportCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {unreadSupportCount > 99 ? '99+' : unreadSupportCount}
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-medium">Support</span>
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
