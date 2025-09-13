@@ -10,7 +10,6 @@ import {
   UserIcon, 
   MapPinIcon, 
   CreditCardIcon, 
-  BellIcon, 
   ShieldCheckIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
@@ -177,12 +176,20 @@ const ProfilePage: React.FC = () => {
       disabled: true // Add disabled flag
     },
     {
-      icon: <BellIcon className="w-5 h-5" />,
-      title: "Notifications",
-      description: "Preferences",
-      onClick: () => navigate('/profile/notifications'),
-      gradient: "from-red-500 to-red-600"
+      icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
+      title: "Help & Support", 
+      description: "Get help and contact us",
+      onClick: () => navigate('/profile/help-support'),
+      gradient: "from-cyan-500 to-blue-500"
     }
+    // Notifications temporarily removed - can be re-enabled later
+    // {
+    //   icon: <BellIcon className="w-5 h-5" />,
+    //   title: "Notifications",
+    //   description: "Preferences",
+    //   onClick: () => navigate('/profile/notifications'),
+    //   gradient: "from-red-500 to-red-600"
+    // }
   ];
 
   const fullWidthItems = [
@@ -192,13 +199,6 @@ const ProfilePage: React.FC = () => {
       description: "Account security settings",
       onClick: () => navigate('/profile/privacy-security'),
       gradient: "from-purple-500 to-purple-600"
-    },
-    {
-      icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
-      title: "Help & Support", 
-      description: "Get help and contact us",
-      onClick: () => navigate('/profile/help-support'),
-      gradient: "from-cyan-500 to-blue-500"
     }
   ];
 
