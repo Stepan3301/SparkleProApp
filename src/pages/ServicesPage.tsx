@@ -179,7 +179,7 @@ const ServicesPage: React.FC = () => {
                       </div>
                       
                       <p className="text-gray-600 text-sm leading-relaxed">
-                        {service.description}
+                        {service.description.replace(/\{\{count\}\}/g, '1')}
                       </p>
                     </div>
 

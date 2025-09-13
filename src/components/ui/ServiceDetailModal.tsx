@@ -131,7 +131,7 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
                    </span>
                  </div>
                 <span className="text-lg text-emerald-600 font-semibold">
-                  {service.price_per_hour ? `/${t('booking.hours', 'hour')}` : ''}
+                  {service.price_per_hour ? '/hour' : ''}
                 </span>
               </div>
 
@@ -139,7 +139,7 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-3">{t('common.serviceDescription', 'Service Description')}</h3>
                 <p className="text-gray-600 leading-relaxed">
-                  {service.description}
+                  {service.description.replace(/\{\{count\}\}/g, '1')}
                 </p>
               </div>
 
