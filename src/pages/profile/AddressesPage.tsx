@@ -231,7 +231,10 @@ interface AddressCardProps {
 }
 
 const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit, onDelete }) => (
-  <div className={`bg-white rounded-2xl p-5 border-2 ${address.is_default ? 'border-primary bg-primary-50' : 'border-transparent'}`}>
+  <div 
+    className={`bg-white rounded-2xl p-5 border-2 cursor-pointer hover:shadow-lg transition-all duration-200 ${address.is_default ? 'border-primary bg-primary-50' : 'border-transparent'}`}
+    onClick={onEdit}
+  >
     <div className="flex items-start justify-between mb-3">
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
@@ -253,7 +256,7 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit
                           <p className="text-sm text-gray-600">{address.city}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="edit"
           shape="bubble"
@@ -280,7 +283,10 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit
         variant="selection"
         shape="organic"
         size="sm"
-        onClick={onSetDefault}
+        onClick={(e) => {
+          e.stopPropagation();
+          onSetDefault();
+        }}
         className="!w-full !py-2 !text-sm !min-w-0 !border-primary !text-primary"
       >
         Set as Default
