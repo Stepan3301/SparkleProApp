@@ -70,15 +70,7 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
         {showSuccessMessage && (
           <div className="relative flex justify-center items-center px-4 py-2 z-20 mt-6">
             <p 
-              className={`text-white font-bold text-3xl text-center tracking-wide transform transition-all duration-700 ease-out ${
-                showSuccessMessage 
-                  ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 translate-y-12'
-              }`}
-              style={{
-                textShadow: '0 0 15px rgba(255,255,255,0.9)',
-                filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-              }}
+              className="text-white font-bold text-3xl text-center tracking-wide animate-slideUpFadeIn"
             >
               {successText}
             </p>
@@ -86,29 +78,43 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
         )}
       </div>
 
-      {/* Background Celebration Particles */}
+      {/* Confetti Celebration Particles */}
       {showParticles && (
         <div className="absolute inset-0 pointer-events-none z-5">
-          {/* Large green celebration particles */}
-          {[...Array(20)].map((_, i) => {
-            const angle = (i * 360) / 20;
-            const startRadius = 50;
-            const finalDistance = 350 + Math.random() * 150;
+          {/* Confetti pieces with random colors and shapes */}
+          {[...Array(40)].map((_, i) => {
+            // Random angle for more natural confetti spread
+            const angle = Math.random() * 360;
+            // Random start radius for more scattered effect
+            const startRadius = Math.random() * 80;
+            // Random final distance for varied confetti travel
+            const finalDistance = 200 + Math.random() * 300;
+            // Add some randomness to the trajectory
+            const angleVariation = (Math.random() - 0.5) * 60; // ±30 degrees variation
+            const finalAngle = angle + angleVariation;
+            
             const startX = Math.cos(angle * Math.PI / 180) * startRadius;
             const startY = Math.sin(angle * Math.PI / 180) * startRadius;
-            const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
-            const finalY = Math.sin(angle * Math.PI / 180) * finalDistance;
+            const finalX = Math.cos(finalAngle * Math.PI / 180) * finalDistance;
+            const finalY = Math.sin(finalAngle * Math.PI / 180) * finalDistance;
+            
+            // Random colors for confetti
+            const colors = ['bg-green-400', 'bg-blue-400', 'bg-yellow-400', 'bg-pink-400', 'bg-purple-400', 'bg-red-400'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Random sizes
+            const size = Math.random() > 0.5 ? 'w-2 h-2' : 'w-3 h-3';
             
             return (
               <div
                 key={i}
-                className="absolute w-3 h-3 bg-green-400 rounded-full opacity-90"
+                className={`absolute ${color} ${size} rounded-full opacity-90`}
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  animation: `addressSuccessBurst 2s ease-out forwards`,
-                  animationDelay: `0s`,
+                  animation: `addressConfettiBurst 2.5s ease-out forwards`,
+                  animationDelay: `${Math.random() * 0.3}s`, // Staggered start times
                   '--start-x': `${startX}px`,
                   '--start-y': `${startY}px`,
                   '--final-x': `${finalX}px`,
@@ -118,27 +124,34 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
             );
           })}
           
-          {/* Golden sparkle stars */}
-          {[...Array(15)].map((_, i) => {
-            const angle = (i * 360) / 15 + 12;
-            const startRadius = 40;
-            const finalDistance = 280 + Math.random() * 120;
+          {/* Sparkle stars with random distribution */}
+          {[...Array(20)].map((_, i) => {
+            // Random angle
+            const angle = Math.random() * 360;
+            // Random start radius
+            const startRadius = Math.random() * 60;
+            // Random final distance
+            const finalDistance = 150 + Math.random() * 250;
+            // Random trajectory variation
+            const angleVariation = (Math.random() - 0.5) * 80;
+            const finalAngle = angle + angleVariation;
+            
             const startX = Math.cos(angle * Math.PI / 180) * startRadius;
             const startY = Math.sin(angle * Math.PI / 180) * startRadius;
-            const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
-            const finalY = Math.sin(angle * Math.PI / 180) * finalDistance;
+            const finalX = Math.cos(finalAngle * Math.PI / 180) * finalDistance;
+            const finalY = Math.sin(finalAngle * Math.PI / 180) * finalDistance;
             
             return (
               <div
                 key={`star-${i}`}
-                className="absolute text-yellow-300 opacity-80"
+                className="absolute text-yellow-300 opacity-90"
                 style={{
                   left: '50%',
                   top: '50%',
                   transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  fontSize: `${20 + Math.random() * 8}px`,
-                  animation: `addressSuccessStarBurst 2.2s ease-out forwards`,
-                  animationDelay: `0s`,
+                  fontSize: `${16 + Math.random() * 12}px`,
+                  animation: `addressConfettiStarBurst 2.8s ease-out forwards`,
+                  animationDelay: `${Math.random() * 0.4}s`,
                   '--start-x': `${startX}px`,
                   '--start-y': `${startY}px`,
                   '--final-x': `${finalX}px`,
@@ -147,35 +160,6 @@ const AddressSuccessAnimation: React.FC<AddressSuccessAnimationProps> = ({
               >
                 ⭐
               </div>
-            );
-          })}
-          
-          {/* Small blue celebration particles */}
-          {[...Array(25)].map((_, i) => {
-            const angle = (i * 360) / 25 + 6;
-            const startRadius = 30;
-            const finalDistance = 220 + Math.random() * 180;
-            const startX = Math.cos(angle * Math.PI / 180) * startRadius;
-            const startY = Math.sin(angle * Math.PI / 180) * startRadius;
-            const finalX = Math.cos(angle * Math.PI / 180) * finalDistance;
-            const finalY = Math.sin(angle * Math.PI / 180) * finalDistance;
-            
-            return (
-              <div
-                key={`small-${i}`}
-                className="absolute w-2 h-2 bg-blue-300 rounded-full opacity-70"
-                style={{
-                  left: '50%',
-                  top: '50%',
-                  transform: `translate(calc(-50% + ${startX}px), calc(-50% + ${startY}px))`,
-                  animation: `addressSuccessBurst 1.8s ease-out forwards`,
-                  animationDelay: `0s`,
-                  '--start-x': `${startX}px`,
-                  '--start-y': `${startY}px`,
-                  '--final-x': `${finalX}px`,
-                  '--final-y': `${finalY}px`,
-                } as React.CSSProperties & { '--start-x': string; '--start-y': string; '--final-x': string; '--final-y': string }}
-              />
             );
           })}
         </div>
