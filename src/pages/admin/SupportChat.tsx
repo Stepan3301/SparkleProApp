@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import { 
   ArrowLeftIcon, 

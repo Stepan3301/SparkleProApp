@@ -30,15 +30,30 @@ const HelpSupportPage: React.FC = () => {
     setError(null);
 
     try {
-      // Get user profile information
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', user.id)
-        .single();
+      // Get user profile information with fallback
+      let userName = 'User';
+      let userEmail = user.email || '';
 
-      if (profileError) {
-        throw new Error('Failed to fetch user profile');
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', user.id)
+          .single();
+
+        if (!profileError && profile) {
+          userName = profile.full_name || user.email?.split('@')[0] || 'User';
+          userEmail = profile.email || user.email || '';
+        } else {
+          // Fallback to user email if profile fetch fails
+          userName = user.email?.split('@')[0] || 'User';
+          userEmail = user.email || '';
+        }
+      } catch (profileError) {
+        // If profile fetch fails, use email as fallback
+        console.warn('Profile fetch failed, using email fallback:', profileError);
+        userName = user.email?.split('@')[0] || 'User';
+        userEmail = user.email || '';
       }
 
       // Insert support message
@@ -46,8 +61,8 @@ const HelpSupportPage: React.FC = () => {
         .from('support_messages')
         .insert({
           user_id: user.id,
-          user_name: profile.full_name || user.email?.split('@')[0] || 'User',
-          user_email: profile.email || user.email || '',
+          user_name: userName,
+          user_email: userEmail,
           message: message.trim(),
           status: 'unread',
           priority: 'medium'

@@ -6,11 +6,12 @@ import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
 import { useSimpleTranslation } from '../utils/i18n';
-import { 
-  UserIcon, 
-  MapPinIcon, 
-  CreditCardIcon, 
+import {
+  UserIcon,
+  MapPinIcon,
+  CreditCardIcon,
   ShieldCheckIcon,
+  BellIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
   ChevronRightIcon,
@@ -176,20 +177,19 @@ const ProfilePage: React.FC = () => {
       disabled: true // Add disabled flag
     },
     {
+      icon: <BellIcon className="w-5 h-5" />,
+      title: "Notifications",
+      description: "Preferences",
+      onClick: () => navigate('/profile/notifications'),
+      gradient: "from-red-500 to-red-600"
+    },
+    {
       icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
       title: "Help & Support", 
       description: "Get help and contact us",
       onClick: () => navigate('/profile/help-support'),
       gradient: "from-cyan-500 to-blue-500"
     }
-    // Notifications temporarily removed - can be re-enabled later
-    // {
-    //   icon: <BellIcon className="w-5 h-5" />,
-    //   title: "Notifications",
-    //   description: "Preferences",
-    //   onClick: () => navigate('/profile/notifications'),
-    //   gradient: "from-red-500 to-red-600"
-    // }
   ];
 
   const fullWidthItems = [
