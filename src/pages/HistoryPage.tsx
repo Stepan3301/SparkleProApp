@@ -503,7 +503,7 @@ const HistoryPage: React.FC = () => {
                     // Restore pointer events after touch
                     setTimeout(() => {
                       if (e.currentTarget) {
-                        e.currentTarget.style.pointerEvents = 'auto';
+                    e.currentTarget.style.pointerEvents = 'auto';
                       }
                     }, 100);
                   }}
@@ -622,15 +622,15 @@ const HistoryPage: React.FC = () => {
                 
                 {/* Cancel Button - Only show if cancellation is allowed */}
                 {canCancelBooking(selectedBooking) ? (
-                  <Button
-                    variant="signout"
-                    shape="bubble"
-                    size="sm"
+                <Button
+                  variant="signout"
+                  shape="bubble"
+                  size="sm"
                     onClick={() => initiateCancelBooking(selectedBooking.id)}
-                    leftIcon={<TrashIcon className="w-4 h-4" />}
-                  >
-                    Cancel
-                  </Button>
+                  leftIcon={<TrashIcon className="w-4 h-4" />}
+                >
+                  Cancel
+                </Button>
                 ) : (
                   <div className="relative group">
                     <Button
@@ -671,15 +671,15 @@ const HistoryPage: React.FC = () => {
                     className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setActiveTooltip(activeTooltip === 'date' ? null : 'date')}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <CalendarIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">{formatDate(selectedBooking.service_date)}</div>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <CalendarIcon className="w-6 h-6 text-white" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Date</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{formatDate(selectedBooking.service_date)}</div>
+                    </div>
+                  </div>
                   </div>
                   {activeTooltip === 'date' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
@@ -699,15 +699,15 @@ const HistoryPage: React.FC = () => {
                     className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setActiveTooltip(activeTooltip === 'time' ? null : 'time')}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <ClockIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">{formatTime(selectedBooking.service_time)}</div>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <ClockIcon className="w-6 h-6 text-white" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Time</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{formatTime(selectedBooking.service_time)}</div>
+                    </div>
+                  </div>
                   </div>
                   {activeTooltip === 'time' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
@@ -722,15 +722,15 @@ const HistoryPage: React.FC = () => {
                     className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setActiveTooltip(activeTooltip === 'cleaners' ? null : 'cleaners')}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <UserIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cleaners</div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <UserIcon className="w-6 h-6 text-white" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Cleaners</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">{selectedBooking.cleaners_count} cleaner{selectedBooking.cleaners_count > 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
                   </div>
                   {activeTooltip === 'cleaners' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
@@ -745,17 +745,17 @@ const HistoryPage: React.FC = () => {
                     className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-h-[80px] cursor-pointer hover:bg-gray-100 transition-colors"
                     onClick={() => setActiveTooltip(activeTooltip === 'address' ? null : 'address')}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <MapPinIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</div>
-                        <div className="text-sm font-semibold text-gray-900 truncate">
-                          {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
-                        </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <MapPinIcon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-500 uppercase tracking-wide font-medium">Address</div>
+                      <div className="text-sm font-semibold text-gray-900 truncate">
+                        {getAddressName(selectedBooking.address_id, selectedBooking.custom_address)}
                       </div>
                     </div>
+                  </div>
                   </div>
                   {activeTooltip === 'address' && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gray-100 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg z-30 transform translate-y-full border border-gray-200">
@@ -794,7 +794,9 @@ const HistoryPage: React.FC = () => {
               </div>
 
               {/* Extra Services Section - Positioned after Order Details */}
-              {((selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0) || (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
+              {((selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0) || 
+                (selectedBooking.addons && selectedBooking.addons.length > 0) || 
+                (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
                   <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -805,6 +807,7 @@ const HistoryPage: React.FC = () => {
                   
                   <div className="space-y-3">
                     {selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0 ? (
+                      // Use detailed addons if available
                       selectedBooking.detailed_addons.map((addon, index) => (
                         <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
                           <div className="flex items-center gap-4">
@@ -835,8 +838,40 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </div>
                       ))
+                    ) : selectedBooking.addons && selectedBooking.addons.length > 0 ? (
+                      // Use addons array if detailed_addons is not available
+                      selectedBooking.addons.map((addon, index) => (
+                        <div key={index} className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+                          <div className="flex items-center gap-4">
+                            {/* Service Image */}
+                            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                              <img
+                                src={getAddonImage(addon.id?.toString() || '0')}
+                                alt={addon.name || 'Add-on Service'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  target.src = '/regular-cleaning.jpg'; // Fallback image
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Service Details */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-gray-900 text-sm mb-1">{addon.name || 'Add-on Service'}</h4>
+                              <p className="text-gray-600 text-xs">Additional cleaning service</p>
+                            </div>
+                            
+                            {/* Price */}
+                            <div className="flex items-center gap-1 text-emerald-600 font-bold text-sm">
+                              <DirhamIcon size="sm" />
+                              <span>{addon.price || 'N/A'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
                     ) : (
-                      /* Fallback when addon details aren't available but total exists */
+                      /* Fallback when no addon details are available but total exists */
                       <div className="bg-white rounded-xl p-4 border border-emerald-100 shadow-sm">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-lg flex-shrink-0 bg-emerald-100 flex items-center justify-center">
@@ -866,9 +901,11 @@ const HistoryPage: React.FC = () => {
                         <span>
                           {selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0 
                             ? selectedBooking.detailed_addons.reduce((total, addon) => total + (addon.price || 0), 0)
+                            : selectedBooking.addons && selectedBooking.addons.length > 0
+                            ? selectedBooking.addons.reduce((total, addon) => total + (addon.price || 0), 0)
                             : selectedBooking.addons_total || 0
                           }
-                        </span>
+                      </span>
                       </div>
                     </div>
                   </div>
