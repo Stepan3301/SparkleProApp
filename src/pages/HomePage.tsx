@@ -647,7 +647,9 @@ const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-2 relative z-[100]">
-              <LanguageSwitcher variant="header" showText={false} />
+              <div className="hidden">
+                <LanguageSwitcher variant="header" showText={false} />
+              </div>
               <Button
                 variant="secondary"
                 shape="bubble"

@@ -450,7 +450,7 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Language Settings */}
-        <div className="mb-6">
+        <div className="mb-6 hidden">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">
             {t('profile.language', 'Language')}
           </h3>
