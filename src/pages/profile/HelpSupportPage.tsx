@@ -190,8 +190,8 @@ const HelpSupportPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <PaperAirplaneIcon className="w-4 h-4" />
                   Send Message
+                  <PaperAirplaneIcon className="w-4 h-4" />
                 </>
               )}
             </Button>
@@ -209,7 +209,7 @@ const HelpSupportPage: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">Email Support</p>
-                  <p className="text-sm text-gray-600">support@sparkleproapp.com</p>
+                  <p className="text-sm text-gray-600">sparklencs@gmail.com</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">

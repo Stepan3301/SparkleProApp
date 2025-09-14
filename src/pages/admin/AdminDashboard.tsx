@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useSimpleTranslation } from '../../utils/i18n';
-import { useNotifications } from '../../hooks/useNotifications';
+// Removed useNotifications import as it's no longer needed
 import DirhamIcon from '../../components/ui/DirhamIcon';
 // Removed unused import: Button
 import { 
@@ -13,9 +13,6 @@ import {
   Cog6ToothIcon,
   EyeIcon,
   MagnifyingGlassIcon,
-  BellIcon,
-  CheckCircleIcon,
-  XCircleIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import SupportChat from './SupportChat';
@@ -77,19 +74,7 @@ interface User {
 const AdminDashboard: React.FC = () => {
   const { signOut, profile } = useAuth();
   const { t } = useSimpleTranslation();
-  const {
-    isSupported,
-    isSubscribed,
-    isLoading: notificationLoading,
-    error: notificationError,
-    isIOSPWA,
-    isSafariTab,
-    platform,
-    permission,
-    requestPermission,
-    sendTestNotification,
-    resetError,
-  } = useNotifications();
+  // Removed notification-related hooks as they're no longer needed
   const [activeTab, setActiveTab] = useState('orders');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -789,86 +774,6 @@ const AdminDashboard: React.FC = () => {
                 <h2 className="text-lg font-semibold text-gray-800 mb-6 text-center">Profile Settings</h2>
                 
                 <div className="space-y-6">
-                  {/* Notification Settings Section */}
-                  <div className="bg-gradient-to-r from-emerald-50 to-sky-50 border border-emerald-200 rounded-xl p-4">
-                    <div className="flex items-center gap-3 mb-4">
-                      <BellIcon className="w-6 h-6 text-emerald-600" />
-                      <h3 className="text-lg font-semibold text-gray-800">Push Notifications</h3>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {/* Status Display */}
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-3">
-                          {isSubscribed ? (
-                            <CheckCircleIcon className="w-5 h-5 text-emerald-600" />
-                          ) : (
-                            <XCircleIcon className="w-5 h-5 text-gray-400" />
-                          )}
-                          <div>
-                            <div className="font-medium text-gray-800">
-                              {isSubscribed ? 'Notifications Enabled' : 'Notifications Disabled'}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {isSubscribed 
-                                ? 'You will receive admin notifications about new orders and updates'
-                                : 'Enable notifications to receive real-time updates about orders and system events'
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Error Display */}
-                      {notificationError && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <XCircleIcon className="w-5 h-5 text-red-600" />
-                            <div className="text-sm text-red-800">{notificationError}</div>
-                          </div>
-                          <button
-                            onClick={resetError}
-                            className="mt-2 text-xs text-red-600 hover:text-red-800 underline"
-                          >
-                            Dismiss
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3">
-                        {/* Enable/Status Button */}
-                        {!isSubscribed && isSupported && !isSafariTab && permission !== 'denied' && (
-                          <button
-                            onClick={requestPermission}
-                            disabled={notificationLoading}
-                            className="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-xl font-medium hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                          >
-                            {notificationLoading ? 'Enabling...' : 'Enable Push Notifications'}
-                          </button>
-                        )}
-
-                        {/* Test Button */}
-                        {isSubscribed && (
-                          <button
-                            onClick={sendTestNotification}
-                            disabled={notificationLoading}
-                            className="px-4 py-2 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                          >
-                            {notificationLoading ? 'Sending...' : 'Send Test'}
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Platform Info */}
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <div>Platform: {platform}</div>
-                        {isIOSPWA && <div>iOS PWA Mode: Active</div>}
-                        {isSafariTab && <div>⚠️ Safari Tab: Install PWA for notifications</div>}
-                        {!isSupported && <div>❌ Push notifications not supported on this device</div>}
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Profile Settings */}
                   <div className="space-y-4">

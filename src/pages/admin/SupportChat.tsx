@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
 import { 
@@ -25,12 +26,13 @@ interface SupportMessage {
 }
 
 const SupportChat: React.FC = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [updating, setUpdating] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied' | 'closed'>('unread');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied' | 'closed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -186,7 +188,7 @@ const SupportChat: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => window.history.back()}
+                onClick={() => navigate('/admin')}
                 className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
               >
                 <ArrowLeftIcon className="w-4 h-4 text-gray-600" />
