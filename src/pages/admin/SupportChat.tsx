@@ -4,10 +4,11 @@ import Button from '../../components/ui/Button';
 import { 
   ArrowLeftIcon, 
   ChatBubbleLeftRightIcon,
-  UserIcon,
-  ClockIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  FunnelIcon,
+  MagnifyingGlassIcon,
+  EllipsisVerticalIcon
 } from '@heroicons/react/24/outline';
 
 interface SupportMessage {
@@ -29,7 +30,9 @@ const SupportChat: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [updating, setUpdating] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied' | 'closed'>('unread');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -102,13 +105,13 @@ const SupportChat: React.FC = () => {
   const getStatusIcon = (status: SupportMessage['status']) => {
     switch (status) {
       case 'unread':
-        return <div className="w-3 h-3 bg-red-500 rounded-full" />;
+        return <div className="w-2 h-2 bg-blue-500 rounded-full" />;
       case 'read':
-        return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
-      case 'replied':
         return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
+      case 'replied':
+        return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
       case 'closed':
-        return <XCircleIcon className="w-4 h-4 text-gray-500" />;
+        return <XCircleIcon className="w-4 h-4 text-gray-400" />;
       default:
         return null;
     }
@@ -117,21 +120,24 @@ const SupportChat: React.FC = () => {
   const getPriorityColor = (priority: SupportMessage['priority']) => {
     switch (priority) {
       case 'urgent':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'high':
-        return 'text-orange-600 bg-orange-50 border-orange-200';
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'medium':
-        return 'text-blue-600 bg-blue-50 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'low':
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const filteredMessages = messages.filter(msg => {
-    if (filter === 'all') return true;
-    return msg.status === filter;
+    const matchesFilter = filter === 'all' || msg.status === filter;
+    const matchesSearch = searchQuery === '' || 
+      msg.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      msg.message.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesFilter && matchesSearch;
   });
 
   const formatDate = (dateString: string) => {
@@ -139,20 +145,26 @@ const SupportChat: React.FC = () => {
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true 
-      });
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor(diffInHours * 60);
+      return `${diffInMinutes}m`;
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)}h`;
     } else {
       return date.toLocaleDateString('en-US', { 
         month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: 'numeric'
       });
     }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
   };
 
   if (loading) {
@@ -168,29 +180,53 @@ const SupportChat: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => window.history.back()}
-              className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Support Chat</h1>
-              <p className="text-sm text-gray-600">{messages.length} total messages</p>
+      {/* Mobile-First Telegram-like Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeftIcon className="w-4 h-4 text-gray-600" />
+              </button>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">Support Chat</h1>
+                <p className="text-xs text-gray-500">{filteredMessages.length} messages</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <FunnelIcon className="w-4 h-4 text-gray-600" />
+              </button>
+              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <EllipsisVerticalIcon className="w-4 h-4 text-gray-600" />
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex h-[calc(100vh-80px)]">
-        {/* Messages List */}
-        <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-          {/* Filter Tabs */}
-          <div className="p-4 border-b border-gray-200">
+        {/* Search Bar */}
+        <div className="px-4 pb-3">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search messages..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        {showFilters && (
+          <div className="px-4 pb-3">
             <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
               {[
                 { key: 'all', label: 'All', count: messages.length },
@@ -202,7 +238,7 @@ const SupportChat: React.FC = () => {
                 <button
                   key={key}
                   onClick={() => setFilter(key as any)}
-                  className={`flex-1 px-3 py-2 text-xs font-medium rounded-md transition-colors ${
+                  className={`flex-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
                     filter === key
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-gray-600 hover:text-gray-900'
@@ -213,155 +249,183 @@ const SupportChat: React.FC = () => {
               ))}
             </div>
           </div>
+        )}
+      </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto">
-            {filteredMessages.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                <ChatBubbleLeftRightIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p>No messages found</p>
-              </div>
-            ) : (
-              filteredMessages.map((message) => (
-                <div
-                  key={message.id}
-                  onClick={() => setSelectedMessage(message)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedMessage?.id === message.id ? 'bg-blue-50 border-l-4 border-l-primary' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(message.status)}
-                      <span className="font-medium text-gray-900 text-sm">
-                        {message.user_name}
-                      </span>
-                    </div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(message.priority)}`}>
-                      {message.priority}
-                    </span>
-                  </div>
-                  
-                  <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                    {message.message}
-                  </p>
-                  
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <ClockIcon className="w-3 h-3" />
-                    <span>{formatDate(message.created_at)}</span>
-                  </div>
-                </div>
-              ))
-            )}
+      {/* Messages List - Telegram-like */}
+      <div className="flex-1">
+        {filteredMessages.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <ChatBubbleLeftRightIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500 text-sm">No messages found</p>
+            </div>
           </div>
-        </div>
-
-        {/* Message Detail */}
-        <div className="flex-1 flex flex-col">
-          {selectedMessage ? (
-            <>
-              {/* Message Header */}
-              <div className="p-6 border-b border-gray-200 bg-white">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{selectedMessage.user_name}</h3>
-                      <p className="text-sm text-gray-600">{selectedMessage.user_email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(selectedMessage.status)}
-                    <span className="text-sm font-medium text-gray-600 capitalize">
-                      {selectedMessage.status}
+        ) : (
+          <div className="space-y-1">
+            {filteredMessages.map((message) => (
+              <div
+                key={message.id}
+                onClick={() => setSelectedMessage(message)}
+                className={`p-4 bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
+                  selectedMessage?.id === message.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  {/* Avatar */}
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-semibold text-sm">
+                      {message.user_name.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <ClockIcon className="w-4 h-4" />
-                    <span>Received {formatDate(selectedMessage.created_at)}</span>
-                  </div>
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(selectedMessage.priority)}`}>
-                    {selectedMessage.priority} priority
-                  </span>
-                </div>
-              </div>
 
-              {/* Message Content */}
-              <div className="flex-1 p-6 bg-gray-50">
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
-                  <h4 className="font-semibold text-gray-900 mb-3">Message</h4>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {selectedMessage.message}
-                  </p>
-                </div>
-
-                {selectedMessage.admin_notes && (
-                  <div className="mt-4 bg-blue-50 rounded-2xl p-6">
-                    <h4 className="font-semibold text-blue-900 mb-3">Admin Notes</h4>
-                    <p className="text-blue-800 leading-relaxed whitespace-pre-wrap">
-                      {selectedMessage.admin_notes}
+                  {/* Message Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900 text-sm truncate">
+                          {message.user_name}
+                        </h3>
+                        {getStatusIcon(message.status)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(message.priority)}`}>
+                          {message.priority}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(message.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                      {message.message}
                     </p>
+                    
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>{message.user_email}</span>
+                      <span>•</span>
+                      <span>{formatTime(message.created_at)}</span>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              {/* Action Buttons */}
-              <div className="p-6 bg-white border-t border-gray-200">
-                <div className="flex items-center gap-3 mb-4">
-                  <textarea
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                    placeholder="Add admin notes..."
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={() => updateMessageStatus(selectedMessage.id, 'read', adminNotes)}
-                    disabled={updating}
-                    variant="secondary"
-                    size="sm"
-                  >
-                    Mark as Read
-                  </Button>
-                  
-                  <Button
-                    onClick={() => updateMessageStatus(selectedMessage.id, 'replied', adminNotes)}
-                    disabled={updating}
-                    variant="primary"
-                    size="sm"
-                  >
-                    Mark as Replied
-                  </Button>
-                  
-                  <Button
-                    onClick={() => updateMessageStatus(selectedMessage.id, 'closed', adminNotes)}
-                    disabled={updating}
-                    variant="delete"
-                    size="sm"
-                  >
-                    Close
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <ChatBubbleLeftRightIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                <p>Select a message to view details</p>
+      {/* Message Detail Modal - Mobile Optimized */}
+      {selectedMessage && (
+        <div className="fixed inset-0 bg-white z-20 flex flex-col">
+          {/* Modal Header */}
+          <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSelectedMessage(null)}
+                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeftIcon className="w-4 h-4 text-gray-600" />
+              </button>
+              <div>
+                <h2 className="font-semibold text-gray-900">{selectedMessage.user_name}</h2>
+                <p className="text-xs text-gray-500">{selectedMessage.user_email}</p>
               </div>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              {getStatusIcon(selectedMessage.status)}
+              <span className="text-xs font-medium text-gray-600 capitalize">
+                {selectedMessage.status}
+              </span>
+            </div>
+          </div>
+
+          {/* Message Content */}
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+            <div className="space-y-4">
+              {/* User Message */}
+              <div className="flex justify-start">
+                <div className="max-w-[80%]">
+                  <div className="bg-white rounded-2xl rounded-tl-md p-4 shadow-sm">
+                    <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
+                      {selectedMessage.message}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-gray-500">
+                        {formatTime(selectedMessage.created_at)}
+                      </span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(selectedMessage.priority)}`}>
+                        {selectedMessage.priority}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              {selectedMessage.admin_notes && (
+                <div className="flex justify-end">
+                  <div className="max-w-[80%]">
+                    <div className="bg-blue-500 text-white rounded-2xl rounded-tr-md p-4">
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                        {selectedMessage.admin_notes}
+                      </p>
+                      <span className="text-xs text-blue-100 mt-2 block">
+                        Admin Notes
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action Bar */}
+          <div className="bg-white border-t border-gray-200 p-4">
+            <div className="space-y-3">
+              <textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder="Add admin notes..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                rows={2}
+              />
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => updateMessageStatus(selectedMessage.id, 'read', adminNotes)}
+                  disabled={updating}
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Mark as Read
+                </Button>
+                
+                <Button
+                  onClick={() => updateMessageStatus(selectedMessage.id, 'replied', adminNotes)}
+                  disabled={updating}
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Mark as Replied
+                </Button>
+                
+                <Button
+                  onClick={() => updateMessageStatus(selectedMessage.id, 'closed', adminNotes)}
+                  disabled={updating}
+                  variant="delete"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

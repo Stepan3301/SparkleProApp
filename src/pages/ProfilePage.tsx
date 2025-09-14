@@ -11,7 +11,6 @@ import {
   MapPinIcon,
   CreditCardIcon,
   ShieldCheckIcon,
-  BellIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
   ChevronRightIcon,
@@ -175,13 +174,6 @@ const ProfilePage: React.FC = () => {
       gradient: "from-gray-400 to-gray-500", // Greyed out
       badge: "Coming Soon",
       disabled: true // Add disabled flag
-    },
-    {
-      icon: <BellIcon className="w-5 h-5" />,
-      title: "Notifications",
-      description: "Preferences",
-      onClick: () => navigate('/profile/notifications'),
-      gradient: "from-red-500 to-red-600"
     },
     {
       icon: <QuestionMarkCircleIcon className="w-5 h-5" />,
