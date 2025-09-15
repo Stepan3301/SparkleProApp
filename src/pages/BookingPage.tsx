@@ -141,7 +141,7 @@ const getMainServiceCategories = (t: any) => [
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
   
   // State management
@@ -331,6 +331,37 @@ const BookingPage: React.FC = () => {
       loadInitialData();
     }
   }, [user]);
+
+  // Restore guest progress after signup/login
+  useEffect(() => {
+    if (user && services.length > 0) {
+      try {
+        const raw = localStorage.getItem('guestBookingProgress');
+        if (!raw) return;
+        const progress = JSON.parse(raw);
+        if (progress.selectedMainCategory) setSelectedMainCategory(progress.selectedMainCategory);
+        if (progress.selectedService) {
+          const svcId = progress.selectedService.id || progress.selectedService;
+          const svc = services.find(s => s.id === svcId);
+          if (svc) setSelectedService(svc);
+        }
+        if (progress.selectedPropertySize) setSelectedPropertySize(progress.selectedPropertySize);
+        if (progress.selectedCleaners) setSelectedCleaners(progress.selectedCleaners);
+        if (progress.selectedHours) setSelectedHours(progress.selectedHours);
+        if (typeof progress.ownMaterials === 'boolean') setOwnMaterials(progress.ownMaterials);
+        if (progress.windowPanelsCount) setWindowPanelsCount(progress.windowPanelsCount);
+        if (Array.isArray(progress.selectedAddons)) setSelectedAddons(progress.selectedAddons);
+        if (progress.step) {
+          setCurrentStep(Math.min(3, progress.step));
+          scrollToTop();
+        }
+      } catch (e) {
+        console.warn('Failed to restore guest progress:', e);
+      } finally {
+        try { localStorage.removeItem('guestBookingProgress'); } catch {}
+      }
+    }
+  }, [user, services]);
 
   // Handle service selection when both category and services are available
   useEffect(() => {
@@ -566,6 +597,23 @@ const BookingPage: React.FC = () => {
         return;
       }
     } else if (currentStep === 3) {
+      if (!user && isGuest) {
+        const progress = {
+          selectedMainCategory,
+          selectedService,
+          selectedPropertySize,
+          selectedCleaners,
+          selectedHours,
+          ownMaterials,
+          windowPanelsCount,
+          selectedAddons,
+          step: currentStep
+        } as any;
+        try { localStorage.setItem('guestBookingProgress', JSON.stringify(progress)); } catch {}
+        alert('Please sign up or sign in to continue scheduling.');
+        navigate('/auth');
+        return;
+      }
       if (!serviceDate || !serviceTime) {
         alert('Please select date and time');
         return;

@@ -8,10 +8,13 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
+  isGuest: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  loginAsGuest: () => void;
+  exitGuestMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('isGuest') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Fetch user profile with role
   const fetchProfile = async (userId: string) => {
@@ -93,6 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        // Leaving guest mode once authenticated
+        setIsGuest(false);
+        try { localStorage.removeItem('isGuest'); } catch {}
       } else {
         setProfile(null);
       }
@@ -121,6 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setIsGuest(false);
+    try { localStorage.removeItem('isGuest'); } catch {}
   };
 
   const signInWithGoogle = async () => {
@@ -159,10 +174,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     loading,
     isAdmin,
+    isGuest,
     signIn,
     signUp,
     signInWithGoogle,
     signOut,
+    loginAsGuest: () => {
+      setIsGuest(true);
+      try { localStorage.setItem('isGuest', 'true'); } catch {}
+    },
+    exitGuestMode: () => {
+      setIsGuest(false);
+      try { localStorage.removeItem('isGuest'); } catch {}
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

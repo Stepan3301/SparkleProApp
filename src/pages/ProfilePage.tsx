@@ -19,7 +19,7 @@ import {
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
   const [stats, setStats] = useState({ bookings: 0, addresses: 0, rating: 5.0 });
   const [profile, setProfile] = useState<any>(null);
@@ -457,16 +457,27 @@ const ProfilePage: React.FC = () => {
           <LanguageSwitcher variant="profile" showText={true} />
         </div>
 
-        {/* Logout Section */}
+        {/* Logout / Sign up Section */}
         <div className="border-t border-gray-200 pt-5 mb-5">
-          <button
-            onClick={handleSignOut}
-            className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-4 px-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden"
-          >
-            <div className="shine-effect"></div>
-            <ArrowRightOnRectangleIcon className="w-5 h-5 relative z-10" />
-                            <span className="relative z-10">Log Out</span>
-          </button>
+          {isGuest ? (
+            <button
+              onClick={() => navigate('/auth')}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-4 px-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden"
+            >
+              <div className="shine-effect"></div>
+              <ArrowRightOnRectangleIcon className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Sign up to continue</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleSignOut}
+              className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold py-4 px-4 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden"
+            >
+              <div className="shine-effect"></div>
+              <ArrowRightOnRectangleIcon className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Log Out</span>
+            </button>
+          )}
         </div>
 
         {/* App Version */}

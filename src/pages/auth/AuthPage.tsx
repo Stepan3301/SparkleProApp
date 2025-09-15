@@ -64,7 +64,7 @@ const AuthPage: React.FC = () => {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, loginAsGuest } = useAuth();
   const navigate = useNavigate();
 
   const loginForm = useForm<LoginFormData>({
@@ -582,6 +582,23 @@ const AuthPage: React.FC = () => {
                 <div style={{ flex: 1, height: '1px', backgroundColor: '#ddd' }}></div>
               </div>
               <GoogleSignInButton text="Sign in with Google" />
+              <div style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => { loginAsGuest(); navigate('/home'); }}
+                  style={{
+                    width: '100%',
+                    background: '#e5e7eb',
+                    color: '#111827',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    fontWeight: 600,
+                    border: '1px solid #d1d5db'
+                  }}
+                >
+                  Log in as a guest
+                </button>
+              </div>
             </div>
           </form>
         ) : (

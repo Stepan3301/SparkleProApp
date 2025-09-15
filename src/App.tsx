@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import AdminRouteGuard from './components/AdminRouteGuard';
+import GuestOrUserRoute from './components/GuestOrUserRoute';
 import AuthPage from './pages/auth/AuthPage';
 import AuthCallback from './pages/auth/AuthCallback';
 import HomePage from './pages/HomePage';
@@ -89,9 +90,9 @@ function AppContent() {
             <Route path="/login" element={<Navigate to="/auth" replace />} />
             {/* Protected Routes with Role-Based Access */}
             <Route path="/home" element={
-              <AdminRouteGuard>
+              <GuestOrUserRoute>
                 <HomePage />
-              </AdminRouteGuard>
+              </GuestOrUserRoute>
             } />
             <Route path="/admin" element={
               <RoleBasedRoute>
@@ -99,9 +100,9 @@ function AppContent() {
               </RoleBasedRoute>
             } />
             <Route path="/booking" element={
-              <AdminRouteGuard>
+              <GuestOrUserRoute>
                 <BookingPage />
-              </AdminRouteGuard>
+              </GuestOrUserRoute>
             } />
             <Route path="/history" element={
               <AdminRouteGuard>

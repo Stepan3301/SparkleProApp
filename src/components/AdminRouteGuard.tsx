@@ -13,7 +13,7 @@ interface AdminRouteGuardProps {
  * they will be automatically redirected to /admin
  */
 const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
-  const { user, loading, isAdmin, profile } = useAuth();
+  const { user, loading, isAdmin, profile, isGuest } = useAuth();
 
   // Debug logging
   console.log('AdminRouteGuard: Component rendered');
@@ -36,7 +36,7 @@ const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
   }
 
   // If not authenticated, redirect to auth
-  if (!user) {
+  if (!user && !isGuest) {
     return <Navigate to="/auth" replace />;
   }
 
