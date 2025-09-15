@@ -42,11 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user profile with role
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
+
+      console.log('Profile fetch result:', { data, error });
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
@@ -54,8 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data) {
+        console.log('Profile found:', data);
         setProfile(data);
       } else {
+        console.log('No profile found, creating default customer profile');
         // Create default profile if none exists
         const now = new Date().toISOString();
         const { error: insertError } = await supabase
@@ -70,19 +75,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (!insertError) {
           const now = new Date().toISOString();
-          setProfile({
+          const defaultProfile = {
             id: userId,
             full_name: undefined,
             phone_number: undefined,
-            role: 'customer',
+            role: 'customer' as const,
             member_since: now,
             created_at: now,
             updated_at: now
-          });
+          };
+          console.log('Created default profile:', defaultProfile);
+          setProfile(defaultProfile);
+        } else {
+          console.error('Error creating default profile:', insertError);
         }
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error in fetchProfile:', error);
     }
   };
 

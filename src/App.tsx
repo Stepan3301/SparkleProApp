@@ -37,7 +37,13 @@ function ScrollToTop() {
 
 // Component to redirect based on user role
 function RootRedirect() {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, profile } = useAuth();
+
+  // Debug logging
+  console.log('RootRedirect: Loading:', loading);
+  console.log('RootRedirect: User:', user?.id);
+  console.log('RootRedirect: Profile role:', profile?.role);
+  console.log('RootRedirect: isAdmin:', isAdmin);
 
   if (loading) {
     return (
@@ -56,8 +62,10 @@ function RootRedirect() {
 
   // Redirect admin users to admin dashboard, regular users to home
   if (isAdmin) {
+    console.log('RootRedirect: Redirecting admin to /admin');
     return <Navigate to="/admin" replace />;
   } else {
+    console.log('RootRedirect: Redirecting user to /home');
     return <Navigate to="/home" replace />;
   }
 }

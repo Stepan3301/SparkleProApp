@@ -74,6 +74,17 @@ interface User {
 const AdminDashboard: React.FC = () => {
   const { signOut, profile } = useAuth();
   const { t } = useSimpleTranslation();
+
+  // Handle logout with error handling
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout by clearing local state and redirecting
+      window.location.href = '/auth';
+    }
+  };
   // Removed notification-related hooks as they're no longer needed
   const [activeTab, setActiveTab] = useState('orders');
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -276,27 +287,12 @@ const AdminDashboard: React.FC = () => {
         return;
       }
 
-      // For each profile, get the user email from auth.users if admin has access
-      const usersWithEmails = await Promise.all(
-        (profilesData || []).map(async (profile) => {
-          try {
-            // Try to get user email from Supabase auth admin API
-            const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
-            return {
-              ...profile,
-              email: authUser?.user?.email || 'N/A',
-              created_at: authUser?.user?.created_at || profile.created_at
-            };
-          } catch (error) {
-            // If admin API is not available, fallback to profile data
-            return {
-              ...profile,
-              email: 'N/A', // Email not available without admin privileges
-              created_at: profile.created_at
-            };
-          }
-        })
-      );
+      // Use profile data directly - email will be 'N/A' since we can't access auth.users from client
+      const usersWithEmails = (profilesData || []).map((profile) => ({
+        ...profile,
+        email: 'N/A', // Email not available without server-side admin privileges
+        created_at: profile.created_at
+      }));
 
       setUsers(usersWithEmails);
       setFilteredUsers(usersWithEmails);
@@ -502,7 +498,7 @@ const AdminDashboard: React.FC = () => {
               </div>
               <span className="text-sm font-medium text-gray-700">{profile?.full_name || 'Admin'}</span>
               <button
-                onClick={signOut}
+                onClick={handleLogout}
                 className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200 transition-colors"
               >
                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
