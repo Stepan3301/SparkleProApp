@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
+import ProfileHeader from '../components/ui/ProfileHeader';
 import { useSimpleTranslation } from '../utils/i18n';
 import {
   UserIcon,
@@ -13,143 +13,26 @@ import {
   ShieldCheckIcon,
   QuestionMarkCircleIcon,
   ArrowRightOnRectangleIcon,
-  ChevronRightIcon,
-  ArrowLeftIcon
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, signOut, isGuest } = useAuth();
+  const { signOut, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
-  const [stats, setStats] = useState({ bookings: 0, addresses: 0, rating: 5.0 });
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchUserStats();
+    if (initialLoading) {
+      setInitialLoading(false);
     }
-  }, [user]);
-
-  // Refresh stats when component becomes visible (user navigates back)
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && user) {
-        fetchUserStats();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user]);
-
-  const fetchUserStats = async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch profile and stats in parallel for better performance
-      const [bookingsResult, addressesResult, profileResult] = await Promise.all([
-        supabase
-          .from('bookings')
-          .select('*', { count: 'exact', head: true })
-          .eq('customer_id', user.id),
-        supabase
-          .from('addresses')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id),
-        supabase
-          .from('profiles')
-          .select('member_since, full_name, phone_number, avatar_url')
-          .eq('id', user.id)
-          .single()
-      ]);
-
-      const { count: bookingsCount, error: bookingsError } = bookingsResult;
-      const { count: addressesCount, error: addressesError } = addressesResult;
-      const { data: profileData, error: profileError } = profileResult;
-
-      if (bookingsError) {
-        console.error('Error fetching bookings count:', bookingsError);
-        throw bookingsError;
-      }
-
-      if (addressesError) {
-        console.error('Error fetching addresses count:', addressesError);
-        throw addressesError;
-      }
-
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Error fetching profile:', profileError);
-        // Don't throw profile error, just log it
-      }
-
-      // Update stats with real data
-      setStats({
-        bookings: bookingsCount || 0,
-        addresses: addressesCount || 0,
-        rating: 5.0 // This could be calculated from reviews if you have a reviews system
-      });
-
-      // Update profile data
-      setProfile(profileData);
-
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      setError('Failed to load stats');
-      // Keep previous stats on error, just stop loading
-    } finally {
-      setLoading(false);
-      // Only set initial loading to false after the first load
-      if (initialLoading) {
-        setInitialLoading(false);
-      }
-    }
-  };
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
-  const getUserName = () => {
-    // Priority: database profile full_name > user metadata > email
-    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
-  };
-
-  const getUserInitials = () => {
-    const name = getUserName();
-    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  const formatMemberSince = () => {
-    if (!profile?.member_since) {
-      // Fallback to user creation date if available, otherwise use 2024
-      return 'Active member since 2024';
-    }
-
-    try {
-      const date = new Date(profile.member_since);
-      const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      
-      const month = monthNames[date.getMonth()];
-      const year = date.getFullYear();
-      
-      return `Active member since ${month} ${year}`;
-    } catch (error) {
-      console.error('Error formatting member date:', error);
-      return 'Active member since 2024';
-    }
-  };
 
   const mainMenuItems = [
     {
@@ -275,104 +158,11 @@ const ProfilePage: React.FC = () => {
         }
       `}</style>
 
-             {/* Enhanced Header */}
-       <header className="bg-gradient-to-r from-indigo-600 to-purple-600 pb-10 pt-5 px-5 relative overflow-hidden">
-         <div className="shimmer"></div>
-         
-         {/* Back Button */}
-         <div className="flex justify-start mb-4 relative z-10">
-           <button
-             onClick={() => navigate('/home')}
-             className="w-10 h-10 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl flex items-center justify-center text-white hover:bg-white/30 transition-all duration-200"
-           >
-             <ArrowLeftIcon className="w-5 h-5" />
-           </button>
-         </div>
-         
-         {/* Profile Header */}
-         <div className="flex items-center justify-between relative z-10 mb-6">
-           <div className="flex-1">
-             <h1 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">{getUserName()}</h1>
-             <p className="text-indigo-100 text-sm mb-2">{user?.email}</p>
-             <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-1 w-fit">
-               <div className="w-2 h-2 bg-emerald-400 rounded-full pulse-dot"></div>
-               <span className="text-xs text-white">{formatMemberSince()}</span>
-             </div>
-           </div>
-                     <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-2xl flex items-center justify-center text-white text-lg font-bold relative overflow-hidden shadow-lg shadow-emerald-400/30 ml-4">
-            <div className="avatar-shine"></div>
-            {profile?.avatar_url ? (
-              <img
-                src={`${profile.avatar_url}?t=${Date.now()}`}
-                alt="Profile Avatar"
-                className="w-full h-full object-cover rounded-2xl relative z-10"
-                onError={(e) => {
-                  // Fallback to initials if image fails to load
-                  (e.currentTarget as HTMLImageElement).style.display = 'none';
-                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (nextElement) {
-                    nextElement.style.display = 'flex';
-                  }
-                }}
-              />
-            ) : null}
-            <span 
-              className="relative z-10 w-full h-full flex items-center justify-center" 
-              style={{ display: profile?.avatar_url ? 'none' : 'flex' }}
-            >
-              {getUserInitials()}
-            </span>
-          </div>
-         </div>
-
-        {/* Stats Row */}
-        <div 
-          className="flex justify-around relative z-10 cursor-pointer" 
-          onClick={() => fetchUserStats()}
-          title="Tap to refresh stats"
-        >
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-1 drop-shadow-lg min-h-[2rem] flex items-center justify-center">
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : error ? (
-                <span className="text-red-300 text-lg">--</span>
-              ) : (
-                stats.bookings
-              )}
-            </div>
-            <div className="text-xs text-indigo-200">
-              {stats.bookings === 1 ? 'Booking' : 'Bookings'}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-1 drop-shadow-lg min-h-[2rem] flex items-center justify-center">
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : error ? (
-                <span className="text-red-300 text-lg">--</span>
-              ) : (
-                stats.addresses
-              )}
-            </div>
-            <div className="text-xs text-indigo-200">
-              {stats.addresses === 1 ? 'Address' : 'Addresses'}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white mb-1 drop-shadow-lg min-h-[2rem] flex items-center justify-center">
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : error ? (
-                <span className="text-red-300 text-lg">--</span>
-              ) : (
-                stats.rating.toFixed(1)
-              )}
-            </div>
-            <div className="text-xs text-indigo-200">Rating</div>
-          </div>
-        </div>
-      </header>
+        {/* New Profile Header */}
+        <ProfileHeader 
+          onEditProfile={() => navigate('/profile/personal-info')}
+          onNewBooking={() => navigate('/booking')}
+        />
 
       {/* PWA Install Prompt - Only shows for browser users */}
       <div className="px-5 -mt-2 mb-4">

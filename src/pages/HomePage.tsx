@@ -3,19 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import DirhamIcon from '../components/ui/DirhamIcon';
-import Button from '../components/ui/Button';
 import ReviewNotification from '../components/ui/ReviewNotification';
 import ServiceDetailModal from '../components/ui/ServiceDetailModal';
 import Toast from '../components/ui/Toast';
+import GuestAccessModal from '../components/ui/GuestAccessModal';
+import HomeHeader from '../components/ui/HomeHeader';
 import { useReviewNotifications } from '../hooks/useReviewNotifications';
-// Removed unused imports: SIZE_OPTIONS, ADDON_OPTIONS
-import LanguageSwitcher from '../components/ui/LanguageSwitcher';
 import { useSimpleTranslation } from '../utils/i18n';
 import { handleReferralShare } from '../utils/shareUtils';
 import { 
-  MapPinIcon, 
-  UserIcon,
-  CalendarIcon,
   ShareIcon
 } from '@heroicons/react/24/outline';
 import { 
@@ -34,19 +30,6 @@ interface UserStats {
   totalAddresses: number;
 }
 
-interface RecentBooking {
-  id: number;
-  property_size: string | null;
-  cleaners_count: number;
-  own_materials: boolean;
-  service_date: string;
-  additional_notes?: string;
-  created_at: string;
-  service_name?: string;
-  service_image_url?: string;
-  status?: string;
-  total_price?: number;
-}
 
 interface ActiveBooking {
   id: number;
@@ -71,7 +54,7 @@ interface ServiceData {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
   const { currentReviewBooking, dismissCurrentReview, markReviewCompleted } = useReviewNotifications();
   const [userStats, setUserStats] = useState<UserStats>({
@@ -79,7 +62,6 @@ const HomePage: React.FC = () => {
     averageRating: 4.9,
     totalAddresses: 0
   });
-  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
   const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [popularServices, setPopularServices] = useState<ServiceData[]>([]);
@@ -96,13 +78,18 @@ const HomePage: React.FC = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success');
   const [isToastVisible, setIsToastVisible] = useState(false);
+  
+  // Guest access modal state
+  const [showGuestAccessModal, setShowGuestAccessModal] = useState(false);
+  const [guestAccessType, setGuestAccessType] = useState<'profile' | 'history'>('profile');
 
   useEffect(() => {
-    if (user) {
-      // Track all critical async operations to prevent layout shifts
-      const loadAllData = async () => {
-        setLoading(true);
-        try {
+    // Load data for both authenticated users and guests
+    const loadAllData = async () => {
+      setLoading(true);
+      try {
+        if (user) {
+          // For authenticated users, load all data
           await Promise.all([
             fetchUserStats(),
             fetchProfile(),
@@ -111,32 +98,38 @@ const HomePage: React.FC = () => {
             fetchPopularServices()
           ]);
           // These can load in parallel without affecting layout
-          fetchRecentBookings();
           fetchUserPreferences();
-        } catch (error) {
-          console.error('Error loading homepage data:', error);
-        } finally {
-          setLoading(false);
-          // Only set initial loading to false after the first load
-          if (initialLoading) {
-            setInitialLoading(false);
-          }
+        } else if (isGuest) {
+          // For guest users, only load public data
+          await Promise.all([
+            fetchServices(),
+            fetchPopularServices()
+          ]);
         }
-      };
-      
-      loadAllData();
+      } catch (error) {
+        console.error('Error loading homepage data:', error);
+      } finally {
+        setLoading(false);
+        // Only set initial loading to false after the first load
+        if (initialLoading) {
+          setInitialLoading(false);
+        }
+      }
+    };
+    
+    loadAllData();
 
-      // Set up real-time updates every 30 seconds
+    // Set up real-time updates every 30 seconds (only for authenticated users)
+    if (user) {
       const interval = setInterval(() => {
         // Only refresh data, don't show loading for background updates
         fetchUserStats();
         fetchActiveBookings();
-        fetchRecentBookings();
       }, 30000);
 
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, isGuest]);
 
   const fetchUserStats = async () => {
     if (!user) return;
@@ -190,43 +183,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const fetchRecentBookings = async () => {
-    if (!user) return;
-
-    try {
-      const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select(`
-          id, 
-          property_size, 
-          cleaners_count, 
-          own_materials, 
-          service_date, 
-          additional_notes, 
-          created_at,
-          services (
-            name,
-            image_url
-          )
-        `)
-        .eq('customer_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-      
-      // Transform the data to include service_name and service_image
-      const transformedBookings = (bookings || []).map(booking => ({
-        ...booking,
-        service_name: booking.services?.[0]?.name || null,
-        service_image_url: booking.services?.[0]?.image_url || null
-      }));
-      
-      setRecentBookings(transformedBookings);
-    } catch (error) {
-      console.error('Error fetching recent bookings:', error);
-    }
-  };
 
   const fetchServices = async () => {
     try {
@@ -322,31 +278,6 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t('home.greeting.morning', 'Good morning');
-    if (hour < 17) return t('home.greeting.afternoon', 'Good afternoon');
-    return t('home.greeting.evening', 'Good evening');
-  };
-
-  const getPersonalizedMessage = () => {
-    if (userStats.totalBookings === 0) {
-      return "Ready for your first clean?";
-    }
-    
-    if (recentBookings.length > 0) {
-      const lastBooking = new Date(recentBookings[0].service_date);
-      const daysSince = Math.floor((Date.now() - lastBooking.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysSince <= 7) {
-        return "Hope your last cleaning was perfect!";
-      } else if (daysSince <= 30) {
-        return `Your last booking was ${daysSince} days ago`;
-      }
-    }
-    
-    return "Ready for your next clean?";
-  };
 
   const getRecommendedServices = () => {
     if (userPreferences.length === 0) {
@@ -363,57 +294,7 @@ const HomePage: React.FC = () => {
     return recommended.length > 0 ? recommended : services.slice(0, 2);
   };
 
-  const getUserName = () => {
-    // Priority: database profile full_name > user metadata > email
-    return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
-  };
 
-  const getServiceImage = (booking: any) => {
-    // Use service image from database if available
-    if (booking.service_image_url) {
-      return booking.service_image_url;
-    }
-    
-    // Fallback to default image if no service image available
-    return '/regular-cleaning.jpg';
-  };
-
-  const getServiceName = (propertySize: string | null) => {
-    // Handle null or empty property size
-    if (!propertySize) {
-      return 'Cleaning Service';
-    }
-    
-    const nameMap: { [key: string]: string } = {
-      'small': 'Regular Cleaning',
-      'medium': 'Deep Cleaning', 
-      'large': 'Office Cleaning',
-      'villa': 'Move In/Out',
-      // Add mappings for common service keywords
-      'regular': 'Regular Cleaning',
-      'deep': 'Deep Cleaning',
-      'move': 'Move In/Out Cleaning',
-      'office': 'Office Cleaning',
-      'post': 'Post-Construction Cleaning',
-      'construction': 'Post-Construction Cleaning',
-      'kitchen': 'Kitchen Deep Cleaning',
-      'bathroom': 'Bathroom Deep Cleaning',
-      'window': 'Window Cleaning',
-      'facade': 'Facade Cleaning'
-    };
-    
-    // Convert to lowercase for matching
-    const lowerPropertySize = propertySize.toLowerCase();
-    
-    // Try to match keywords
-    for (const [key, name] of Object.entries(nameMap)) {
-      if (lowerPropertySize.includes(key)) {
-        return name;
-      }
-    }
-    
-    return propertySize || 'Cleaning Service';
-  };
 
   const getServiceKey = (serviceName: string) => {
     const name = serviceName.toLowerCase();
@@ -448,6 +329,36 @@ const HomePage: React.FC = () => {
   const handleCloseServiceModal = () => {
     setIsServiceModalOpen(false);
     setSelectedService(null);
+  };
+
+  // Guest mode restriction handlers
+  const handleProfileClick = () => {
+    if (isGuest) {
+      setGuestAccessType('profile');
+      setShowGuestAccessModal(true);
+    } else {
+      navigate('/profile');
+    }
+  };
+
+  const handleHistoryClick = () => {
+    if (isGuest) {
+      setGuestAccessType('history');
+      setShowGuestAccessModal(true);
+    } else {
+      navigate('/history');
+    }
+  };
+
+  // Guest access modal handlers
+  const handleGuestSignup = () => {
+    setShowGuestAccessModal(false);
+    navigate('/auth', { state: { fromProfile: guestAccessType === 'profile' } });
+  };
+
+  const handleGoHome = () => {
+    setShowGuestAccessModal(false);
+    navigate('/home');
   };
 
   // Toast notification helpers
@@ -508,27 +419,6 @@ const HomePage: React.FC = () => {
       
       <div className="min-h-screen bg-gray-50 pb-20">
         <style>{`
-          .header-gradient {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            position: relative;
-            overflow: hidden;
-          }
-          
-          .header-gradient::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 100%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: shimmer 6s infinite;
-          }
-          
-          @keyframes shimmer {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
           
           .quick-book-gradient {
             background: linear-gradient(135deg, #10b981, #06b6d4);
@@ -634,44 +524,14 @@ const HomePage: React.FC = () => {
           />
         )}
 
-        {/* Header */}
-        <header className="header-gradient px-5 py-4 text-white rounded-b-[30px] relative overflow-visible">
-          <div className="header-top flex justify-between items-start mb-4 relative z-10">
-            <div className="greeting flex-1 pr-4">
-              <h1 className="text-xl font-bold mb-1 drop-shadow-sm">
-                {getGreeting()}, {getUserName()}! 👋
-              </h1>
-              <div className="location flex items-center gap-1 text-sm opacity-90">
-                <MapPinIcon className="w-3 h-3" />
-                <span>{t('home.location', 'Dubai, UAE')}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 relative z-[100]">
-              <div className="hidden">
-                <LanguageSwitcher variant="header" showText={false} />
-              </div>
-              <Button
-                variant="secondary"
-                shape="bubble"
-                size="sm"
-                onClick={() => navigate('/profile')}
-                className="!min-w-[45px] !w-11 !h-11 !p-0 !bg-white/20 !border-white/30 !text-white hover:!bg-white/30 backdrop-blur-sm"
-              >
-                <UserIcon className="w-5 h-5" />
-              </Button>
-            </div>
-          </div>
-          
-          <div className="welcome-card bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl p-4 relative z-[5]">
-            <div className="welcome-title text-base font-semibold mb-2">✨ {getPersonalizedMessage()}</div>
-            <div className="welcome-text text-sm opacity-90 leading-relaxed">
-              {userStats.totalBookings > 0 
-                ? `${userStats.totalBookings} cleaning${userStats.totalBookings > 1 ? 's' : ''} completed • ${userStats.totalAddresses} address${userStats.totalAddresses > 1 ? 'es' : ''} saved`
-                : 'Your trusted cleaning service partner in Dubai. Book your first service today!'
-              }
-            </div>
-          </div>
-        </header>
+        {/* New Home Header */}
+        <HomeHeader 
+          userStats={{
+            totalBookings: userStats.totalBookings,
+            totalAddresses: userStats.totalAddresses
+          }}
+          onProfileClick={handleProfileClick}
+        />
 
         {/* PWA Install Prompt - Only shows for browser users */}
         <div className="px-5 -mt-2 mb-4">
@@ -968,12 +828,12 @@ const HomePage: React.FC = () => {
           <NavItem 
             icon={<DocumentSolid className="w-5 h-5" />} 
             label={t('navigation.history', 'History')} 
-            onClick={() => navigate('/history')}
+            onClick={handleHistoryClick}
           />
           <NavItem 
             icon={<UserSolid className="w-5 h-5" />} 
             label={t('navigation.profile', 'Profile')} 
-            onClick={() => navigate('/profile')}
+            onClick={handleProfileClick}
           />
         </nav>
 
@@ -992,6 +852,19 @@ const HomePage: React.FC = () => {
           type={toastType}
           isVisible={isToastVisible}
           onClose={hideToast}
+        />
+
+        {/* Guest Access Modal */}
+        <GuestAccessModal
+          isVisible={showGuestAccessModal}
+          onClose={() => setShowGuestAccessModal(false)}
+          onSignup={handleGuestSignup}
+          onGoHome={handleGoHome}
+          title="Sign Up Required"
+          message={guestAccessType === 'profile' 
+            ? 'Sign up to open your profile and manage your account settings'
+            : 'Sign up to view your booking history and track your orders'
+          }
         />
       </div>
     </>

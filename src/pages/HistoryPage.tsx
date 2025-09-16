@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import BookingCancelAnimation from '../components/ui/BookingCancelAnimation';
+import GuestAccessModal from '../components/ui/GuestAccessModal';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
@@ -18,7 +19,7 @@ import { canCancelBooking, getCancellationBlockedReason } from '../utils/booking
 
 const HistoryPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -34,6 +35,27 @@ const HistoryPage: React.FC = () => {
   // Animation state
   const [showCancelAnimation, setShowCancelAnimation] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+
+  // Guest access modal state
+  const [showGuestAccessModal, setShowGuestAccessModal] = useState(false);
+
+  // Guest mode check
+  React.useEffect(() => {
+    if (isGuest) {
+      setShowGuestAccessModal(true);
+    }
+  }, [isGuest]);
+
+  // Guest access modal handlers
+  const handleGuestSignup = () => {
+    setShowGuestAccessModal(false);
+    navigate('/auth', { state: { fromHistory: true } });
+  };
+
+  const handleGoHome = () => {
+    setShowGuestAccessModal(false);
+    navigate('/home');
+  };
 
   // Add custom styles for smooth animations
   React.useEffect(() => {
@@ -134,15 +156,54 @@ const HistoryPage: React.FC = () => {
     if (!user) return;
 
     try {
+      // First, try to get bookings with detailed addons like admin side
       const { data, error } = await supabase
-        .from('booking_details_with_addons')
+        .from('admin_bookings_with_addons')
         .select('*')
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Fallback to regular bookings table if view doesn't exist
+        console.log('admin_bookings_with_addons view not accessible, falling back to bookings table');
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('bookings')
+          .select(`
+            *,
+            booking_additional_services!left (
+              additional_services (
+                id,
+                name,
+                base_price,
+                image_url
+              )
+            )
+          `)
+          .eq('customer_id', user.id)
+          .order('created_at', { ascending: false });
 
-      setBookings(data || []);
+        if (bookingsError) throw bookingsError;
+
+        // Transform the data to match expected format
+        const transformedBookings = (bookingsData || []).map(booking => ({
+          ...booking,
+          detailed_addons: booking.booking_additional_services?.map((bas: any) => ({
+            id: bas.additional_services.id,
+            name: bas.additional_services.name,
+            price: bas.additional_services.base_price,
+            image_url: bas.additional_services.image_url
+          })) || [],
+          addons: booking.booking_additional_services?.map((bas: any) => ({
+            id: bas.additional_services.id,
+            name: bas.additional_services.name,
+            price: bas.additional_services.base_price
+          })) || []
+        }));
+
+        setBookings(transformedBookings);
+      } else {
+        setBookings(data || []);
+      }
     } catch (error) {
       console.error('Error fetching bookings:', error);
     } finally {
@@ -796,7 +857,7 @@ const HistoryPage: React.FC = () => {
               {/* Extra Services Section - Positioned after Order Details */}
               {((selectedBooking.detailed_addons && selectedBooking.detailed_addons.length > 0) || 
                 (selectedBooking.addons && selectedBooking.addons.length > 0) || 
-                (selectedBooking.addons_total && selectedBooking.addons_total > 0)) && (
+                (selectedBooking.addons_total && Number(selectedBooking.addons_total) > 0)) && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 mb-6 border border-emerald-100">
                   <h3 className="text-lg font-bold text-emerald-900 mb-4 flex items-center gap-2">
                     <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -994,6 +1055,16 @@ const HistoryPage: React.FC = () => {
       <BookingCancelAnimation
         isVisible={showCancelAnimation}
         onComplete={completeCancelBooking}
+      />
+
+      {/* Guest Access Modal */}
+      <GuestAccessModal
+        isVisible={showGuestAccessModal}
+        onClose={() => setShowGuestAccessModal(false)}
+        onSignup={handleGuestSignup}
+        onGoHome={handleGoHome}
+        title="Sign Up Required"
+        message="Sign up to view your booking history and track your orders"
       />
     </div>
       )}

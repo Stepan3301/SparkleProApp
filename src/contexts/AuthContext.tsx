@@ -98,25 +98,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
       if (session?.user) {
+        console.log('Initial session found, clearing guest mode and setting user');
+        setUser(session.user);
         fetchProfile(session.user.id);
+        // Clear guest mode if user is already authenticated
+        setIsGuest(false);
+        try { 
+          localStorage.removeItem('isGuest');
+          console.log('Cleared isGuest from localStorage on initial load');
+        } catch {}
       } else {
+        setUser(null);
         setProfile(null);
+        // Check if we should be in guest mode
+        const isGuestMode = localStorage.getItem('isGuest') === 'true';
+        if (isGuestMode) {
+          console.log('No initial session but guest mode active');
+          setIsGuest(true);
+        } else {
+          setIsGuest(false);
+        }
       }
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      console.log('Auth state change:', _event, session?.user?.id);
+      
+      // If there's a session (user logged in), always process it regardless of guest mode
       if (session?.user) {
+        console.log('User authenticated, clearing guest mode and setting user');
+        setUser(session.user);
         fetchProfile(session.user.id);
-        // Leaving guest mode once authenticated
+        // Clear guest mode when user authenticates
         setIsGuest(false);
-        try { localStorage.removeItem('isGuest'); } catch {}
+        try { 
+          localStorage.removeItem('isGuest');
+          console.log('Cleared isGuest from localStorage');
+        } catch {}
       } else {
-        setProfile(null);
+        // No session - check if we should be in guest mode
+        const isGuestMode = localStorage.getItem('isGuest') === 'true';
+        if (isGuestMode) {
+          console.log('No session but guest mode active, keeping guest state');
+          // Keep guest mode active
+        } else {
+          console.log('No session and not guest mode, clearing user');
+          setUser(null);
+          setProfile(null);
+          setIsGuest(false);
+        }
       }
       setLoading(false);
     });
@@ -169,14 +202,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = profile?.role === 'admin';
   
-  // Debug logging for admin role detection
+  // Debug logging for authentication state
   useEffect(() => {
-    if (user && profile) {
-      console.log('AuthContext - User ID:', user.id);
-      console.log('AuthContext - Profile role:', profile.role);
-      console.log('AuthContext - isAdmin:', isAdmin);
-    }
-  }, [user, profile, isAdmin]);
+    console.log('AuthContext - User ID:', user?.id || 'null');
+    console.log('AuthContext - Profile role:', profile?.role || 'null');
+    console.log('AuthContext - isAdmin:', isAdmin);
+    console.log('AuthContext - isGuest:', isGuest);
+    console.log('AuthContext - Loading:', loading);
+  }, [user, profile, isAdmin, isGuest, loading]);
 
   const value = {
     user,
@@ -189,12 +222,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signInWithGoogle,
     signOut,
     loginAsGuest: () => {
+      console.log('loginAsGuest: Starting guest mode activation');
+      console.log('loginAsGuest: Current user before:', user?.id);
+      console.log('loginAsGuest: Current isGuest before:', isGuest);
+      
+      // Clear existing user session and profile
+      setUser(null);
+      setProfile(null);
       setIsGuest(true);
-      try { localStorage.setItem('isGuest', 'true'); } catch {}
+      
+      try { 
+        localStorage.setItem('isGuest', 'true');
+        // Clear any existing auth session
+        localStorage.removeItem('sb-rpvohieuafewgivonjgr-auth-token');
+        console.log('loginAsGuest: Guest mode activated, localStorage cleared');
+      } catch (error) {
+        console.error('loginAsGuest: Error clearing localStorage:', error);
+      }
     },
     exitGuestMode: () => {
       setIsGuest(false);
-      try { localStorage.removeItem('isGuest'); } catch {}
+      setUser(null);
+      setProfile(null);
+      try { 
+        localStorage.removeItem('isGuest');
+        // Clear any existing auth session
+        localStorage.removeItem('sb-rpvohieuafewgivonjgr-auth-token');
+      } catch {}
     },
   };
 

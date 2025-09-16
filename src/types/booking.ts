@@ -17,6 +17,7 @@ export interface Profile {
   phone_number?: string;
   role?: 'customer' | 'admin';
   member_since?: string;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
 }

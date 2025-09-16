@@ -13,6 +13,7 @@ import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker
 import AddCardForm from '../components/ui/AddCardForm';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
+import GuestSignupModal from '../components/ui/GuestSignupModal';
 import Lottie from 'lottie-react';
 import bookingSuccessAnimation from '../assets/animations/booking-success.json';
 import { 
@@ -172,6 +173,9 @@ const BookingPage: React.FC = () => {
   const [serviceTime, setServiceTime] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cash');
   
+  // Guest signup modal state
+  const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
+  
   // Window cleaning specific state
   const [windowPanelsCount, setWindowPanelsCount] = useState<number | null>(null);
   
@@ -308,29 +312,33 @@ const BookingPage: React.FC = () => {
     }
   }, [newAddressValue, setValue, watchedNewAddress]);
 
-  // Fetch data when user is available
+  // Fetch data when user is available or for guests
   useEffect(() => {
-    if (user) {
-      const loadInitialData = async () => {
-        try {
+    const loadInitialData = async () => {
+      try {
+        if (user) {
+          // For authenticated users, load all data
           await Promise.all([
             fetchUserData(),
             fetchAddresses(),
             fetchSavedCards(),
             fetchServices()
           ]);
-        } catch (error) {
-          console.error('Error loading booking page data:', error);
-        } finally {
-          if (initialLoading) {
-            setInitialLoading(false);
-          }
+        } else if (isGuest) {
+          // For guest users, only load services
+          await fetchServices();
         }
-      };
-      
-      loadInitialData();
-    }
-  }, [user]);
+      } catch (error) {
+        console.error('Error loading booking page data:', error);
+      } finally {
+        if (initialLoading) {
+          setInitialLoading(false);
+        }
+      }
+    };
+    
+    loadInitialData();
+  }, [user, isGuest]);
 
   // Restore guest progress after signup/login
   useEffect(() => {
@@ -511,7 +519,8 @@ const BookingPage: React.FC = () => {
   };
 
   const fetchServices = async () => {
-    if (!user) return;
+    // Allow both authenticated users and guests to fetch services
+    console.log('fetchServices: Starting fetch for user:', user?.id, 'isGuest:', isGuest);
 
     try {
       // Fetch main services
@@ -521,6 +530,7 @@ const BookingPage: React.FC = () => {
         .eq('is_active', true)
         .order('id');
 
+      console.log('fetchServices: Services data:', servicesData, 'Error:', servicesError);
       if (servicesError) throw servicesError;
       
       // Add UI-specific fields to services
@@ -610,8 +620,7 @@ const BookingPage: React.FC = () => {
           step: currentStep
         } as any;
         try { localStorage.setItem('guestBookingProgress', JSON.stringify(progress)); } catch {}
-        alert('Please sign up or sign in to continue scheduling.');
-        navigate('/auth');
+        setShowGuestSignupModal(true);
         return;
       }
       if (!serviceDate || !serviceTime) {
@@ -634,6 +643,16 @@ const BookingPage: React.FC = () => {
     setCurrentStep(currentStep - 1);
     // Scroll to top when changing steps
     scrollToTop();
+  };
+
+  // Guest signup modal handlers
+  const handleGuestSignup = () => {
+    setShowGuestSignupModal(false);
+    navigate('/auth', { state: { fromBooking: true } });
+  };
+
+  const handleCloseGuestSignupModal = () => {
+    setShowGuestSignupModal(false);
   };
 
   // Calculations - Updated for new service structure including window services
@@ -2337,6 +2356,14 @@ const BookingPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Guest Signup Modal */}
+      <GuestSignupModal
+        isVisible={showGuestSignupModal}
+        onClose={handleCloseGuestSignupModal}
+        message="To continue for scheduling you will need to sign up"
+        onSignup={handleGuestSignup}
+      />
     </div>
     </>
   );
