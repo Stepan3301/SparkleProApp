@@ -128,10 +128,10 @@ const AddressesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#F7FBFD' }}>
       {/* Header */}
-      <header className="bg-white px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <header className="bg-white px-4 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Button
             variant="nav-back"
             shape="bubble"
@@ -141,24 +141,22 @@ const AddressesPage: React.FC = () => {
           >
             <ArrowLeftIcon className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-bold text-gray-900">Addresses</h1>
+          <h1 className="text-lg font-black text-gray-900 tracking-wide">Addresses</h1>
         </div>
-        <Button
-          variant="primary"
-          shape="bubble"
-          size="sm"
+        <button
           onClick={() => setShowAddForm(true)}
-          className="!min-w-[44px] !w-11 !h-11 !p-0"
+          className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-cyan-500 to-emerald-400 text-white rounded-xl font-black text-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
         >
-          <PlusIcon className="w-5 h-5" />
-        </Button>
+          <PlusIcon className="w-4 h-4" />
+          Add
+        </button>
       </header>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-4 max-w-4xl mx-auto">
         {addresses.length === 0 ? (
           /* Empty State */
-          <div className="bg-white rounded-2xl p-8 text-center">
+          <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <MapPinIcon className="w-8 h-8 text-gray-400" />
             </div>
@@ -176,7 +174,7 @@ const AddressesPage: React.FC = () => {
           </div>
         ) : (
           /* Address List */
-          <div className="space-y-4">
+          <ul className="space-y-3">
             {addresses.map((address) => (
               <AddressCard
                 key={address.id}
@@ -186,7 +184,7 @@ const AddressesPage: React.FC = () => {
                 onDelete={() => deleteAddress(address.id)}
               />
             ))}
-          </div>
+          </ul>
         )}
 
         {/* Add/Edit Address Form Modal */}
@@ -231,68 +229,108 @@ interface AddressCardProps {
 }
 
 const AddressCard: React.FC<AddressCardProps> = ({ address, onSetDefault, onEdit, onDelete }) => (
-  <div 
-    className={`bg-white rounded-2xl p-5 border-2 cursor-pointer hover:shadow-lg transition-all duration-200 ${address.is_default ? 'border-primary bg-primary-50' : 'border-transparent'}`}
+  <li 
+    className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer ${
+      address.is_default 
+        ? 'border-cyan-400 shadow-cyan-100' 
+        : 'border-gray-200'
+    }`}
+    style={{
+      padding: '12px',
+      boxShadow: address.is_default 
+        ? '0 8px 22px rgba(10,189,198,.15), 0 8px 20px rgba(10,30,40,.08)' 
+        : '0 8px 20px rgba(10,30,40,.08)'
+    }}
     onClick={onEdit}
   >
-    <div className="flex items-start justify-between mb-3">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-          address.is_default ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
-        }`}>
-          <HomeIcon className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900">
-              {address.apartment ? `${address.apartment}, ` : ''}{address.street}
-            </h3>
-            {address.is_default && (
-              <span className="bg-primary text-white text-xs font-semibold px-2 py-1 rounded-lg">
-                Default
-              </span>
-            )}
-          </div>
-                          <p className="text-sm text-gray-600">{address.city}</p>
-        </div>
+    <div className="flex items-start gap-3">
+      {/* Icon */}
+      <div 
+        className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+          address.is_default 
+            ? 'bg-gradient-to-br from-cyan-500 to-emerald-400 text-white' 
+            : 'bg-gradient-to-br from-cyan-100 to-emerald-50 text-cyan-600 border border-cyan-200'
+        }`}
+      >
+        <HomeIcon className="w-5 h-5" />
       </div>
-      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="edit"
-          shape="bubble"
-          size="sm"
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="font-black text-gray-900 text-base tracking-wide">
+            {address.apartment ? `${address.apartment}, ` : ''}{address.street}
+          </h3>
+          {address.is_default && (
+            <span 
+              className="text-xs font-black text-cyan-800 bg-cyan-100 border border-cyan-300 px-2 py-1 rounded-full"
+            >
+              Default
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-gray-600 mt-1">{address.city}</p>
+      </div>
+      
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <button
           onClick={onEdit}
-          className="!p-2 !min-w-[32px] !w-8 !h-8"
+          className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center hover:bg-gray-50 transition-colors duration-150 shadow-sm hover:shadow-md"
+          aria-label="Edit address"
         >
-          <PencilIcon className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="delete"
-          shape="bubble"
-          size="sm"
+          <PencilIcon className="w-4 h-4 text-gray-700" />
+        </button>
+        <button
           onClick={onDelete}
-          className="!p-2 !min-w-[32px] !w-8 !h-8"
+          className="w-8 h-8 rounded-lg border border-red-200 bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors duration-150 shadow-sm hover:shadow-md"
+          aria-label="Delete address"
         >
-          <TrashIcon className="w-4 h-4" />
-        </Button>
+          <TrashIcon className="w-4 h-4 text-red-600" />
+        </button>
       </div>
     </div>
     
+    {/* Set as Default Link */}
     {!address.is_default && (
-      <Button
-        variant="selection"
-        shape="organic"
-        size="sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          onSetDefault();
-        }}
-        className="!w-full !py-2 !text-sm !min-w-0 !border-primary !text-primary"
-      >
-        Set as Default
-      </Button>
+      <div className="mt-3 flex items-center justify-between">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onSetDefault();
+          }}
+          className="relative text-cyan-700 font-black text-sm px-3 py-2 rounded-lg hover:bg-cyan-50 transition-colors duration-150"
+          style={{
+            position: 'relative',
+            border: 'none',
+            background: 'transparent',
+            fontWeight: '900',
+            letterSpacing: '0.15px',
+            cursor: 'pointer',
+            padding: '9px 12px',
+            borderRadius: '10px'
+          }}
+        >
+          <span className="relative z-10">Set as Default</span>
+          <span 
+            className="absolute left-3 right-3 bottom-2 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent rounded-full scale-x-75 origin-center transition-transform duration-200 hover:scale-x-100"
+            style={{
+              content: '""',
+              position: 'absolute',
+              left: '10px',
+              right: '10px',
+              bottom: '6px',
+              height: '2px',
+              background: 'linear-gradient(90deg, transparent, rgba(10,189,198,.6), transparent)',
+              transform: 'scaleX(.7)',
+              transformOrigin: 'center',
+              transition: 'transform .2s ease'
+            }}
+          />
+        </button>
+      </div>
     )}
-  </div>
+  </li>
 );
 
 // Add/Edit Address Modal Component

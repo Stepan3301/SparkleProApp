@@ -521,6 +521,19 @@ const HomePage: React.FC = () => {
           .book-again-card:hover::before {
             left: 100%;
           }
+          
+          /* Special offer animations */
+          @keyframes shine {
+            0% { transform: translateX(-60%) rotate(8deg); }
+            50% { transform: translateX(20%) rotate(8deg); }
+            100% { transform: translateX(120%) rotate(8deg); }
+          }
+          
+          @keyframes rise {
+            0% { transform: translateY(0) scale(.9); opacity: 0; }
+            15% { opacity: .95; }
+            100% { transform: translateY(-160px) scale(1.15); opacity: 0; }
+          }
         `}</style>
 
 
@@ -763,35 +776,118 @@ const HomePage: React.FC = () => {
             </div>
           </section>
 
-          {/* Promo / Loyalty Section */}
+          {/* Special Offer Section */}
           <section className="mb-6">
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-5 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full -ml-12 -mb-12"></div>
+            <div 
+              className="relative p-4 rounded-2xl text-white overflow-hidden"
+              style={{
+                background: `
+                  radial-gradient(120% 100% at 100% 0%, #c8fff1 0%, transparent 55%),
+                  radial-gradient(120% 100% at 0% 100%, #b7f8ff 0%, transparent 55%),
+                  linear-gradient(135deg, #6c5dd3, #36c2cf)
+                `,
+                boxShadow: '0 14px 28px rgba(10,30,40,.18)',
+                border: '1px solid rgba(255,255,255,.5)'
+              }}
+            >
+              {/* Decorative shine effect */}
+              <div 
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: 'linear-gradient(115deg, rgba(255,255,255,0) 35%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 65%)',
+                  transform: 'translateX(-60%) rotate(8deg)',
+                  filter: 'blur(12px)',
+                  animation: 'shine 4s ease-in-out infinite',
+                  mixBlendMode: 'screen'
+                }}
+              />
+              
+              {/* Decorative bubbles */}
+              <div 
+                className="absolute w-3 h-3 rounded-full pointer-events-none opacity-90"
+                style={{
+                  right: '14px',
+                  bottom: '10px',
+                  background: 'radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.6))',
+                  boxShadow: 'inset 0 0 10px rgba(255,255,255,.9), 0 8px 18px rgba(0,0,0,.12)',
+                  animation: 'rise 9s linear infinite 0.4s'
+                }}
+              />
+              <div 
+                className="absolute w-2 h-2 rounded-full pointer-events-none opacity-90"
+                style={{
+                  right: '36px',
+                  bottom: '14px',
+                  background: 'radial-gradient(circle at 30% 30%, #fff, rgba(255,255,255,.6))',
+                  boxShadow: 'inset 0 0 10px rgba(255,255,255,.9), 0 8px 18px rgba(0,0,0,.12)',
+                  animation: 'rise 9s linear infinite 1.1s'
+                }}
+              />
+
               <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-2xl">🎁</span>
-                  <h3 className="font-bold text-lg">Special Offer!</h3>
+                <div className="flex items-start gap-3 mb-3">
+                  {/* Icon */}
+                  <div 
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: 'linear-gradient(135deg, #0ABDC6, #00E6B8)',
+                      boxShadow: '0 10px 22px rgba(10,189,198,.35)'
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white">
+                      <path d="M9 7h6l1-2h-3V3h-2v2H8l1 2Zm-1 2h8v11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V9Zm10 0h2v8h-2V9Z"/>
+                    </svg>
+                  </div>
+                  
+                  {/* Title */}
+                  <div className="flex-1">
+                    <h3 className="font-black text-lg mb-1 tracking-wide" style={{ textShadow: '0 2px 12px rgba(0,0,0,.2)' }}>
+                      Special Offer!
+                    </h3>
+                    <p className="text-sm opacity-95" style={{ color: '#eafcff' }}>
+                      {userStats.totalBookings === 0 
+                        ? "Get 15% off your first cleaning service. Use code FIRST15"
+                        : "Invite a friend and get 10% off your next booking!"
+                      }
+                    </p>
+                  </div>
                 </div>
-                <p className="text-sm opacity-90 mb-3">
-                  {userStats.totalBookings === 0 
-                    ? "Get 15% off your first cleaning service. Use code FIRST15"
-                    : "Invite a friend and get 10% off your next booking!"
-                  }
-                </p>
-                <button 
-                  onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : handleInviteFriend()}
-                  className="bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2"
-                >
-                  {userStats.totalBookings === 0 ? (
-                    "Book Now"
-                  ) : (
-                    <>
-                      <ShareIcon className="w-4 h-4" />
-                      Invite Friend
-                    </>
-                  )}
-                </button>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button 
+                    onClick={() => userStats.totalBookings === 0 ? navigate('/booking') : handleInviteFriend()}
+                    className="relative inline-flex items-center gap-2 px-4 py-3 rounded-full font-black text-sm transition-all duration-200 hover:scale-105"
+                    style={{
+                      color: '#073238',
+                      background: '#fff',
+                      boxShadow: '0 10px 24px rgba(0,0,0,.15), 0 10px 22px rgba(10,189,198,.25)'
+                    }}
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      {userStats.totalBookings === 0 ? (
+                        "Book Now"
+                      ) : (
+                        <>
+                          <ShareIcon className="w-4 h-4" />
+                          Invite Friend
+                        </>
+                      )}
+                    </span>
+                    {/* Button gloss effect */}
+                    <span 
+                      className="absolute inset-0 rounded-full pointer-events-none opacity-90"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,255,255,0) 55%)',
+                        mixBlendMode: 'screen'
+                      }}
+                    />
+                  </button>
+                  
+                  <span className="text-xs opacity-90" style={{ color: '#e6fbff' }}>
+                    Limited time • Applies at checkout
+                  </span>
+                </div>
               </div>
             </div>
           </section>
