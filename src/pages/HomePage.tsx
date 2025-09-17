@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/OptimizedAuthContext';
 import { supabase } from '../lib/supabase';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import ReviewNotification from '../components/ui/ReviewNotification';
@@ -16,7 +16,7 @@ import {
   ShareIcon
 } from '@heroicons/react/24/outline';
 import SEO from '../components/seo/SEO';
-import LoadingScreen from '../components/ui/OptimizedLoadingScreen';
+import LoadingScreen from '../components/ui/LoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
 
 interface UserStats {

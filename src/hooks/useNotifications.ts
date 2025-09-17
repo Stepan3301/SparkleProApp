@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/OptimizedAuthContext';
 import NotificationsManager from '../notifications/NotificationsManager';
 
 interface NotificationState {

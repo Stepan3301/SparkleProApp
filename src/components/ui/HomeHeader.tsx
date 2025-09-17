@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { useSimpleTranslation } from '../../utils/i18n';
 import { MapPinIcon, UserIcon } from '@heroicons/react/24/outline';
 

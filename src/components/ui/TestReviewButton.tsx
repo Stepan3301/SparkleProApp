@@ -1,6 +1,6 @@
 import React from 'react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import Button from './Button';
 
 const TestReviewButton: React.FC = () => {

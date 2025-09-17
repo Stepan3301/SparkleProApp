@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/OptimizedAuthContext';
 import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import BookingCancelAnimation from '../components/ui/BookingCancelAnimation';
@@ -202,7 +202,7 @@ const HistoryPage: React.FC = () => {
 
         setBookings(transformedBookings);
       } else {
-        setBookings(data || []);
+      setBookings(data || []);
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);

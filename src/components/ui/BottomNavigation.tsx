@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { useSimpleTranslation } from '../../utils/i18n';
 import { 
   HomeIcon as HomeSolid,

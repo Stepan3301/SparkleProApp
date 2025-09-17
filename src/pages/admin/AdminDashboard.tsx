@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { supabase } from '../../lib/supabase';
 import { useSimpleTranslation } from '../../utils/i18n';
 // Removed useNotifications import as it's no longer needed

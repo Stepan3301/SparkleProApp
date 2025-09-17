@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { XMarkIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { CreateReviewData } from '../../types/review';
 import Button from './Button';
 

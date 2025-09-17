@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { encryptCardData, getCardType, getLastFourDigits } from '../../utils/cardEncryption';
 
 interface AddCardFormProps {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { supabase } from '../../lib/supabase';
 import { decryptCardData, maskCardNumber } from '../../utils/cardEncryption';
 import Button from '../../components/ui/Button';

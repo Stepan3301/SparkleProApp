@@ -22,7 +22,7 @@ import './App.css';
 import './styles/mobile-optimizations.css';
 import SEOProvider from './components/seo/SEOProvider';
 import BusinessSchema from './components/seo/BusinessSchema';
-import LoadingScreen from './components/ui/OptimizedLoadingScreen';
+import LoadingScreen from './components/ui/LoadingScreen';
 
 // Component to handle scroll reset on route change
 function ScrollToTop() {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 import GoogleSignInButton from '../../components/auth/GoogleSignInButton';
 import PhoneNumberInput from '../../components/ui/PhoneNumberInput';
 import Lottie from 'lottie-react';
