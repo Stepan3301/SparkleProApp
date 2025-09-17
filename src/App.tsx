@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/OptimizedAuthContext';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import AdminRouteGuard from './components/AdminRouteGuard';
 import GuestOrUserRoute from './components/GuestOrUserRoute';
@@ -19,9 +19,10 @@ import PrivacySecurityPage from './pages/profile/PrivacySecurityPage';
 import HelpSupportPage from './pages/profile/HelpSupportPage';
 import { scrollToTop } from './utils/scrollToTop';
 import './App.css';
+import './styles/mobile-optimizations.css';
 import SEOProvider from './components/seo/SEOProvider';
 import BusinessSchema from './components/seo/BusinessSchema';
-import LoadingScreen from './components/ui/LoadingScreen';
+import LoadingScreen from './components/ui/OptimizedLoadingScreen';
 
 // Component to handle scroll reset on route change
 function ScrollToTop() {

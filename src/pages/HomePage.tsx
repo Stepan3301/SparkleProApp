@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import DirhamIcon from '../components/ui/DirhamIcon';
@@ -8,20 +8,15 @@ import ServiceDetailModal from '../components/ui/ServiceDetailModal';
 import Toast from '../components/ui/Toast';
 import GuestAccessModal from '../components/ui/GuestAccessModal';
 import HomeHeader from '../components/ui/HomeHeader';
+import BottomNavigation from '../components/ui/BottomNavigation';
 import { useReviewNotifications } from '../hooks/useReviewNotifications';
 import { useSimpleTranslation } from '../utils/i18n';
 import { handleReferralShare } from '../utils/shareUtils';
 import { 
   ShareIcon
 } from '@heroicons/react/24/outline';
-import { 
-  HomeIcon as HomeSolid,
-  CalendarIcon as CalendarSolid,
-  DocumentTextIcon as DocumentSolid,
-  UserIcon as UserSolid
-} from '@heroicons/react/24/solid';
 import SEO from '../components/seo/SEO';
-import LoadingScreen from '../components/ui/LoadingScreen';
+import LoadingScreen from '../components/ui/OptimizedLoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
 
 interface UserStats {
@@ -54,6 +49,7 @@ interface ServiceData {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
   const { currentReviewBooking, dismissCurrentReview, markReviewCompleted } = useReviewNotifications();
@@ -131,7 +127,7 @@ const HomePage: React.FC = () => {
     }
   }, [user, isGuest]);
 
-  const fetchUserStats = async () => {
+  const fetchUserStats = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -158,7 +154,7 @@ const HomePage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
-  };
+  }, [user]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -417,7 +413,22 @@ const HomePage: React.FC = () => {
         smartLoading={true}
       />
       
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div 
+        className="min-h-screen bg-gray-50 pb-20"
+        style={{
+          // Mobile optimizations
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+          // Ensure proper viewport handling - use dynamic viewport height for mobile
+          minHeight: '100dvh', // Dynamic viewport height for mobile
+          // Prevent zoom on input focus
+          touchAction: 'manipulation',
+          // Optimize rendering
+          willChange: 'scroll-position',
+          // Add padding for safe area
+          paddingBottom: 'max(80px, env(safe-area-inset-bottom) + 60px)'
+        }}
+      >
         <style>{`
           
           .quick-book-gradient {
@@ -812,30 +823,10 @@ const HomePage: React.FC = () => {
           </section>
         </main>
 
-        {/* Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 grid grid-cols-4 pt-2 pb-5 z-50">
-          <NavItem 
-            icon={<HomeSolid className="w-5 h-5" />} 
-            label={t('navigation.home', 'Home')} 
-            active 
-            onClick={() => navigate('/home')}
-          />
-          <NavItem 
-            icon={<CalendarSolid className="w-5 h-5" />} 
-            label={t('navigation.booking', 'Book')} 
-            onClick={() => navigate('/booking')}
-          />
-          <NavItem 
-            icon={<DocumentSolid className="w-5 h-5" />} 
-            label={t('navigation.history', 'History')} 
-            onClick={handleHistoryClick}
-          />
-          <NavItem 
-            icon={<UserSolid className="w-5 h-5" />} 
-            label={t('navigation.profile', 'Profile')} 
-            onClick={handleProfileClick}
-          />
-        </nav>
+        {/* Optimized Bottom Navigation */}
+        <BottomNavigation 
+          currentPath={location.pathname}
+        />
 
         {/* Service Detail Modal */}
         <ServiceDetailModal
@@ -871,24 +862,5 @@ const HomePage: React.FC = () => {
   );
 };
 
-// Navigation Item Component
-interface NavItemProps {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-  onClick: () => void;
-}
-
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active = false, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`flex flex-col items-center gap-1 py-2 px-1 transition-all active:scale-95 ${
-      active ? 'text-primary' : 'text-gray-400'
-    }`}
-  >
-    {icon}
-    <span className="text-xs font-medium">{label}</span>
-  </button>
-);
 
 export default HomePage; 

@@ -1,0 +1,282 @@
+/* Mobile Performance Optimizations */
+
+/* Prevent layout shifts and improve scrolling */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent zoom on input focus */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  
+  /* Improve scrolling performance */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+}
+
+body {
+  /* Prevent zoom on input focus */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  
+  /* Improve touch performance */
+  touch-action: manipulation;
+  
+  /* Prevent overscroll bounce */
+  overscroll-behavior: contain;
+  
+  /* Optimize font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+}
+
+/* Mobile viewport optimizations */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* Fixed bottom navigation optimizations */
+.fixed-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  
+  /* Prevent transform issues */
+  transform: none !important;
+  will-change: auto;
+  
+  /* Add safe area padding */
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  
+  /* Backdrop blur for better visibility */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  /* Ensure it stays in place */
+  position: fixed !important;
+}
+
+/* Optimize images for mobile */
+img {
+  /* Prevent layout shifts */
+  height: auto;
+  max-width: 100%;
+  
+  /* Optimize loading */
+  loading: lazy;
+  
+  /* Improve rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Optimize videos for mobile */
+video {
+  /* Prevent layout shifts */
+  height: auto;
+  max-width: 100%;
+  
+  /* Optimize playback */
+  object-fit: contain;
+  
+  /* Prevent fullscreen on mobile */
+  -webkit-playsinline: true;
+  playsinline: true;
+}
+
+/* Touch target optimizations */
+button, 
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  /* Ensure minimum touch target size */
+  min-height: 44px;
+  min-width: 44px;
+  
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  tap-highlight-color: rgba(0, 0, 0, 0.1);
+  
+  /* Prevent text selection on touch */
+  -webkit-user-select: none;
+  user-select: none;
+  
+  /* Improve touch responsiveness */
+  touch-action: manipulation;
+}
+
+/* Input optimizations for mobile */
+input, 
+textarea, 
+select {
+  /* Prevent zoom on focus */
+  font-size: 16px;
+  
+  /* Improve touch targets */
+  min-height: 44px;
+  
+  /* Remove default styling */
+  -webkit-appearance: none;
+  appearance: none;
+  
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scroll optimizations */
+.scroll-container {
+  /* Improve scrolling performance */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  
+  /* Prevent overscroll bounce */
+  overscroll-behavior: contain;
+  
+  /* Optimize rendering */
+  will-change: scroll-position;
+}
+
+/* Animation optimizations for mobile */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-mobile-optimized {
+    /* Use transform and opacity for better performance */
+    will-change: transform, opacity;
+    
+    /* Use GPU acceleration */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Loading screen optimizations */
+.loading-screen {
+  /* Use GPU acceleration */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  
+  /* Optimize rendering */
+  will-change: opacity;
+  
+  /* Prevent interaction during loading */
+  pointer-events: none;
+}
+
+/* Modal optimizations for mobile */
+.modal-mobile {
+  /* Prevent body scroll when modal is open */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  
+  /* Optimize rendering */
+  will-change: opacity, transform;
+  
+  /* Improve touch handling */
+  touch-action: manipulation;
+}
+
+/* Card optimizations for mobile */
+.card-mobile {
+  /* Prevent layout shifts */
+  contain: layout;
+  
+  /* Optimize rendering */
+  will-change: transform;
+  
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+  tap-highlight-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Text optimizations for mobile */
+.text-mobile-optimized {
+  /* Improve text rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Prevent text selection on touch */
+  -webkit-user-select: none;
+  user-select: none;
+  
+  /* Improve readability */
+  text-rendering: optimizeLegibility;
+}
+
+/* Grid optimizations for mobile */
+.grid-mobile {
+  /* Prevent layout shifts */
+  contain: layout;
+  
+  /* Optimize rendering */
+  will-change: auto;
+}
+
+/* Flexbox optimizations for mobile */
+.flex-mobile {
+  /* Prevent layout shifts */
+  contain: layout;
+  
+  /* Optimize rendering */
+  will-change: auto;
+}
+
+/* Performance optimizations for low-end devices */
+@media (max-width: 768px) {
+  /* Reduce animations on mobile */
+  .animate-mobile-optimized {
+    animation-duration: 0.3s;
+    transition-duration: 0.3s;
+  }
+  
+  /* Optimize shadows for mobile */
+  .shadow-mobile {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Reduce blur effects on mobile */
+  .backdrop-blur-mobile {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+  }
+}
+
+/* Critical CSS for above-the-fold content */
+.critical-content {
+  /* Ensure critical content loads first */
+  contain: layout style paint;
+  
+  /* Optimize rendering */
+  will-change: auto;
+}
+
+/* Non-critical content optimizations */
+.non-critical-content {
+  /* Defer non-critical content */
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
