@@ -86,50 +86,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Optimized authentication functions
+  // Optimized authentication functions with error handling
   const signIn = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) throw error;
-    // User will be set by the auth state change listener
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
+      // User will be set by the auth state change listener
+    } catch (error) {
+      console.error('Sign in failed:', error);
+      throw error;
+    }
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) throw error;
-    // User will be set by the auth state change listener
+      if (error) {
+        console.error('Sign up error:', error);
+        throw error;
+      }
+      // User will be set by the auth state change listener
+    } catch (error) {
+      console.error('Sign up failed:', error);
+      throw error;
+    }
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
 
-    if (error) throw error;
+      if (error) {
+        console.error('Google sign in error:', error);
+        throw error;
+      }
+    } catch (error) {
+      console.error('Google sign in failed:', error);
+      throw error;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.warn('Sign out error (non-critical):', error);
+        // Don't throw error, just clear local state
+      }
     } catch (error) {
       console.error('Error signing out:', error);
-      // Force clear local state even if logout fails
+    } finally {
+      // Always clear local state regardless of API response
       setUser(null);
       setProfile(null);
       setIsGuest(false);
       try {
         localStorage.removeItem('isGuest');
+        // Clear any stored tokens
+        localStorage.removeItem('sb-access-token');
+        localStorage.removeItem('sb-refresh-token');
       } catch {}
     }
   }, []);
@@ -152,7 +183,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {}
   }, []);
 
-  // Optimized auth state change listener
+  // Token cleanup function
+  const clearAuthTokens = useCallback(() => {
+    try {
+      localStorage.removeItem('sb-access-token');
+      localStorage.removeItem('sb-refresh-token');
+      localStorage.removeItem('supabase.auth.token');
+      // Clear any other auth-related storage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (error) {
+      console.warn('Error clearing auth tokens:', error);
+    }
+  }, []);
+
+  // Optimized auth state change listener with error handling
   useEffect(() => {
     let mounted = true;
 
@@ -161,26 +209,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Auth state change:', event, session?.user?.id);
 
-      if (session?.user) {
-        console.log('User authenticated, clearing guest mode and setting user');
-        setUser(session.user);
-        await fetchProfile(session.user.id);
-        setIsGuest(false);
-        try {
-          localStorage.removeItem('isGuest');
-        } catch {}
-      } else {
-        const isGuestMode = localStorage.getItem('isGuest') === 'true';
-        if (isGuestMode) {
-          console.log('No session but guest mode active, keeping guest state');
+      try {
+        if (session?.user) {
+          console.log('User authenticated, clearing guest mode and setting user');
+          setUser(session.user);
+          await fetchProfile(session.user.id);
+          setIsGuest(false);
+          try {
+            localStorage.removeItem('isGuest');
+          } catch {}
         } else {
-          console.log('No session and not guest mode, clearing user');
+          const isGuestMode = localStorage.getItem('isGuest') === 'true';
+          if (isGuestMode) {
+            console.log('No session but guest mode active, keeping guest state');
+            setIsGuest(true);
+            setUser(null);
+            setProfile(null);
+          } else {
+            console.log('No session and not guest mode, clearing user');
+            setUser(null);
+            setProfile(null);
+            setIsGuest(false);
+          }
+        }
+      } catch (error) {
+        console.error('Error in auth state change:', error);
+        // On error, clear tokens and fall back to guest mode to prevent app crash
+        if (mounted) {
+          clearAuthTokens();
           setUser(null);
           setProfile(null);
-          setIsGuest(false);
+          setIsGuest(true);
+          try {
+            localStorage.setItem('isGuest', 'true');
+          } catch {}
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
         }
       }
-      setLoading(false);
     });
 
     return () => {
@@ -189,15 +257,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [fetchProfile]);
 
-  // Initial session check with optimization
+  // Initial session check with optimization and error handling
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
+
+        if (error) {
+          console.warn('Session check error (non-critical):', error.message);
+          // Clear invalid tokens and fall back to guest mode
+          clearAuthTokens();
+          setUser(null);
+          setProfile(null);
+          setIsGuest(true);
+          try {
+            localStorage.setItem('isGuest', 'true');
+          } catch {}
+          setLoading(false);
+          return;
+        }
 
         if (session?.user) {
           console.log('Initial session found, clearing guest mode and setting user');
@@ -221,7 +303,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       } catch (error) {
         console.error('Error initializing auth:', error);
+        // On any error, clear tokens and fall back to guest mode to prevent app crash
         if (mounted) {
+          clearAuthTokens();
+          setUser(null);
+          setProfile(null);
+          setIsGuest(true);
+          try {
+            localStorage.setItem('isGuest', 'true');
+          } catch {}
           setLoading(false);
         }
       }
