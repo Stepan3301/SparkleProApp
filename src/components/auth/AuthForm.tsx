@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 
 interface AuthFormProps {
   mode: 'signin' | 'signup';
@@ -23,6 +23,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const { signIn, signUp } = useAuth();
 
   const isSignUp = mode === 'signup';
   const schema = isSignUp ? signupSchema : signinSchema;
@@ -40,28 +41,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode }) => {
     try {
       if (isSignUp) {
         const { fullName, email, password } = data as z.infer<typeof signupSchema>;
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
-        if (signUpError) throw signUpError;
-        if (signUpData.user?.identities?.length === 0) {
-            setMessage("An account with this email already exists but is unconfirmed. Please check your email to confirm it.");
-        } else {
-            setMessage("Sign up successful! Please check your email to confirm your account.");
-        }
+        await signUp(email, password, fullName);
+        setMessage("Sign up successful! Please check your email to confirm your account.");
       } else {
         const { email, password } = data as z.infer<typeof signinSchema>;
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
+        await signIn(email, password);
         setMessage("Sign in successful! Redirecting...");
         setTimeout(() => {
           window.location.href = '/home';

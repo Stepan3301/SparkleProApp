@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/OptimizedAuthContext';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
+  const { user, profile, isAdmin } = useAuth();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -11,34 +12,14 @@ const AuthCallback: React.FC = () => {
         console.log('Auth callback - Current URL:', window.location.href); // Debug log
         console.log('Auth callback - Hash:', window.location.hash); // Debug log
         
-        // Handle OAuth callback with hash parameters
-        const { data, error } = await supabase.auth.getSession();
+        // Wait a bit for auth state to be processed
+        await new Promise(resolve => setTimeout(resolve, 500));
         
-        if (error) {
-          console.error('Auth callback error:', error);
-          navigate('/auth?error=oauth_error');
-          return;
-        }
-
-        if (data.session) {
-          console.log('Auth callback - Session found, checking user role...'); // Debug log
-          
-          // Get user profile to check role
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.session.user.id)
-            .single();
-          
-          if (profileError) {
-            console.error('Error fetching profile:', profileError);
-            // Fallback to home if profile fetch fails
-            navigate('/home');
-            return;
-          }
+        if (user) {
+          console.log('Auth callback - User found, checking role...'); // Debug log
           
           // Redirect based on user role
-          if (profileData?.role === 'admin') {
+          if (isAdmin) {
             console.log('Auth callback - Admin user, redirecting to admin dashboard');
             navigate('/admin');
           } else {
@@ -46,8 +27,8 @@ const AuthCallback: React.FC = () => {
             navigate('/home');
           }
         } else {
-          console.log('Auth callback - No session found, redirecting to auth'); // Debug log
-          // No session found, redirect to auth
+          console.log('Auth callback - No user found, redirecting to auth'); // Debug log
+          // No user found, redirect to auth
           navigate('/auth');
         }
       } catch (error) {
@@ -60,7 +41,7 @@ const AuthCallback: React.FC = () => {
     const timeoutId = setTimeout(handleAuthCallback, 100);
     
     return () => clearTimeout(timeoutId);
-  }, [navigate]);
+  }, [navigate, user, isAdmin]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-400 to-emerald-400 flex items-center justify-center">
