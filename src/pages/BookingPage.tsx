@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/OptimizedAuthContext';
 import { supabase } from '../lib/supabase';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -13,6 +13,7 @@ import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker
 import AddCardForm from '../components/ui/AddCardForm';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
+import PhoneNumberInput from '../components/ui/PhoneNumberInput';
 import GuestSignupModal from '../components/ui/GuestSignupModal';
 import Lottie from 'lottie-react';
 import bookingSuccessAnimation from '../assets/animations/booking-success.json';
@@ -32,10 +33,12 @@ import { useSimpleTranslation } from '../utils/i18n';
 import { scrollToTop } from '../utils/scrollToTop';
 import SEO from '../components/seo/SEO';
 
-// Form validation schema for step 5 (was step 4)
+// Form validation schema for step 4 (contact details)
 const contactSchema = z.object({
   customerName: z.string().min(2, 'Name must be at least 2 characters'),
-  customerPhone: z.string().min(10, 'Please enter a valid phone number'),
+  customerPhone: z.string()
+    .min(10, 'Please enter a valid phone number')
+    .regex(/^\+\d{1,4}\d{6,14}$/, 'Please enter a valid phone number with country code'),
   selectedAddressId: z.number().optional(),
   newAddress: z.string().optional(),
   newAddressFloor: z.string().optional(),
@@ -197,7 +200,7 @@ const BookingPage: React.FC = () => {
   const [showEcoInfo, setShowEcoInfo] = useState(false);
 
   // Form for contact details
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ContactFormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch, control } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
 
@@ -1677,15 +1680,18 @@ const BookingPage: React.FC = () => {
                     <span className="text-xs text-emerald-600 ml-2">✓ From your profile</span>
                   )}
                 </label>
-                <input
-                  type="tel"
-                  className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
-                  placeholder="Enter your phone number"
-                  {...register('customerPhone')}
+                <Controller
+                  name="customerPhone"
+                  control={control}
+                  render={({ field }) => (
+                    <PhoneNumberInput
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                      error={errors.customerPhone?.message}
+                      required={true}
+                    />
+                  )}
                 />
-                {errors.customerPhone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.customerPhone.message}</p>
-                )}
               </div>
 
               <div>
