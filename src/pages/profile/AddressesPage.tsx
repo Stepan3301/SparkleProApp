@@ -61,20 +61,33 @@ const AddressesPage: React.FC = () => {
 
     try {
       // Remove default from all addresses
-      await supabase
+      const { error: clearError } = await supabase
         .from('addresses')
         .update({ is_default: false })
         .eq('user_id', user.id);
 
+      if (clearError) {
+        console.error('Error clearing default addresses:', clearError);
+        alert('Error setting default address. Please try again.');
+        return;
+      }
+
       // Set new default
-      await supabase
+      const { error: setError } = await supabase
         .from('addresses')
         .update({ is_default: true })
         .eq('id', addressId);
 
+      if (setError) {
+        console.error('Error setting default address:', setError);
+        alert('Error setting default address. Please try again.');
+        return;
+      }
+
       fetchAddresses();
     } catch (error) {
       console.error('Error setting default address:', error);
+      alert('Error setting default address. Please try again.');
     }
   };
 
@@ -85,6 +98,58 @@ const AddressesPage: React.FC = () => {
       if (!addressToDelete) {
         console.error('Address not found');
         return;
+      }
+
+      // Check if address is referenced by any bookings
+      const { data: bookings, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('id, status')
+        .eq('address_id', addressId);
+
+      if (bookingsError) {
+        console.error('Error checking bookings:', bookingsError);
+        alert('Error checking address usage. Please try again.');
+        return;
+      }
+
+      if (bookings && bookings.length > 0) {
+        // Address is referenced by bookings, need to handle this
+        const confirmed = window.confirm(
+          `This address is used by ${bookings.length} booking(s). ` +
+          `Deleting it will remove the address reference from those bookings. ` +
+          `Do you want to continue?`
+        );
+
+        if (!confirmed) return;
+
+        // Update bookings to use a different address or set to NULL
+        const otherAddresses = addresses.filter(addr => addr.id !== addressId);
+        
+        if (otherAddresses.length > 0) {
+          // Use another address from the same user
+          const { error: updateBookingsError } = await supabase
+            .from('bookings')
+            .update({ address_id: otherAddresses[0].id })
+            .eq('address_id', addressId);
+
+          if (updateBookingsError) {
+            console.error('Error updating bookings:', updateBookingsError);
+            alert('Error updating bookings. Please try again.');
+            return;
+          }
+        } else {
+          // No other addresses, set address_id to NULL
+          const { error: updateBookingsError } = await supabase
+            .from('bookings')
+            .update({ address_id: null })
+            .eq('address_id', addressId);
+
+          if (updateBookingsError) {
+            console.error('Error updating bookings:', updateBookingsError);
+            alert('Error updating bookings. Please try again.');
+            return;
+          }
+        }
       }
 
       // If deleting the default address and there are other addresses
@@ -101,14 +166,21 @@ const AddressesPage: React.FC = () => {
       }
 
       // Now delete the address
-      await supabase
+      const { error } = await supabase
         .from('addresses')
         .delete()
         .eq('id', addressId);
 
+      if (error) {
+        console.error('Error deleting address:', error);
+        alert('Error deleting address. Please try again.');
+        return;
+      }
+
       fetchAddresses();
     } catch (error) {
       console.error('Error deleting address:', error);
+      alert('Error deleting address. Please try again.');
     }
   };
 
@@ -370,6 +442,14 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
 
         if (error) throw error;
       } else {
+        // Check if this will be the first address (make it default)
+        const { data: existingAddresses } = await supabase
+          .from('addresses')
+          .select('id')
+          .eq('user_id', user.id);
+
+        const isFirstAddress = !existingAddresses || existingAddresses.length === 0;
+
         // Create new address
         const { error } = await supabase
           .from('addresses')
@@ -378,10 +458,21 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
             street: searchValue,
             apartment: formData.apartment || null,
             city: formData.city,
-            is_default: false,
+            is_default: isFirstAddress,
           });
 
         if (error) throw error;
+
+        // If this is the first address, we're done
+        // If this is not the first address, ensure only one default exists
+        if (!isFirstAddress) {
+          // Remove default from all other addresses
+          await supabase
+            .from('addresses')
+            .update({ is_default: false })
+            .eq('user_id', user.id)
+            .neq('street', searchValue);
+        }
       }
 
       onSuccess(!isEditing);
@@ -411,17 +502,14 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
       <div className="bg-white w-full rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">{isEditing ? 'Edit Address' : 'Add New Address'}</h2>
-          <Button
-            variant="secondary"
-            shape="bubble"
-            size="sm"
+          <button
             onClick={onClose}
-            className="!p-2 !min-w-[40px] !w-10 !h-10"
+            className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center hover:bg-orange-200 transition-colors"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-          </Button>
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -439,6 +527,16 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
                 mapHeight={200}
                 onError={(error: string) => {
                   console.error('Places API error:', error);
+                  // Show user-friendly error message
+                  if (error.includes('RefererNotAllowedMapError')) {
+                    alert('Google Maps API key is not authorized for this domain. Please add localhost to your API key restrictions in Google Cloud Console.');
+                  } else if (error.includes('ApiNotActivatedMapError')) {
+                    alert('Google Maps API is not enabled. Please enable the Maps JavaScript API in Google Cloud Console.');
+                  } else if (error.includes('InvalidKeyMapError')) {
+                    alert('Invalid Google Maps API key. Please check your API key configuration.');
+                  } else {
+                    alert('Google Maps error: ' + error);
+                  }
                 }}
                 includedRegionCodes={['ae']}
               />

@@ -5,15 +5,26 @@ declare global {
   interface Window {
     google: any;
     googleMapsReady: boolean;
+    gm_authFailure?: () => void;
   }
+}
+
+interface AddressComponents {
+  country: string;
+  emirate: string;
+  city: string;
+  route: string;
+  streetNumber: string;
+  postalCode: string;
 }
 
 interface PlaceDetails {
   placeId: string;
   formattedAddress: string;
-  displayName?: string;
+  displayName: string;
   lat: number;
   lng: number;
+  components: AddressComponents;
 }
 
 interface PlacesAutocompleteProps {
@@ -23,8 +34,7 @@ interface PlacesAutocompleteProps {
   className?: string;
   disabled?: boolean;
   onError?: (error: string) => void;
-  // Configuration options (CORRECTED for new API)
-  includedRegionCodes?: string[]; // Correct property for new Places API
+  includedRegionCodes?: string[];
   showMap?: boolean;
   mapHeight?: number;
 }
@@ -36,7 +46,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
   className = "",
   disabled = false,
   onError,
-  includedRegionCodes = ['ae'], // Correct property for UAE
+  includedRegionCodes = ['AE'], // Uppercase ISO codes
   showMap = false,
   mapHeight = 200
 }) => {
@@ -45,9 +55,113 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
   const autocompleteElementRef = useRef<any>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const pendingLocationRef = useRef<any>(null);
+  const isMapInitializedRef = useRef<boolean>(false);
   
   const [isLoaded, setIsLoaded] = useState(false);
   const [inputValue, setInputValue] = useState(value);
+
+  // Parse address components helper
+  const parseAddressComponents = useCallback((place: any) => {
+    const dict = new Map<string, any>();
+    (place.addressComponents || []).forEach((c: any) => 
+      c.types.forEach((t: string) => dict.set(t, c))
+    );
+    const pick = (t: string, k: 'shortText' | 'longText' = 'longText') => 
+      dict.get(t)?.[k] ?? dict.get(t)?.[k.replace('Text', '_name')];
+    
+    return {
+      country: pick('country', 'shortText'),
+      emirate: pick('administrative_area_level_1'),
+      city: pick('locality') || pick('sublocality') || pick('administrative_area_level_2'),
+      route: pick('route'),
+      streetNumber: pick('street_number'),
+      postalCode: pick('postal_code'),
+    };
+  }, []);
+
+  // Robust marker management system
+  const ensureMarker = useCallback(async (location: any, title: string = 'Selected Location') => {
+    if (!mapInstanceRef.current) {
+      console.warn('Map not initialized, cannot create marker');
+      return;
+    }
+
+    const mapId = process.env.REACT_APP_GOOGLE_MAPS_MAP_ID;
+    
+    try {
+      // Import marker libraries
+      const { Marker, AdvancedMarkerElement } = await window.google.maps.importLibrary("marker");
+      
+      // If marker doesn't exist, create it
+      if (!markerRef.current) {
+        console.log('Creating new marker...');
+        
+        if (mapId && AdvancedMarkerElement) {
+          console.log('Using AdvancedMarkerElement');
+          markerRef.current = new AdvancedMarkerElement({
+            map: mapInstanceRef.current,
+            position: location,
+            title: title
+          });
+        } else {
+          console.log('Using legacy Marker');
+          markerRef.current = new Marker({
+            map: mapInstanceRef.current,
+            position: location,
+            title: title
+          });
+        }
+        console.log('Marker created:', markerRef.current);
+      } else {
+        console.log('Marker exists, updating position...');
+        
+        // Ensure marker is attached to map
+        if (mapId && AdvancedMarkerElement) {
+          if (!markerRef.current.map) {
+            markerRef.current.map = mapInstanceRef.current;
+          }
+          markerRef.current.position = location;
+        } else {
+          if (!markerRef.current.getMap()) {
+            markerRef.current.setMap(mapInstanceRef.current);
+          }
+          markerRef.current.setPosition(location);
+        }
+      }
+      
+      // Force marker visibility
+      setTimeout(() => {
+        if (markerRef.current && mapInstanceRef.current) {
+          console.log('Ensuring marker visibility...');
+          
+          if (mapId && AdvancedMarkerElement) {
+            markerRef.current.map = mapInstanceRef.current;
+            markerRef.current.position = location;
+          } else {
+            markerRef.current.setMap(mapInstanceRef.current);
+            markerRef.current.setPosition(location);
+          }
+          
+          // Trigger map refresh
+          window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
+        }
+      }, 50);
+      
+    } catch (error) {
+      console.error('Error creating/updating marker:', error);
+    }
+  }, []);
+
+  const setMarker = useCallback((location: any, title: string = 'Selected Location') => {
+    console.log('Setting marker at location:', location);
+    ensureMarker(location, title);
+    
+    // Pan map to location
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.panTo(location);
+    }
+  }, [ensureMarker]);
 
   // Handle Google Maps API loading
   const checkGoogleMapsLoaded = useCallback(() => {
@@ -56,6 +170,21 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       return true;
     }
     return false;
+  }, []);
+
+  // Handle Google Maps authentication errors
+  useEffect(() => {
+    const handleAuthError = () => {
+      console.error('Google Maps authentication failed');
+      // Don't show error immediately, let the specific error handlers deal with it
+    };
+
+    // Listen for Google Maps authentication errors
+    window.gm_authFailure = handleAuthError;
+    
+    return () => {
+      window.gm_authFailure = undefined;
+    };
   }, []);
 
   useEffect(() => {
@@ -82,7 +211,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
 
     try {
       // Import required libraries
-      const [{ Map }, { AdvancedMarkerElement }] = await Promise.all([
+      const [{ Map }, { Marker, AdvancedMarkerElement }] = await Promise.all([
         window.google.maps.importLibrary("maps"),
         window.google.maps.importLibrary("marker")
       ]);
@@ -93,35 +222,60 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       const map = new Map(mapRef.current, {
         center: dubaiCenter,
         zoom: 12,
-        mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
+        mapId: process.env.REACT_APP_GOOGLE_MAPS_MAP_ID || undefined,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false
       });
 
       mapInstanceRef.current = map;
+      isMapInitializedRef.current = true;
       console.log('Map initialized successfully with new API');
+
+      // Handle pending location if place was selected before map was ready
+      if (pendingLocationRef.current) {
+        const { location, viewport } = pendingLocationRef.current;
+        if (viewport && map.fitBounds) {
+          map.fitBounds(viewport);
+        } else {
+          map.setCenter(location);
+          map.setZoom(17);
+        }
+
+        // Use the new marker system
+        setMarker(location, 'Selected Location');
+        pendingLocationRef.current = null;
+      }
     } catch (error) {
       console.error('Failed to initialize map:', error);
-      onError?.('Failed to initialize map');
+      
+      // Check for specific Google Maps API errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('RefererNotAllowedMapError')) {
+        onError?.('Google Maps API key is not authorized for this domain. Please add localhost to your API key restrictions.');
+      } else if (errorMessage.includes('ApiNotActivatedMapError')) {
+        onError?.('Google Maps API is not enabled. Please enable the Maps JavaScript API in Google Cloud Console.');
+      } else if (errorMessage.includes('InvalidKeyMapError')) {
+        onError?.('Invalid Google Maps API key. Please check your API key configuration.');
+      } else {
+        onError?.('Failed to initialize map. Please check your Google Maps configuration.');
+      }
     }
   }, [showMap, onError]);
 
-  // Initialize autocomplete using new Places API (CORRECTED)
+  // Initialize autocomplete using new Places API
   const initializeAutocomplete = useCallback(async () => {
     if (!containerRef.current || !isLoaded || autocompleteElementRef.current) return;
 
     try {
-      // Import the Places library (correct import)
+      // Import the Places library
       const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places");
       
       console.log('Creating PlaceAutocompleteElement with correct syntax...');
       
-      // Create the PlaceAutocompleteElement with proper configuration (FIXED)
+      // Create the PlaceAutocompleteElement with proper configuration
       const placeAutocomplete = new PlaceAutocompleteElement({
-        // Correct UAE restriction (FIXED)
-        includedRegionCodes: includedRegionCodes, // Use prop value
-        // Set location bias to Dubai for UAE addresses
+        includedRegionCodes: includedRegionCodes,
         locationBias: { lat: 25.2048, lng: 55.2708 }
       });
       
@@ -129,11 +283,7 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       
       // Configure the autocomplete element
       placeAutocomplete.id = 'place-autocomplete-input';
-      
-      // Set the placeholder directly as an attribute
       placeAutocomplete.setAttribute('placeholder', placeholder);
-
-      // Ensure the element is properly styled and visible
       placeAutocomplete.style.width = '100%';
       placeAutocomplete.style.display = 'block';
       placeAutocomplete.style.minHeight = '48px';
@@ -143,41 +293,39 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
       containerRef.current.appendChild(placeAutocomplete);
       
       console.log('PlaceAutocompleteElement added to container');
-      console.log('Container children:', containerRef.current.children);
       
-      // Wait a moment for the element to fully render
-      setTimeout(() => {
-        console.log('PlaceAutocompleteElement after timeout:', placeAutocomplete);
-        if (containerRef.current) {
-          console.log('Container innerHTML:', containerRef.current.innerHTML);
-        }
-      }, 1000);
-      
-      // Listen for place selection using the CORRECT 'gmp-select' event (FIXED)
+      // Listen for place selection using the 'gmp-select' event
       placeAutocomplete.addEventListener('gmp-select', async (event: any) => {
         console.log('Place selection event triggered:', event);
         
-        // Correct destructuring (FIXED)
         const { placePrediction } = event;
         const place = placePrediction.toPlace();
         
-        // Fetch place details with correct method (FIXED)
+        // Fetch place details with correct fields
         await place.fetchFields({ 
-          fields: ['displayName', 'formattedAddress', 'location', 'id'] 
+          fields: ['id', 'displayName', 'formattedAddress', 'location', 'viewport', 'addressComponents'] 
         });
 
         if (!place.location) {
           console.warn('No location for selected place');
-          onError?.(`No location details available for: ${place.displayName || 'selected place'}`);
+          onError?.('No location details available for selected place');
+          return;
+        }
+
+        // Parse address components and validate UAE
+        const components = parseAddressComponents(place);
+        if (components.country !== 'AE') {
+          onError?.('Address must be within the UAE');
           return;
         }
 
         const placeDetails: PlaceDetails = {
           placeId: place.id,
           formattedAddress: place.formattedAddress,
-          displayName: place.displayName,
+          displayName: place.displayName?.text ?? '',
           lat: place.location.lat(),
-          lng: place.location.lng()
+          lng: place.location.lng(),
+          components: components
         };
 
         // Update input value display
@@ -186,33 +334,25 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         // Call the onChange callback
         onChange(place.formattedAddress, placeDetails);
 
-        // Update map if available
-        if (mapInstanceRef.current) {
-          // Center map on selected location
-          if (place.viewport) {
-            mapInstanceRef.current.fitBounds(place.viewport);
-          } else {
-            mapInstanceRef.current.setCenter(place.location);
-            mapInstanceRef.current.setZoom(17);
-          }
-
-          // Update or create marker using AdvancedMarkerElement
-          try {
-            const { AdvancedMarkerElement } = await window.google.maps.importLibrary("marker");
-            
-            if (markerRef.current) {
-              markerRef.current.position = place.location;
-            } else {
-              markerRef.current = new AdvancedMarkerElement({
-                map: mapInstanceRef.current,
-                position: place.location,
-                title: place.formattedAddress
-              });
-            }
-          } catch (markerError) {
-            console.warn('Could not create advanced marker:', markerError);
-          }
+        // Handle map updates with race condition protection
+        if (!mapInstanceRef.current) {
+          pendingLocationRef.current = { 
+            location: place.location, 
+            viewport: place.viewport 
+          };
+          return;
         }
+
+        // Update map if available
+        if (place.viewport && mapInstanceRef.current.fitBounds) {
+          mapInstanceRef.current.fitBounds(place.viewport);
+        } else {
+          mapInstanceRef.current.setCenter(place.location);
+          mapInstanceRef.current.setZoom(17);
+        }
+
+        // Use the new robust marker system
+        setMarker(place.location, place.formattedAddress);
 
         console.log('Place selected (New API):', placeDetails);
       });
@@ -222,16 +362,29 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
     } catch (error) {
       console.error('Failed to initialize PlaceAutocompleteElement:', error);
       
+      // Check for specific Google Maps API errors
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('RefererNotAllowedMapError')) {
+        onError?.('Google Maps API key is not authorized for this domain. Please add localhost to your API key restrictions.');
+        return;
+      } else if (errorMessage.includes('ApiNotActivatedMapError')) {
+        onError?.('Google Maps API is not enabled. Please enable the Places API in Google Cloud Console.');
+        return;
+      } else if (errorMessage.includes('InvalidKeyMapError')) {
+        onError?.('Invalid Google Maps API key. Please check your API key configuration.');
+        return;
+      }
+      
       // Fallback to legacy Autocomplete if PlaceAutocompleteElement fails
       try {
         console.log('Attempting fallback to legacy Autocomplete...');
         await initializeLegacyAutocomplete();
       } catch (fallbackError) {
         console.error('Both new and legacy APIs failed:', fallbackError);
-        onError?.('Failed to initialize address search');
+        onError?.('Failed to initialize address search. Please check your Google Maps configuration.');
       }
     }
-  }, [isLoaded, onChange, onError, placeholder, includedRegionCodes]);
+  }, [isLoaded, onChange, onError, placeholder, includedRegionCodes, parseAddressComponents]);
 
   // Fallback to legacy Autocomplete API
   const initializeLegacyAutocomplete = useCallback(async () => {
@@ -248,15 +401,22 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
 
     const autocomplete = new window.google.maps.places.Autocomplete(input, {
       types: ['address'],
-      componentRestrictions: { country: includedRegionCodes },
-      fields: ['place_id', 'formatted_address', 'name', 'geometry']
+      componentRestrictions: { country: 'AE' },
+      fields: ['place_id', 'formatted_address', 'name', 'geometry', 'address_components']
     });
 
-    autocomplete.addListener('place_changed', () => {
+    autocomplete.addListener('place_changed', async () => {
       const place = autocomplete.getPlace();
       
       if (!place.geometry?.location) {
         console.warn('No geometry location for selected place');
+        return;
+      }
+
+      // Parse address components for legacy API
+      const components = parseAddressComponents(place);
+      if (components.country !== 'AE') {
+        onError?.('Address must be within the UAE');
         return;
       }
 
@@ -265,33 +425,49 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         formattedAddress: place.formatted_address || '',
         displayName: place.name || '',
         lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng()
+        lng: place.geometry.location.lng(),
+        components: components
       };
 
       setInputValue(place.formatted_address || '');
       onChange(place.formatted_address || '', placeDetails);
 
-      // Update map if available
-      if (mapInstanceRef.current) {
-        if (place.geometry.viewport) {
-          mapInstanceRef.current.fitBounds(place.geometry.viewport);
-        } else {
-          mapInstanceRef.current.setCenter(place.geometry.location);
-          mapInstanceRef.current.setZoom(17);
-        }
+      // Handle map updates with race condition protection
+      if (!mapInstanceRef.current) {
+        pendingLocationRef.current = { 
+          location: place.geometry.location, 
+          viewport: place.geometry.viewport 
+        };
+        return;
       }
+
+      // Update map if available
+      if (place.geometry.viewport) {
+        mapInstanceRef.current.fitBounds(place.geometry.viewport);
+      } else {
+        mapInstanceRef.current.setCenter(place.geometry.location);
+        mapInstanceRef.current.setZoom(17);
+      }
+
+      // Use the new robust marker system
+      setMarker(place.geometry.location, place.formatted_address);
     });
 
     autocompleteElementRef.current = { element: input, autocomplete };
     console.log('Legacy Autocomplete initialized successfully');
-  }, [includedRegionCodes, placeholder, onChange]);
+  }, [placeholder, onChange, parseAddressComponents, onError]);
 
-  // Initialize components when loaded
+  // Initialize components when loaded (fix race conditions)
   useEffect(() => {
     if (!isLoaded) return;
 
-    initializeMap();
-    initializeAutocomplete();
+    const initializeComponents = async () => {
+      // Initialize map first, then autocomplete
+      await initializeMap();
+      await initializeAutocomplete();
+    };
+
+    initializeComponents();
   }, [isLoaded, initializeMap, initializeAutocomplete]);
 
   // Update input value when prop changes
@@ -299,16 +475,59 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
     setInputValue(value);
   }, [value]);
 
+  // Handle map resize when component becomes visible (fixes modal sizing bug)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !showMap) return;
+
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        window.google.maps.event.trigger(mapInstanceRef.current, 'resize');
+      }
+    };
+
+    // Resize map after a short delay to ensure modal is fully visible
+    const timeoutId = setTimeout(handleResize, 100);
+    
+    // Also listen for window resize events
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [showMap]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (autocompleteElementRef.current) {
+      const ref = autocompleteElementRef.current;
+      if (!ref) return;
+      
+      try {
+        if (ref instanceof Element && ref.tagName === 'GMP-PLACE-AUTOCOMPLETE') {
+          ref.remove();
+        } else if (ref.autocomplete && ref.element) {
+          window.google.maps.event.clearInstanceListeners(ref.autocomplete);
+          ref.element.remove();
+        }
+      } catch (error) {
+        console.warn('Error cleaning up autocomplete element:', error);
+      }
+      
+      // Clean up marker
+      if (markerRef.current) {
         try {
-          autocompleteElementRef.current.remove();
+          if (markerRef.current.setMap) {
+            markerRef.current.setMap(null);
+          }
+          markerRef.current = null;
         } catch (error) {
-          console.warn('Error cleaning up autocomplete element:', error);
+          console.warn('Error cleaning up marker:', error);
         }
       }
+      
+      // Reset map initialization flag
+      isMapInitializedRef.current = false;
     };
   }, []);
 
@@ -381,6 +600,42 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         )}
       </div>
       
+      {/* Fallback input when Google Maps fails to load */}
+      {!isLoaded && (
+        <div className="mt-2">
+          <input
+            type="text"
+            placeholder="Enter address manually (Google Maps unavailable)"
+            className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-emerald-500 focus:outline-none"
+            onChange={(e) => {
+              const address = e.target.value;
+              if (address.trim()) {
+                // Create a basic place details object for manual entry
+                const placeDetails = {
+                  placeId: 'manual_' + Date.now(),
+                  formattedAddress: address,
+                  displayName: address,
+                  lat: 25.2048, // Default to Dubai center
+                  lng: 55.2708,
+                  components: {
+                    country: 'AE',
+                    emirate: 'Dubai',
+                    city: 'Dubai',
+                    route: '',
+                    streetNumber: '',
+                    postalCode: ''
+                  }
+                };
+                onChange(address, placeDetails);
+              }
+            }}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Google Maps is unavailable. You can enter the address manually.
+          </p>
+        </div>
+      )}
+      
       {showMap && (
         <div 
           className="mt-3 border-2 border-gray-200 rounded-lg overflow-hidden"
@@ -388,9 +643,15 @@ const PlacesAutocomplete: React.FC<PlacesAutocompleteProps> = ({
         >
           {!isLoaded ? (
             <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <div className="flex items-center gap-2 text-gray-500">
-                <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                Loading map...
+              <div className="flex flex-col items-center gap-2 text-gray-500">
+                <div className="w-8 h-8 text-gray-400">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <p className="text-sm">Map unavailable</p>
+                <p className="text-xs text-gray-400">Google Maps API key needs configuration</p>
               </div>
             </div>
           ) : (

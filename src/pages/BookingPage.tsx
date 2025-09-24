@@ -39,10 +39,7 @@ const contactSchema = z.object({
   customerPhone: z.string()
     .min(10, 'Please enter a valid phone number')
     .regex(/^\+\d{1,4}\d{6,14}$/, 'Please enter a valid phone number with country code'),
-  selectedAddressId: z.number().optional(),
-  newAddress: z.string().optional(),
-  newAddressFloor: z.string().optional(),
-  newAddressApartment: z.string().optional(),
+  selectedAddressId: z.number().min(1, 'Please select an address'),
   additionalNotes: z.string().optional(),
 });
 
@@ -158,7 +155,6 @@ const BookingPage: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isUsingNewAddress, setIsUsingNewAddress] = useState(false);
   const [savedCards, setSavedCards] = useState<PaymentCard[]>([]);
   
   // Service data from database
@@ -179,6 +175,9 @@ const BookingPage: React.FC = () => {
   // Guest signup modal state
   const [showGuestSignupModal, setShowGuestSignupModal] = useState(false);
   
+  // Address creation modal state
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  
   // Window cleaning specific state
   const [windowPanelsCount, setWindowPanelsCount] = useState<number | null>(null);
   
@@ -192,8 +191,6 @@ const BookingPage: React.FC = () => {
     return serviceId ? [17, 18].includes(serviceId) : false; // Only internal (17) and external (18)
   };
   const [showAddCardForm, setShowAddCardForm] = useState(false);
-  const [newAddressValue, setNewAddressValue] = useState('');
-  const [newAddressStreet, setNewAddressStreet] = useState('');
   const [recommendation, setRecommendation] = useState<RecommendationResult | null>(null);
 
   // State for eco-friendly info expansion
@@ -204,8 +201,6 @@ const BookingPage: React.FC = () => {
     resolver: zodResolver(contactSchema),
   });
 
-  // Watch for changes in newAddress to keep state in sync
-  const watchedNewAddress = watch('newAddress');
 
   // Handle URL parameters for pre-selected service and order again data
   useEffect(() => {
@@ -308,12 +303,6 @@ const BookingPage: React.FC = () => {
     }
   }, [location.search, services]);
 
-  // Synchronize newAddressValue with form field
-  useEffect(() => {
-    if (newAddressValue && newAddressValue !== watchedNewAddress) {
-      setValue('newAddress', newAddressValue);
-    }
-  }, [newAddressValue, setValue, watchedNewAddress]);
 
   // Fetch data when user is available or for guests
   useEffect(() => {
@@ -481,7 +470,7 @@ const BookingPage: React.FC = () => {
   };
 
   const fetchAddresses = async () => {
-    if (!user) return;
+    if (!user) return [];
 
     try {
       const { data, error } = await supabase
@@ -498,8 +487,11 @@ const BookingPage: React.FC = () => {
       if (defaultAddress) {
         setValue('selectedAddressId', defaultAddress.id);
       }
+      
+      return data || [];
     } catch (error) {
       console.error('Error fetching addresses:', error);
+      return [];
     }
   };
 
@@ -743,13 +735,8 @@ const BookingPage: React.FC = () => {
     }
 
     // Validate address selection
-    if (!isUsingNewAddress && !data.selectedAddressId) {
-      alert('Please select an address or choose "New Address"');
-      return;
-    }
-    
-    if (isUsingNewAddress && !data.newAddress) {
-      alert('Please search and select a new address');
+    if (!data.selectedAddressId) {
+      alert('Please select an address');
       return;
     }
 
@@ -784,9 +771,8 @@ const BookingPage: React.FC = () => {
       const bookingData = {
         customer_id: user.id,
         service_id: parseInt(serviceIdValue.toString()),
-        // Address handling
-        address_id: isUsingNewAddress ? null : (data.selectedAddressId ? parseInt(data.selectedAddressId.toString()) : null),
-        custom_address: isUsingNewAddress ? (data.newAddress || '') : null,
+        // Address handling - now using saved addresses only
+        address_id: data.selectedAddressId ? parseInt(data.selectedAddressId.toString()) : null,
         // Schedule (using the correct field names from schema)
         requested_date: serviceDate,
         requested_time: serviceTime,
@@ -827,7 +813,7 @@ const BookingPage: React.FC = () => {
       console.log('- duration_hours:', parseInt(hoursValue.toString()));
       console.log('- size_price:', selectedService.price_per_hour && selectedPropertySize ? 
         Math.round(PROPERTY_SIZE_MAP[selectedPropertySize as keyof typeof PROPERTY_SIZE_MAP]?.multiplier || 1) : null);
-      console.log('- address_id:', isUsingNewAddress ? null : (data.selectedAddressId ? parseInt(data.selectedAddressId.toString()) : null));
+      console.log('- address_id:', data.selectedAddressId ? parseInt(data.selectedAddressId.toString()) : null);
       
       const { error, data: insertData } = await supabase
         .from('bookings')
@@ -847,6 +833,8 @@ const BookingPage: React.FC = () => {
       }
       
       console.log('Booking created successfully:', insertData);
+      
+      // Address is now handled by the modal, so no need for inline creation
       
       // Send notification to admin about new order
       try {
@@ -1698,108 +1686,35 @@ const BookingPage: React.FC = () => {
                 <label className="block font-medium mb-2">Service Address</label>
                 <div className="space-y-3">
                   <div className="flex gap-2">
+                    <div className="flex-1">
+                      <select
+                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
+                        {...register('selectedAddressId', { valueAsNumber: true })}
+                      >
+                        <option value="">Select an address</option>
+                        {addresses.map((address) => (
+                          <option key={address.id} value={address.id}>
+                            {address.street}, {address.city}
+                            {address.is_default && ' (Default)'}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <Button
                       type="button"
-                      variant="selection"
-                      shape="organic"
+                      variant="primary"
+                      shape="bubble"
                       size="md"
-                      selected={!isUsingNewAddress}
-                      onClick={() => setIsUsingNewAddress(false)}
-                      className="!flex-1 !p-3 !min-w-0"
+                      onClick={() => setShowAddAddressModal(true)}
+                      className="!ml-3 !px-4"
+                      leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>}
                     >
-                      Saved Address
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="selection"
-                      shape="organic"
-                      size="md"
-                      selected={isUsingNewAddress}
-                      onClick={() => setIsUsingNewAddress(true)}
-                      className="!flex-1 !p-3 !min-w-0"
-                    >
-                      New Address
+                      Add New
                     </Button>
                   </div>
 
-                  {!isUsingNewAddress ? (
-                    <select
-                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
-                      {...register('selectedAddressId', { valueAsNumber: true })}
-                    >
-                      <option value="">Select an address</option>
-                      {addresses.map((address) => (
-                                        <option key={address.id} value={address.id}>
-                  {address.street}, {address.city}
-                  {address.is_default && ' (Default)'}
-                </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="space-y-4">
-                      <PlacesAutocomplete
-                        value={newAddressValue}
-                        onChange={(address: string, placeDetails?: any) => {
-                          console.log('Places API - Address changed:', address, placeDetails);
-                          
-                          // Extract building/place name from placeDetails if available, otherwise use the search term
-                          let buildingName = address;
-                          
-                          if (placeDetails && placeDetails.displayName) {
-                            buildingName = placeDetails.displayName;
-                          } else if (placeDetails && placeDetails.name) {
-                            buildingName = placeDetails.name;
-                          }
-                          
-                          setNewAddressValue(buildingName);
-                          setNewAddressStreet(buildingName);
-                          setValue('newAddress', buildingName);
-                        }}
-                        placeholder="Search for building name (e.g., Westwood Grande 2 by Imtiaz)..."
-                        showMap={true}
-                        mapHeight={200}
-                        onError={(error: string) => {
-                          console.error('Places API error:', error);
-                        }}
-                        includedRegionCodes={['ae']}
-                      />
-                      
-                      {/* Selected Building Name Display */}
-                      {newAddressValue && (
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">Selected Building</label>
-                          <div className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-blue-50 text-gray-900 font-medium border-blue-200">
-                            {newAddressValue}
-                          </div>
-                          <p className="text-xs text-blue-600 mt-1">This building name will be used for your service</p>
-                        </div>
-                      )}
-
-                      {/* Floor and Apartment Number Fields */}
-                      {newAddressValue && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Floor (Optional)</label>
-                            <input
-                              type="text"
-                              {...register('newAddressFloor')}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                              placeholder="e.g., 5th, Ground, etc."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Apartment (Optional)</label>
-                            <input
-                              type="text"
-                              {...register('newAddressApartment')}
-                              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
-                              placeholder="e.g., 501, A12, etc."
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -2370,8 +2285,240 @@ const BookingPage: React.FC = () => {
         message="To continue for scheduling you will need to sign up"
         onSignup={handleGuestSignup}
       />
+
+      {/* Add Address Modal */}
+      {showAddAddressModal && (
+        <AddAddressModal
+          onClose={() => setShowAddAddressModal(false)}
+          onSuccess={async (isNewAddress: boolean) => {
+            setShowAddAddressModal(false);
+            if (isNewAddress) {
+              // Refresh addresses and get fresh data
+              const freshAddresses = await fetchAddresses();
+              const defaultAddress = freshAddresses.find(addr => addr.is_default);
+              if (defaultAddress) {
+                setValue('selectedAddressId', defaultAddress.id);
+              }
+            }
+          }}
+        />
+      )}
     </div>
     </>
+  );
+};
+
+// Add/Edit Address Modal Component for Booking
+interface AddAddressModalProps {
+  address?: Address | null;
+  onClose: () => void;
+  onSuccess: (isNewAddress: boolean) => void;
+}
+
+const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onSuccess }) => {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState({
+    apartment: address?.apartment || '',
+    city: address?.city || 'Dubai',
+    // Canonical address fields
+    place_id: null as string | null,
+    formatted_address: '',
+    lat: null as number | null,
+    lng: null as number | null,
+    country: 'AE',
+    emirate: '',
+    route: '',
+    street_number: '',
+  });
+  const [searchValue, setSearchValue] = useState(address?.street || '');
+  const [loading, setLoading] = useState(false);
+  const isEditing = !!address;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !searchValue.trim()) return;
+
+    // Validate canonical address data
+    if (!formData.place_id || !formData.lat || !formData.lng) {
+      alert('Please select a valid address from the search results');
+      return;
+    }
+
+    if (formData.country !== 'AE') {
+      alert('Address must be within the UAE');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isEditing && address) {
+        // Update existing address
+        const { error } = await supabase
+          .from('addresses')
+          .update({
+            street: searchValue.trim(),
+            apartment: formData.apartment.trim() || null,
+            city: formData.city,
+          })
+          .eq('id', address.id);
+
+        if (error) throw error;
+      } else {
+        // Check if this will be the first address (make it default)
+        const { data: existingAddresses } = await supabase
+          .from('addresses')
+          .select('id')
+          .eq('user_id', user.id);
+
+        const isFirstAddress = !existingAddresses || existingAddresses.length === 0;
+
+        // Create new address with canonical data
+        const { error } = await supabase
+          .from('addresses')
+          .insert({
+            user_id: user.id,
+            street: searchValue, // User-facing label
+            apartment: formData.apartment || null,
+            city: formData.city,
+            is_default: isFirstAddress,
+            // Canonical address data
+            place_id: formData.place_id,
+            formatted_address: formData.formatted_address,
+            lat: formData.lat,
+            lng: formData.lng,
+            country: formData.country,
+            emirate: formData.emirate,
+            route: formData.route,
+            street_number: formData.street_number,
+          });
+
+        if (error) throw error;
+
+        // If this is the first address, we're done
+        // If this is not the first address, ensure only one default exists
+        if (!isFirstAddress) {
+          // Remove default from all other addresses
+          await supabase
+            .from('addresses')
+            .update({ is_default: false })
+            .eq('user_id', user.id)
+            .neq('street', searchValue);
+        }
+      }
+
+      onSuccess(!isEditing);
+    } catch (error) {
+      console.error(`Error ${isEditing ? 'updating' : 'adding'} address:`, error);
+      alert(`Error ${isEditing ? 'updating' : 'adding'} address. Please try again.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddressChange = (address: string, placeDetails?: any) => {
+    // Use display name for user-facing label, fallback to formatted address
+    const label = placeDetails?.displayName || placeDetails?.name || address;
+    setSearchValue(label);
+    
+    // Capture canonical address data
+    if (placeDetails) {
+      setFormData(prev => ({
+        ...prev,
+        place_id: placeDetails.placeId ?? null,
+        formatted_address: placeDetails.formattedAddress ?? '',
+        lat: placeDetails.lat ?? null,
+        lng: placeDetails.lng ?? null,
+        country: placeDetails.components?.country ?? 'AE',
+        emirate: placeDetails.components?.emirate ?? '',
+        city: placeDetails.components?.city || prev.city,
+        route: placeDetails.components?.route ?? '',
+        street_number: placeDetails.components?.streetNumber ?? '',
+      }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
+      <div className="bg-white w-full rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isEditing ? 'Edit Address' : 'Add New Address'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center hover:bg-orange-200 transition-colors"
+          >
+            <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Search Building/Place Name</label>
+            <PlacesAutocomplete
+              value={searchValue}
+              onChange={handleAddressChange}
+              placeholder="Search for building name (e.g., Westwood Grande 2 by Imtiaz)..."
+              showMap={true}
+              mapHeight={200}
+              onError={(error: string) => {
+                console.error('Places API error:', error);
+              }}
+            />
+            {searchValue && (
+              <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-600">
+                  <strong>Selected:</strong> {searchValue}
+                </p>
+                <p className="text-xs text-blue-500 mt-1">
+                  This is the building name that will be saved
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Apartment/Unit/Floor (Optional)</label>
+            <input
+              type="text"
+              value={formData.apartment}
+              onChange={(e) => setFormData({ ...formData, apartment: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              placeholder="e.g., Apt 101, Floor 5, Unit A..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+            <input
+              type="text"
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              required
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="primary"
+            shape="bubble"
+            size="md"
+            disabled={loading || !searchValue.trim()}
+            fullWidth={true}
+            className="!py-3 !shadow-lg"
+          >
+            {loading 
+              ? (isEditing ? 'Updating...' : 'Adding...') 
+              : (isEditing ? 'Update Address' : 'Add Address')
+            }
+          </Button>
+        </form>
+      </div>
+    </div>
   );
 };
 

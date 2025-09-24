@@ -469,6 +469,43 @@ const AuthPage: React.FC = () => {
             transform: translateY(0);
           }
         }
+        
+        /* Custom checkbox styles for perfect square */
+        .custom-checkbox {
+          box-sizing: border-box !important;
+          display: inline-block !important;
+          width: 22px !important;
+          height: 22px !important;
+          min-width: 22px !important;
+          min-height: 22px !important;
+          max-width: 22px !important;
+          max-height: 22px !important;
+          padding: 0 !important;
+          margin: 2px 8px 0 0 !important;
+          border: 2px solid #d1d5db !important;
+          border-radius: 0 !important;
+          background-color: white !important;
+          appearance: none !important;
+          cursor: pointer !important;
+          position: relative !important;
+          vertical-align: text-bottom !important;
+        }
+        
+        .custom-checkbox:checked {
+          background-color: #10b981 !important;
+          border-color: #10b981 !important;
+        }
+        
+        .custom-checkbox:checked::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: white;
+          font-size: 16px;
+          font-weight: bold;
+        }
       `}</style>
 
       <div className="bubbles" id="bubbles"></div>
@@ -700,12 +737,25 @@ const AuthPage: React.FC = () => {
                   type="checkbox"
                   id="termsAccepted"
                   {...signupForm.register('termsAccepted')}
+                  className="custom-checkbox"
                   style={{
-                    marginTop: '2px',
-                    width: '16px',
-                    height: '16px',
-                    accentColor: '#10b981',
-                    cursor: 'pointer'
+                    width: '22px',
+                    height: '22px',
+                    cursor: 'pointer',
+                    borderRadius: '0px',
+                    appearance: 'none',
+                    border: '2px solid #d1d5db',
+                    backgroundColor: 'white',
+                    position: 'relative',
+                    boxSizing: 'border-box',
+                    display: 'inline-block',
+                    minWidth: '22px',
+                    minHeight: '22px',
+                    maxWidth: '22px',
+                    maxHeight: '22px',
+                    padding: '0',
+                    margin: '2px 8px 0 0',
+                    verticalAlign: 'text-bottom'
                   }}
                 />
                 <label htmlFor="termsAccepted" style={{ cursor: 'pointer', lineHeight: '1.4' }}>

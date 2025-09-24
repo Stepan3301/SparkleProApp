@@ -191,19 +191,112 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Token cleanup function
   const clearAuthTokens = useCallback(() => {
     try {
+      console.log('Clearing all Supabase auth tokens...');
+      
+      // Clear known Supabase token keys
       localStorage.removeItem('sb-access-token');
       localStorage.removeItem('sb-refresh-token');
       localStorage.removeItem('supabase.auth.token');
-      // Clear any other auth-related storage
+      
+      // Clear all Supabase-related keys (including the specific format we see in screenshot)
+      const keysToRemove: string[] = [];
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('sb-') || key.includes('supabase')) {
-          localStorage.removeItem(key);
+        if (key.startsWith('sb-') || 
+            key.includes('supabase') || 
+            key.includes('auth-token') ||
+            key.includes('sb-rpvohieuafewgivonjgr')) {
+          keysToRemove.push(key);
         }
       });
+      
+      keysToRemove.forEach(key => {
+        console.log('Removing token key:', key);
+        localStorage.removeItem(key);
+      });
+      
+      console.log(`Cleared ${keysToRemove.length} auth token(s)`);
     } catch (error) {
       console.warn('Error clearing auth tokens:', error);
     }
   }, []);
+
+  // Comprehensive cache cleanup for development environment
+  const clearAppCache = useCallback(() => {
+    try {
+      console.log('Clearing app cache for fresh start...');
+      
+      // Clear all Supabase auth tokens
+      clearAuthTokens();
+      
+      // Clear app-specific storage
+      localStorage.removeItem('isGuest');
+      localStorage.removeItem('orderAgainData');
+      localStorage.removeItem('guestBookingProgress');
+      localStorage.removeItem('notifications_declined_at');
+      localStorage.removeItem('notification_subscription');
+      localStorage.removeItem('test_notifications');
+      localStorage.removeItem('i18nextLng');
+      
+      // Clear any other app-related storage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sparkle') || key.includes('booking') || key.includes('guest')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      console.log('App cache cleared successfully');
+    } catch (error) {
+      console.warn('Error clearing app cache:', error);
+    }
+  }, [clearAuthTokens]);
+
+  // Check if we need to clear cache (development environment or version mismatch)
+  const checkAndClearCacheIfNeeded = useCallback(() => {
+    try {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const lastCleared = localStorage.getItem('lastCacheClear');
+      const currentTime = Date.now();
+      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+      
+      // In development mode, be more aggressive about clearing cache
+      // Clear cache if:
+      // 1. In development mode and cache is older than 5 minutes
+      // 2. No previous clear timestamp exists
+      // 3. We have Supabase tokens but no valid session (stale tokens)
+      const hasSupabaseTokens = Object.keys(localStorage).some(key => 
+        key.startsWith('sb-') || key.includes('supabase')
+      );
+      
+      const shouldClearCache = isDevelopment && (
+        !lastCleared || 
+        (currentTime - parseInt(lastCleared)) > fiveMinutes ||
+        hasSupabaseTokens // Always clear if we have Supabase tokens in dev mode
+      );
+      
+      if (shouldClearCache) {
+        console.log('Development environment detected - clearing cache for fresh start');
+        console.log('Reason:', !lastCleared ? 'No previous clear' : 
+                   (currentTime - parseInt(lastCleared)) > fiveMinutes ? 'Cache older than 5 minutes' : 
+                   'Supabase tokens detected');
+        clearAppCache();
+        localStorage.setItem('lastCacheClear', currentTime.toString());
+      } else {
+        console.log('Cache check passed - no clearing needed');
+      }
+    } catch (error) {
+      console.warn('Error checking cache status:', error);
+      // If there's any error, clear cache to be safe
+      clearAppCache();
+    }
+  }, [clearAppCache]);
+
+  // Expose cache clear function to window for debugging
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).clearAppCache = clearAppCache;
+      (window as any).clearAuthTokens = clearAuthTokens;
+    }
+  }, [clearAppCache, clearAuthTokens]);
 
   // Optimized auth state change listener with error handling
   useEffect(() => {
@@ -260,7 +353,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, []); // Remove fetchProfile dependency to prevent infinite re-renders
+
+  // Token validation function
+  const validateStoredTokens = useCallback(async () => {
+    try {
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      
+      // Check if we have any Supabase tokens in localStorage
+      const hasTokens = Object.keys(localStorage).some(key => 
+        key.startsWith('sb-') || key.includes('supabase')
+      );
+      
+      if (!hasTokens) {
+        console.log('No stored tokens found, starting fresh');
+        return false;
+      }
+      
+      // In development mode, be more aggressive about clearing tokens
+      if (isDevelopment) {
+        console.log('Development mode: clearing all tokens for fresh start');
+        clearAuthTokens();
+        return false;
+      }
+      
+      // Try to get session to validate tokens
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.warn('Token validation failed:', error);
+        clearAuthTokens();
+        return false;
+      }
+      
+      if (!session?.user) {
+        console.log('No valid session found, clearing tokens');
+        clearAuthTokens();
+        return false;
+      }
+      
+      console.log('Valid session found');
+      return true;
+    } catch (error) {
+      console.error('Error validating tokens:', error);
+      clearAuthTokens();
+      return false;
+    }
+  }, [clearAuthTokens]);
 
   // Initial session check with optimization and error handling
   useEffect(() => {
@@ -268,41 +407,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initializing auth state...');
         
-        if (!mounted) return;
+        // First, check and clear cache if needed (development environment)
+        checkAndClearCacheIfNeeded();
+        
+        // Validate stored tokens before using them
+        const hasValidTokens = await validateStoredTokens();
+        
+        if (hasValidTokens) {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          if (!mounted) return;
 
-        if (error) {
-          console.warn('Session check error (non-critical):', error.message);
-          // Clear invalid tokens and fall back to guest mode
-          clearAuthTokens();
-          setUser(null);
-          setProfile(null);
-          setIsGuest(true);
-          try {
-            localStorage.setItem('isGuest', 'true');
-          } catch {}
-          setLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          console.log('Initial session found, clearing guest mode and setting user');
-          setUser(session.user);
-          await fetchProfile(session.user.id);
-          setIsGuest(false);
-          try {
-            localStorage.removeItem('isGuest');
-          } catch {}
-        } else {
-          setUser(null);
-          setProfile(null);
-          const isGuestMode = localStorage.getItem('isGuest') === 'true';
-          if (isGuestMode) {
-            console.log('No initial session but guest mode active');
+          if (error) {
+            console.warn('Session check error (non-critical):', error.message);
+            // Clear invalid tokens and fall back to guest mode
+            clearAuthTokens();
+            setUser(null);
+            setProfile(null);
             setIsGuest(true);
-          } else {
+            try {
+              localStorage.setItem('isGuest', 'true');
+            } catch {}
+            setLoading(false);
+            return;
+          }
+
+          if (session?.user) {
+            console.log('Initial session found, clearing guest mode and setting user');
+            setUser(session.user);
+            await fetchProfile(session.user.id);
             setIsGuest(false);
+            try {
+              localStorage.removeItem('isGuest');
+            } catch {}
+          } else {
+            setUser(null);
+            setProfile(null);
+            const isGuestMode = localStorage.getItem('isGuest') === 'true';
+            if (isGuestMode) {
+              console.log('No initial session but guest mode active');
+              setIsGuest(true);
+            } else {
+              setIsGuest(false);
+            }
+          }
+        } else {
+          // No valid tokens, start fresh
+          if (mounted) {
+            console.log('No valid tokens, starting fresh');
+            setUser(null);
+            setProfile(null);
+            setIsGuest(true);
+            try {
+              localStorage.setItem('isGuest', 'true');
+            } catch {}
           }
         }
         setLoading(false);
@@ -327,7 +487,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, [fetchProfile]);
+  }, [checkAndClearCacheIfNeeded, validateStoredTokens, clearAuthTokens, fetchProfile]);
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
