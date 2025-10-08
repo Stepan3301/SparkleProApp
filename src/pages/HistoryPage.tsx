@@ -6,6 +6,7 @@ import LoadingScreen from '../components/ui/LoadingScreen';
 import BookingCancelAnimation from '../components/ui/BookingCancelAnimation';
 import GuestAccessModal from '../components/ui/GuestAccessModal';
 import InvoiceDownloadModal from '../components/invoice/InvoiceDownloadModal';
+import RescheduleModal from '../components/booking/RescheduleModal';
 import { InvoiceGenerator } from '../components/invoice/InvoiceGenerator';
 import { transformBookingToInvoice, generateInvoiceFilename } from '../components/invoice/invoiceUtils';
 import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon, DocumentIcon } from '@heroicons/react/24/outline';
@@ -45,6 +46,9 @@ const HistoryPage: React.FC = () => {
   // PDF invoice modal state
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Reschedule modal state
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
   // Guest mode check
   React.useEffect(() => {
@@ -474,6 +478,120 @@ const HistoryPage: React.FC = () => {
     }
   };
 
+  const handleReschedule = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowRescheduleModal(true);
+    closeModal();
+  };
+
+  const confirmReschedule = async (newDate: string, newTime: string) => {
+    if (!selectedBooking) return;
+
+    try {
+      // Update the booking in the database
+      const { error } = await supabase
+        .from('bookings')
+        .update({
+          service_date: newDate,
+          service_time: newTime,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedBooking.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setBookings(prev => prev.map(booking => 
+        booking.id === selectedBooking.id 
+          ? { ...booking, service_date: newDate, service_time: newTime }
+          : booking
+      ));
+
+      // Send email notification
+      try {
+        const response = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            booking_id: selectedBooking.id,
+            template_name: 'booking_rescheduled',
+            recipient_email: user?.email,
+            recipient_name: selectedBooking.customer_name || user?.email,
+            variables: {
+              customer_name: selectedBooking.customer_name || user?.email,
+              booking_number: selectedBooking.id.toString(),
+              service_name: getServiceName(selectedBooking.service_id),
+              old_service_date: new Date(selectedBooking.service_date).toLocaleDateString('en-AE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }),
+              old_service_time: selectedBooking.service_time,
+              new_service_date: new Date(newDate).toLocaleDateString('en-AE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              }),
+              new_service_time: newTime,
+              app_url: window.location.origin
+            }
+          })
+        });
+
+        if (response.ok) {
+          console.log('Reschedule email notification sent successfully');
+        } else {
+          console.log('Failed to send reschedule email notification');
+        }
+      } catch (emailError) {
+        console.error('Error sending reschedule email:', emailError);
+        // Don't fail the reschedule if email fails
+      }
+
+      // Send Telegram notification
+      try {
+        const telegramResponse = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/api/push/reschedule-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookingId: selectedBooking.id,
+            bookingDetails: {
+              customer_name: selectedBooking.customer_name,
+              service_name: getServiceName(selectedBooking.service_id),
+              old_date: selectedBooking.service_date,
+              old_time: selectedBooking.service_time,
+              new_date: newDate,
+              new_time: newTime,
+              total_price: selectedBooking.total_cost || selectedBooking.total_price
+            }
+          })
+        });
+
+        if (telegramResponse.ok) {
+          console.log('Telegram reschedule notification sent successfully');
+        } else {
+          console.log('Failed to send Telegram reschedule notification');
+        }
+      } catch (telegramError) {
+        console.error('Error sending Telegram reschedule notification:', telegramError);
+        // Don't fail the reschedule if Telegram fails
+      }
+
+      alert('Booking rescheduled successfully!');
+      
+    } catch (error) {
+      console.error('Error rescheduling booking:', error);
+      throw error; // Re-throw to be handled by the modal
+    }
+  };
+
   const orderAgain = (booking: Booking) => {
     // Get the main category for the service
     const mainCategory = getServiceMainCategory(booking.service_id);
@@ -775,32 +893,32 @@ const HistoryPage: React.FC = () => {
                   Order Again
                 </Button>
                 
-                {/* Cancel Button - Only show if cancellation is allowed */}
+                {/* Reschedule Button - Only show if rescheduling is allowed */}
                 {canCancelBooking(selectedBooking) ? (
                 <Button
-                  variant="signout"
+                  variant="secondary"
                   shape="bubble"
                   size="sm"
-                    onClick={() => initiateCancelBooking(selectedBooking.id)}
-                  leftIcon={<TrashIcon className="w-4 h-4" />}
+                    onClick={() => handleReschedule(selectedBooking)}
+                  leftIcon={<CalendarIcon className="w-4 h-4" />}
                 >
-                  Cancel
+                  Reschedule
                 </Button>
                 ) : (
                   <div className="relative group">
                     <Button
-                      variant="signout"
+                      variant="secondary"
                       shape="bubble"
                       size="sm"
                       disabled={true}
-                      leftIcon={<TrashIcon className="w-4 h-4 opacity-50" />}
+                      leftIcon={<CalendarIcon className="w-4 h-4 opacity-50" />}
                       className="opacity-50 cursor-not-allowed"
                     >
-                      Cancel
+                      Reschedule
                     </Button>
-                    {/* Tooltip for why cancellation is blocked */}
+                    {/* Tooltip for why rescheduling is blocked */}
                     <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-30">
-                      {getCancellationBlockedReason(selectedBooking)}
+                      {getCancellationBlockedReason(selectedBooking).replace('cancel', 'reschedule').replace('Cancel', 'Reschedule')}
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                     </div>
                   </div>
@@ -1168,6 +1286,14 @@ const HistoryPage: React.FC = () => {
         onDownload={handlePdfDownload}
         bookingNumber={`SP${String(selectedBooking?.id || '').padStart(6, '0')}`}
         isGenerating={isGeneratingPdf}
+      />
+
+      {/* Reschedule Modal */}
+      <RescheduleModal
+        isOpen={showRescheduleModal}
+        onClose={() => setShowRescheduleModal(false)}
+        booking={selectedBooking}
+        onConfirm={confirmReschedule}
       />
     </div>
       )}

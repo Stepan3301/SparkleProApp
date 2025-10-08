@@ -302,6 +302,58 @@ class OneSignalClient {
   }
 
   /**
+   * Send reschedule notification to all admin users
+   */
+  async sendRescheduleNotification(bookingId, bookingDetails = {}) {
+    try {
+      // Get all admin users from the database
+      const adminUsers = await this.getAdminUsers();
+      
+      if (!adminUsers || adminUsers.length === 0) {
+        console.log('No admin users found for reschedule notification');
+        return {
+          success: false,
+          error: 'No admin users found'
+        };
+      }
+
+      const notification = {
+        title: '📅 Booking Rescheduled',
+        message: `Booking #${bookingId} - ${bookingDetails.customer_name || 'Customer'} rescheduled from ${bookingDetails.old_date} ${bookingDetails.old_time} to ${bookingDetails.new_date} ${bookingDetails.new_time}`,
+        data: {
+          type: 'booking_rescheduled',
+          bookingId,
+          bookingDetails
+        }
+      };
+
+      // Send to all admin users
+      const results = await Promise.all(
+        adminUsers.map(admin => 
+          this.sendToExternalUser(admin.external_user_id, notification)
+        )
+      );
+
+      const successCount = results.filter(r => r.success).length;
+      const totalCount = results.length;
+
+      return {
+        success: true,
+        notificationId: `reschedule_${bookingId}_${Date.now()}`,
+        recipients: successCount,
+        totalAdmins: totalCount,
+        message: `Reschedule notification sent to ${successCount}/${totalCount} admin users`
+      };
+    } catch (error) {
+      console.error('Failed to send reschedule notification:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Send order status change notification to customer
    */
   async sendOrderStatusChangeNotification(customerId, orderId, newStatus, orderDetails = {}) {

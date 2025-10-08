@@ -416,6 +416,55 @@ router.delete('/cancel/:notificationId', async (req, res) => {
 });
 
 /**
+ * POST /api/push/reschedule-notification
+ * Send notification to admin when booking is rescheduled
+ */
+router.post('/reschedule-notification', async (req, res) => {
+  try {
+    const { bookingId, bookingDetails } = req.body;
+
+    if (!bookingId || !bookingDetails) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: bookingId and bookingDetails'
+      });
+    }
+
+    // Send reschedule notification to all admin users
+    const result = await oneSignalClient.sendRescheduleNotification(
+      bookingId,
+      bookingDetails
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Reschedule notification sent to admins successfully',
+        data: {
+          notificationId: result.notificationId,
+          recipients: result.recipients,
+          bookingId,
+          sentAt: new Date().toISOString()
+        }
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send reschedule notification',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Error in /reschedule-notification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+});
+
+/**
  * GET /api/push/admin-users
  * Get all admin users for notifications
  */
