@@ -172,7 +172,7 @@ const ServicesPage: React.FC = () => {
                           </div>
                           {service.base_price && service.price_per_hour && (
                             <p className="text-xs text-gray-500 mt-1">
-                              Base: {service.base_price} AED
+                              <span className="flex items-center gap-1">Base: {service.base_price} <DirhamIcon size="sm" /></span>
                             </p>
                           )}
                         </div>

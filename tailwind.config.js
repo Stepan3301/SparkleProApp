@@ -25,6 +25,7 @@ module.exports = {
         'float': 'float 6s linear infinite',
         'fadeSlideIn': 'fadeSlideIn 0.35s cubic-bezier(0.21, 1, 0.21, 1) both',
         'fadeSlideOut': 'fadeSlideOut 0.25s ease both',
+        'slide-up': 'slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       },
       keyframes: {
         float: {
@@ -58,6 +59,14 @@ module.exports = {
           'to': { 
             opacity: '0', 
             transform: 'translate(-50%, calc(-50% + 16px))' 
+          }
+        },
+        slideUp: {
+          'from': { 
+            transform: 'translateY(100%)' 
+          },
+          'to': { 
+            transform: 'translateY(0)' 
           }
         }
       },

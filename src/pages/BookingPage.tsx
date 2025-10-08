@@ -15,6 +15,7 @@ import LoadingScreen from '../components/ui/LoadingScreen';
 import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
 import PhoneNumberInput from '../components/ui/PhoneNumberInput';
 import GuestSignupModal from '../components/ui/GuestSignupModal';
+import ServiceInclusionsModal from '../components/booking/ServiceInclusionsModal';
 import Lottie from 'lottie-react';
 import bookingSuccessAnimation from '../assets/animations/booking-success.json';
 import { 
@@ -124,9 +125,9 @@ const getMainServiceCategories = (t: any) => [
     icon: '📦',
     title: t('booking.services.packages', 'Complete Packages'),
     subtitle: t('booking.services.packagesDesc', 'All-inclusive cleaning solutions'),
-    price: t('booking.from', 'From') + ' 299 ' + t('booking.aed', 'AED'),
+    price: t('booking.from', 'From') + ' 180 ' + t('booking.aed', 'AED'),
     description: t('common.fixedPriceComprehensive', 'Fixed-price comprehensive services'),
-    serviceIds: [10, 11, 12, 13, 14, 15, 16] // Full Villa Deep Cleaning, Full Apartment Deep Cleaning, Villa Façade Cleaning, Move in/Move out Cleaning, Post-construction Cleaning, Kitchen Deep Cleaning, Bathroom Deep Cleaning
+    serviceIds: [20, 21, 22, 23, 24, 25, 26, 27, 28, 12, 29, 30, 15, 16] // New Complete Package services
   },
   {
     key: 'specialized',
@@ -157,6 +158,14 @@ const BookingPage: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [savedCards, setSavedCards] = useState<PaymentCard[]>([]);
   
+  // Complete Packages sub-navigation state
+  const [activePackageSection, setActivePackageSection] = useState<'apartments' | 'villas' | 'other'>('apartments');
+  const [isPackageNavSticky, setIsPackageNavSticky] = useState(false);
+  
+  // Add-ons sub-navigation state
+  const [activeAddonSection, setActiveAddonSection] = useState<'sofa' | 'carpet' | 'mattress' | 'curtains' | 'other'>('sofa');
+  const [isAddonNavSticky, setIsAddonNavSticky] = useState(false);
+  
   // Service data from database
   const [services, setServices] = useState<ServiceType[]>([]);
   const [additionalServices, setAdditionalServices] = useState<any[]>([]);
@@ -177,6 +186,10 @@ const BookingPage: React.FC = () => {
   
   // Address creation modal state
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  
+  // Service inclusions modal state
+  const [showServiceInclusionsModal, setShowServiceInclusionsModal] = useState(false);
+  const [selectedPackageService, setSelectedPackageService] = useState<ServiceType | null>(null);
   
   // Window cleaning specific state
   const [windowPanelsCount, setWindowPanelsCount] = useState<number | null>(null);
@@ -228,7 +241,7 @@ const BookingPage: React.FC = () => {
         let categoryKey = '';
         if ([6, 7].includes(matchedService.id)) categoryKey = 'regular';
         else if ([8, 9].includes(matchedService.id)) categoryKey = 'deep';
-        else if ([10, 11, 12, 13, 14, 15, 16].includes(matchedService.id)) categoryKey = 'packages';
+        else if ([20, 21, 22, 23, 24, 25, 26, 27, 28, 12, 29, 30, 15, 16].includes(matchedService.id)) categoryKey = 'packages';
         else if ([17, 18, 19].includes(matchedService.id)) categoryKey = 'specialized';
         
         if (categoryKey) {
@@ -238,16 +251,16 @@ const BookingPage: React.FC = () => {
         }
       } else {
         // Fallback to basic category matching
-        let categoryKey = '';
-        if (serviceParam.includes('regular') || serviceParam === 'regular') categoryKey = 'regular';
-        else if (serviceParam.includes('deep') || serviceParam === 'deep') categoryKey = 'deep';
+      let categoryKey = '';
+      if (serviceParam.includes('regular') || serviceParam === 'regular') categoryKey = 'regular';
+      else if (serviceParam.includes('deep') || serviceParam === 'deep') categoryKey = 'deep';
         else if (serviceParam.includes('move') || serviceParam === 'move') categoryKey = 'packages'; // Move is in packages
         else if (serviceParam.includes('office') || serviceParam === 'office') categoryKey = 'regular'; // Office uses regular cleaning
         else if (serviceParam.includes('window') || serviceParam.includes('internal') || serviceParam.includes('external')) categoryKey = 'specialized';
         else if (serviceParam.includes('bathroom') || serviceParam.includes('kitchen') || serviceParam.includes('villa') || serviceParam.includes('apartment')) categoryKey = 'packages';
-        
-        if (categoryKey) {
-          setSelectedMainCategory(categoryKey);
+      
+      if (categoryKey) {
+        setSelectedMainCategory(categoryKey);
           console.log('Auto-selected category:', categoryKey);
         }
       }
@@ -306,8 +319,8 @@ const BookingPage: React.FC = () => {
 
   // Fetch data when user is available or for guests
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
+      const loadInitialData = async () => {
+        try {
         if (user) {
           // For authenticated users, load all data
           await Promise.all([
@@ -320,16 +333,16 @@ const BookingPage: React.FC = () => {
           // For guest users, only load services
           await fetchServices();
         }
-      } catch (error) {
-        console.error('Error loading booking page data:', error);
-      } finally {
-        if (initialLoading) {
-          setInitialLoading(false);
+        } catch (error) {
+          console.error('Error loading booking page data:', error);
+        } finally {
+          if (initialLoading) {
+            setInitialLoading(false);
+          }
         }
-      }
-    };
-    
-    loadInitialData();
+      };
+      
+      loadInitialData();
   }, [user, isGuest]);
 
   // Restore guest progress after signup/login
@@ -393,8 +406,11 @@ const BookingPage: React.FC = () => {
         targetService = services.find(s => s.id === 6); // Regular Cleaning (without materials)
       } else if (selectedMainCategory === 'deep') {
         targetService = services.find(s => s.id === 8); // Deep Cleaning (without materials)  
+      } else if (selectedMainCategory === 'packages') {
+        // For packages, specifically select Studio Deep Cleaning (ID: 20) as default
+        targetService = services.find(s => s.id === 20); // Studio Deep Cleaning with Materials
       } else {
-        // For packages and specialized, find the first service in the category
+        // For specialized, find the first service in the category
         const category = getMainServiceCategories(t).find(cat => cat.key === selectedMainCategory);
         if (category) {
           targetService = services.find(s => category.serviceIds.includes(s.id));
@@ -432,6 +448,114 @@ const BookingPage: React.FC = () => {
     // This effect triggers re-render when selectedPaymentMethod changes
     // This ensures the floating cart updates with VAT and cash fees
   }, [selectedPaymentMethod]);
+
+  // Complete Packages sub-navigation scroll listener
+  useEffect(() => {
+    if (selectedMainCategory !== 'packages') return;
+
+    const handleScroll = () => {
+      const apartmentsSection = document.getElementById('apartments-section');
+      const villasSection = document.getElementById('villas-section');
+      const otherSection = document.getElementById('other-section');
+      const packagesContainer = document.getElementById('packages-container');
+
+      if (!apartmentsSection || !villasSection || !otherSection || !packagesContainer) return;
+
+      const scrollTop = window.scrollY;
+      const containerTop = packagesContainer.offsetTop;
+      
+      // Check if navigation should be sticky
+      setIsPackageNavSticky(scrollTop > containerTop - 100);
+
+      // Determine active section based on scroll position
+      const apartmentsTop = apartmentsSection.offsetTop - 150;
+      const villasTop = villasSection.offsetTop - 150;
+      const otherTop = otherSection.offsetTop - 150;
+
+      if (scrollTop >= otherTop) {
+        setActivePackageSection('other');
+      } else if (scrollTop >= villasTop) {
+        setActivePackageSection('villas');
+      } else if (scrollTop >= apartmentsTop) {
+        setActivePackageSection('apartments');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [selectedMainCategory]);
+
+  // Add-ons sub-navigation scroll listener
+  useEffect(() => {
+    if (currentStep !== 2) return;
+
+    const handleScroll = () => {
+      const sofaSection = document.getElementById('sofa-addons-section');
+      const carpetSection = document.getElementById('carpet-addons-section');
+      const mattressSection = document.getElementById('mattress-addons-section');
+      const curtainsSection = document.getElementById('curtains-addons-section');
+      const otherAddonsSection = document.getElementById('other-addons-section');
+      const addonsContainer = document.getElementById('addons-container');
+
+      if (!sofaSection || !carpetSection || !mattressSection || !curtainsSection || !otherAddonsSection || !addonsContainer) return;
+
+      const scrollTop = window.scrollY;
+      const containerTop = addonsContainer.offsetTop;
+      
+      // Check if navigation should be sticky
+      setIsAddonNavSticky(scrollTop > containerTop - 100);
+
+      // Determine active section based on scroll position
+      const sofaTop = sofaSection.offsetTop - 150;
+      const carpetTop = carpetSection.offsetTop - 150;
+      const mattressTop = mattressSection.offsetTop - 150;
+      const curtainsTop = curtainsSection.offsetTop - 150;
+      const otherTop = otherAddonsSection.offsetTop - 150;
+
+      if (scrollTop >= otherTop) {
+        setActiveAddonSection('other');
+      } else if (scrollTop >= curtainsTop) {
+        setActiveAddonSection('curtains');
+      } else if (scrollTop >= mattressTop) {
+        setActiveAddonSection('mattress');
+      } else if (scrollTop >= carpetTop) {
+        setActiveAddonSection('carpet');
+      } else if (scrollTop >= sofaTop) {
+        setActiveAddonSection('sofa');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentStep]);
+
+  // Function to scroll to specific package section
+  const scrollToPackageSection = (section: 'apartments' | 'villas' | 'other') => {
+    const sectionId = `${section}-section`;
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offsetTop = element.offsetTop - 120; // Account for sticky nav
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+    }
+    setActivePackageSection(section);
+  };
+
+  // Function to scroll to specific addon section
+  const scrollToAddonSection = (section: 'sofa' | 'carpet' | 'mattress' | 'curtains' | 'other') => {
+    const sectionId = `${section}-addons-section`;
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offsetTop = element.offsetTop - 120; // Account for sticky nav
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+    }
+    setActiveAddonSection(section);
+  };
 
   const fetchUserData = async () => {
     if (!user) return;
@@ -542,7 +666,9 @@ const BookingPage: React.FC = () => {
         .from('additional_services')
         .select('*')
         .eq('is_active', true)
-        .order('id');
+        .order('category', { ascending: true })
+        .order('subcategory', { ascending: true })
+        .order('price', { ascending: true });
 
       if (addonsError) throw addonsError;
       
@@ -552,8 +678,13 @@ const BookingPage: React.FC = () => {
         name: addon.name,
         price: parseFloat(addon.price),
         description: addon.description,
-        unit: addon.unit
+        unit: addon.unit,
+        category: addon.category || 'other',
+        subcategory: addon.subcategory || 'general',
+        image_url: addon.image_url
       })) || [];
+      
+      console.log('🔍 Additional services with images:', addonsWithUI.map(a => ({ id: a.id, name: a.name, image_url: a.image_url })));
       
       setAdditionalServices(addonsWithUI);
 
@@ -650,6 +781,17 @@ const BookingPage: React.FC = () => {
     setShowGuestSignupModal(false);
   };
 
+  // Handle service selection from modal
+  const handleSelectPackageService = () => {
+    if (selectedPackageService) {
+      setSelectedService(selectedPackageService);
+      setShowServiceInclusionsModal(false);
+      setSelectedPackageService(null);
+      // For packages, we don't need property size, cleaners, or hours
+      // They are fixed price services
+    }
+  };
+
   // Calculations - Updated for new service structure including window services
   const calculatePricing = () => {
     if (!selectedService) {
@@ -706,9 +848,9 @@ const BookingPage: React.FC = () => {
   // Calculate final price with VAT and cash fees
   const calculateFinalPrice = (): number => {
     const baseTotal = calculatePricing().total;
-    const vat = Math.round(baseTotal * 0.05);
+    const vat = parseFloat((baseTotal * 0.05).toFixed(2)); // Precise 5% VAT calculation
     const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
-    return baseTotal + vat + cashFee;
+    return parseFloat((baseTotal + vat + cashFee).toFixed(2));
   };
 
   // Handle booking submission
@@ -756,7 +898,7 @@ const BookingPage: React.FC = () => {
 
       // Calculate final price with VAT and cash fees (matching what's shown in UI)
       const baseTotal = pricing.total;
-      const vat = Math.round(baseTotal * 0.05);
+      const vat = parseFloat((baseTotal * 0.05).toFixed(2)); // Precise 5% VAT calculation
       const cashFee = selectedPaymentMethod === 'cash' ? 5 : 0;
       const finalTotal = baseTotal + vat + cashFee;
       
@@ -925,11 +1067,37 @@ const BookingPage: React.FC = () => {
       '3': '/balcony-cleaning.JPG',          // Balcony Cleaning
       '4': '/wardrobe-cabinet-cleaning.png', // Wardrobe/Cabinet Cleaning
       '5': '/laundry-service.JPG',           // Ironing Service
-      '6': '/sofa-cleaning.png',             // Sofa Cleaning - NEW IMAGE
-      '7': '/carpet-cleaning.JPG',           // Carpet Cleaning
-      '8': '/matress-cleaning.png',          // Mattress Cleaning Single - NEW IMAGE
-      '9': '/matress-cleaning.png',          // Mattress Cleaning Double - NEW IMAGE
-      '10': '/curtains-cleaning.JPG'         // Curtains Cleaning - NEW IMAGE
+      '6': '/sofa-cleaning-banner.png',      // Sofa Cleaning (updated)
+      '7': '/carpet-cleaning-banner.png',    // Carpet Cleaning (updated)
+      '8': '/mattress-cleaning-banner.png',  // Mattress Cleaning Single (updated)
+      '9': '/mattress-cleaning-banner.png',  // Mattress Cleaning Double (updated)
+      '10': '/curtain-cleaning-banner.png',  // Curtain Cleaning (new)
+      
+      // New specific addon mappings
+      // Sofa sizes
+      '11': '/single-seat-sofa.png',         // Single Seat Sofa
+      '12': '/2-seater-sofa.png',            // 2 Seater Sofa
+      '13': '/3-seater-sofa.png',            // 3 Seater Sofa
+      '14': '/4-seater-sofa.png',            // 4 Seater (L-Shape) Sofa
+      '15': '/5-seater-sofa.png',            // 5 Seater Sofa
+      
+      // Carpet sizes
+      '16': '/small-carpet.png',             // Small Carpet
+      '17': '/medium-carpet.png',            // Medium Carpet
+      '18': '/large-carpet.png',             // Large Carpet
+      '19': '/extra-large-carpet.png',       // Extra Large Carpet
+      
+      // Mattress sizes
+      '20': '/single-mattress.png',          // Single Mattress
+      '21': '/double-mattress.png',          // Double Mattress
+      '22': '/queen-mattress.png',           // Queen Mattress
+      '23': '/king-mattress.png',            // King Mattress
+      
+      // Curtain sizes
+      '24': '/small-curtains.png',           // Small Curtains
+      '25': '/medium-curtains.png',          // Medium Curtains
+      '26': '/large-curtains.png',           // Large Curtains
+      '27': '/extra-large-curtains.png'      // Extra Large Curtains
     };
     return imageMap[addonId] || '/regular-cleaning.jpg'; // Fallback to main service image
   };
@@ -1060,8 +1228,165 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Service options within the selected category */}
-                {(selectedMainCategory === 'packages' || selectedMainCategory === 'specialized') && (
+                {/* Complete Packages Workflow */}
+                {selectedMainCategory === 'packages' && (
+                  <div id="packages-container" className="space-y-6 mb-6">
+                    {/* Sub-navigation for Complete Packages */}
+                    <div className={`bg-white/80 backdrop-blur-sm border-b border-gray-200 transition-all duration-300 ${
+                      isPackageNavSticky ? 'fixed top-0 left-0 right-0 z-40 shadow-md' : 'relative'
+                    }`}>
+                      <div className="max-w-md mx-auto px-4">
+                        <div className="flex justify-center space-x-1 py-3">
+                          {[
+                            { key: 'apartments', label: 'Apartments', icon: '🏢' },
+                            { key: 'villas', label: 'Villas', icon: '🏡' },
+                            { key: 'other', label: 'Other', icon: '🧹' }
+                          ].map((section) => (
+                            <button
+                              key={section.key}
+                              onClick={() => scrollToPackageSection(section.key as 'apartments' | 'villas' | 'other')}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border-2 ${
+                                activePackageSection === section.key
+                                  ? 'border-emerald-500 text-emerald-700 bg-emerald-50/30'
+                                  : 'border-gray-200 text-gray-600 bg-white/50 hover:border-gray-300 hover:bg-white/70'
+                              }`}
+                            >
+                              <span className="text-base">{section.icon}</span>
+                              <span>{section.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add spacing when nav is sticky */}
+                    {isPackageNavSticky && <div className="h-16"></div>}
+
+                    {/* Apartments Deep Cleaning Section */}
+                    <div id="apartments-section">
+                      <h3 className="font-semibold text-gray-800 text-lg mb-4">Apartments deep cleaning with materials</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {services
+                          .filter(service => [20, 21, 22, 23, 24].includes(service.id)) // Apartment services
+                          .sort((a, b) => a.id - b.id)
+                          .map((service) => {
+                            const propertyType = service.name.includes('Studio') ? 'Studio' : 
+                                               service.name.includes('1 Bedroom') ? '1 bedroom' :
+                                               service.name.includes('2 Bedroom') ? '2 bedrooms' :
+                                               service.name.includes('3 Bedroom') ? '3 bedrooms' :
+                                               service.name.includes('4 Bedroom') ? '4 bedrooms' : service.name;
+                            
+                            return (
+                              <div
+                                key={service.id}
+                                className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                                  selectedService?.id === service.id
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50'
+                                }`}
+                                onClick={() => {
+                                  setSelectedPackageService(service);
+                                  setShowServiceInclusionsModal(true);
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">{propertyType}</h4>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-emerald-600 font-bold text-lg">
+                                    <DirhamIcon size="sm" />
+                                    <span className="flex items-center gap-1">
+                                      {service.base_price} <DirhamIcon size="sm" />
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    {/* Villa Deep Cleaning Section */}
+                    <div id="villas-section">
+                      <h3 className="font-semibold text-gray-800 text-lg mb-4">Villa deep cleaning with materials</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {services
+                          .filter(service => [25, 26, 27, 28].includes(service.id)) // Villa services
+                          .sort((a, b) => a.id - b.id)
+                          .map((service) => {
+                            const propertyType = service.name.includes('2 Bedroom') ? '2 bedroom' :
+                                               service.name.includes('3 Bedroom') ? '3 bedroom' :
+                                               service.name.includes('4 Bedroom') ? '4 bedroom' :
+                                               service.name.includes('5 Bedroom') ? '5 bedroom' : service.name;
+                            
+                            return (
+                              <div
+                                key={service.id}
+                                className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                                  selectedService?.id === service.id
+                                    ? 'border-emerald-500 bg-emerald-50'
+                                    : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50'
+                                }`}
+                                onClick={() => {
+                                  setSelectedPackageService(service);
+                                  setShowServiceInclusionsModal(true);
+                                }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">{propertyType}</h4>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-emerald-600 font-bold text-lg">
+                                    <DirhamIcon size="sm" />
+                                    <span className="flex items-center gap-1">
+                                      {service.base_price} <DirhamIcon size="sm" />
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    {/* Other Packages Section */}
+                    <div id="other-section">
+                      <h3 className="font-semibold text-gray-800 text-lg mb-4">Other packages</h3>
+                      <div className="grid grid-cols-1 gap-3">
+                        {services
+                          .filter(service => [12, 29, 30, 15, 16].includes(service.id)) // Other packages
+                          .sort((a, b) => a.id - b.id)
+                          .map((service) => (
+                            <div
+                              key={service.id}
+                              className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${
+                                selectedService?.id === service.id
+                                  ? 'border-emerald-500 bg-emerald-50'
+                                  : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50'
+                              }`}
+                              onClick={() => {
+                                setSelectedPackageService(service);
+                                setShowServiceInclusionsModal(true);
+                              }}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">{service.name}</h4>
+                                  <p className="text-gray-600 text-sm">{service.description}</p>
+                                </div>
+                                <div className="flex items-center gap-1 text-emerald-600 font-bold text-lg">
+                                  {service.base_price} <DirhamIcon size="sm" />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Service options for specialized services only */}
+                {selectedMainCategory === 'specialized' && (
                   <div className="space-y-4 mb-6">
                     <h3 className="font-semibold text-gray-800">Choose Specific Service</h3>
                     {services
@@ -1178,15 +1503,15 @@ const BookingPage: React.FC = () => {
                     {windowPanelsCount && (
                       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
                         <p className="text-blue-800 font-medium">
-                          {windowPanelsCount} panel{windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} AED = <span className="font-bold">{windowPanelsCount * (selectedService.base_price || 0)} AED</span>
+                          {windowPanelsCount} panel{windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} <DirhamIcon size="sm" className="inline" /> = <span className="font-bold flex items-center gap-1">{windowPanelsCount * (selectedService.base_price || 0)} <DirhamIcon size="sm" /></span>
                         </p>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Property Size Selection (for non-window services) */}
-                {selectedService && !isWindowCleaningService(selectedService.id) && (
+                {/* Property Size Selection (for non-window services and non-package services) */}
+                {selectedService && !isWindowCleaningService(selectedService.id) && selectedMainCategory !== 'packages' && (
                   <div className="space-y-4 mb-6 animate-fadeIn">
                     <h3 className="font-semibold text-gray-800">Property Size</h3>
                     <div className="grid grid-cols-2 gap-3">
@@ -1443,7 +1768,7 @@ const BookingPage: React.FC = () => {
                     {selectedService.id === 19 ? (
                       <>
                         <p className="text-blue-800 font-medium">
-                          Complete Villa Window Package: <span className="font-bold">{selectedService.base_price} AED</span>
+                          Complete Villa Window Package: <span className="font-bold flex items-center gap-1">{selectedService.base_price} <DirhamIcon size="sm" /></span>
                         </p>
                         <p className="text-blue-600 text-sm mt-1">
                           All windows cleaned inside and outside
@@ -1452,7 +1777,7 @@ const BookingPage: React.FC = () => {
                     ) : (
                       <>
                         <p className="text-blue-800 font-medium">
-                          {windowPanelsCount} panel{windowPanelsCount && windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} AED = <span className="font-bold">{(windowPanelsCount || 0) * (selectedService.base_price || 0)} AED</span>
+                          {windowPanelsCount} panel{windowPanelsCount && windowPanelsCount > 1 ? 's' : ''} × {selectedService.base_price} <DirhamIcon size="sm" className="inline" /> = <span className="font-bold flex items-center gap-1">{(windowPanelsCount || 0) * (selectedService.base_price || 0)} <DirhamIcon size="sm" /></span>
                         </p>
                         <p className="text-blue-600 text-sm mt-1">
                           {selectedService.name} - Professional quality guaranteed
@@ -1469,7 +1794,7 @@ const BookingPage: React.FC = () => {
                 {selectedService && !selectedService.price_per_hour && selectedPropertySize && !isWindowCleaningService(selectedService.id) && (
                   <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center animate-fadeIn">
                     <p className="text-emerald-800 font-medium">
-                      Fixed-price package service: <span className="font-bold">{selectedService.base_price} AED</span>
+                      Fixed-price package service: <span className="font-bold flex items-center gap-1">{selectedService.base_price} <DirhamIcon size="sm" /></span>
                     </p>
                     <p className="text-emerald-600 text-sm mt-1">
                       {selectedService.description}
@@ -1492,7 +1817,7 @@ const BookingPage: React.FC = () => {
                       <div className="text-sm text-gray-600 mt-2">
                         {selectedCleaners} cleaners × {selectedHours} hours × {ownMaterials ? 
                           (getServiceKey(selectedService.name) === 'regular' ? '35' : '45') : 
-                          (getServiceKey(selectedService.name) === 'regular' ? '45' : '55')} AED/hour/cleaner
+                          (getServiceKey(selectedService.name) === 'regular' ? '45' : '55')} <DirhamIcon size="sm" className="inline" />/hour/cleaner
                       </div>
                     </div>
                   </div>
@@ -1510,12 +1835,429 @@ const BookingPage: React.FC = () => {
               <p className="text-gray-600">{t('booking.steps.extraServicesDesc', 'Add optional services to enhance your cleaning')}</p>
             </div>
             
-            <div className="space-y-4">
-              {/* Horizontal Carousel Layout */}
-              <div className="relative">
+            <div id="addons-container" className="space-y-6 mb-6">
+              {/* Sub-navigation for Add-ons */}
+              <div className={`bg-white/80 backdrop-blur-sm border-b border-gray-200 transition-all duration-300 ${
+                isAddonNavSticky ? 'fixed top-0 left-0 right-0 z-40 shadow-md' : 'relative'
+              }`}>
+                <div className="max-w-md mx-auto px-4">
+                  <div className="flex justify-center space-x-1 py-3 overflow-x-auto scrollbar-hide">
+                    {[
+                      { key: 'sofa', label: 'Sofa', icon: '🛋️' },
+                      { key: 'carpet', label: 'Carpet', icon: '🏠' },
+                      { key: 'mattress', label: 'Mattress', icon: '🛏️' },
+                      { key: 'curtains', label: 'Curtains', icon: '🪟' },
+                      { key: 'other', label: 'Other', icon: '✨' }
+                    ].map((section) => (
+                      <button
+                        key={section.key}
+                        onClick={() => scrollToAddonSection(section.key as 'sofa' | 'carpet' | 'mattress' | 'curtains' | 'other')}
+                        className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border-2 whitespace-nowrap ${
+                          activeAddonSection === section.key
+                            ? 'border-emerald-500 text-emerald-700 bg-emerald-50/30'
+                            : 'border-gray-200 text-gray-600 bg-white/50 hover:border-gray-300 hover:bg-white/70'
+                        }`}
+                      >
+                        <span className="text-sm">{section.icon}</span>
+                        <span>{section.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Add spacing when nav is sticky */}
+              {isAddonNavSticky && <div className="h-16"></div>}
+
+              {/* Sofa Cleaning Section */}
+              <div id="sofa-addons-section">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center">
+                    <span className="text-orange-600 text-xl">🛋️</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Sofa</h2>
+                </div>
+                
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 rounded-2xl p-4 mb-4">
+                  <img
+                    src="/sofa-cleaning-banner.png"
+                    alt="Sofa Cleaning"
+                    className="w-full h-32 object-cover rounded-xl mb-4"
+                    onLoad={() => {
+                      console.log('✅ Sofa banner loaded successfully');
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Failed to load sofa banner image');
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="w-full h-32 bg-gradient-to-br from-orange-200 to-orange-300 rounded-xl hidden items-center justify-center mb-4">
+                    <span className="text-orange-700 text-4xl font-bold">Sofa</span>
+                  </div>
+                </div>
+                
                 <div className="overflow-x-auto scrollbar-hide">
-                  <div className="flex gap-4 pb-4"  >
-                    {additionalServices.map((addon) => {
+                  <div className="flex gap-4 pb-4 min-w-max">
+                    {additionalServices
+                      .filter(addon => addon.category === 'furniture' && addon.subcategory === 'sofa')
+                      .map((addon) => {
+                        const isSelected = selectedAddons.some(selected => selected.id === addon.id);
+                        
+                        return (
+                          <div
+                            key={addon.id}
+                            className={`flex-shrink-0 w-48 border-2 rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-emerald-500 bg-emerald-50' 
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                            onClick={() => toggleAddon(addon)}
+                          >
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {addon.image_url ? (
+                                    <img
+                                      src={addon.image_url}
+                                      alt={addon.name}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-xl">🛋️</span>
+                                  )}
+                                </div>
+                                <button
+                                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected 
+                                      ? 'border-emerald-500 bg-emerald-500' 
+                                      : 'border-gray-300 bg-white'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                              
+                              <h4 className="font-semibold text-gray-900 mb-1">{addon.name}</h4>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{addon.description}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-bold text-emerald-600">
+                                  <DirhamIcon size="sm" className="mr-1" /> {addon.price}
+                                </span>
+                                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+                                  ADD +
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Carpet Cleaning Section */}
+              <div id="carpet-addons-section">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center">
+                    <span className="text-blue-600 text-xl">🏠</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Carpet</h2>
+                </div>
+                
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-4 mb-4">
+                  <img
+                    src="/carpet-cleaning-banner.png"
+                    alt="Carpet Cleaning"
+                    className="w-full h-32 object-cover rounded-xl mb-4"
+                    onLoad={() => {
+                      console.log('✅ Carpet banner loaded successfully');
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Failed to load carpet banner image');
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="w-full h-32 bg-gradient-to-br from-blue-200 to-blue-300 rounded-xl hidden items-center justify-center mb-4">
+                    <span className="text-blue-700 text-4xl font-bold">Carpet</span>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-4 pb-4 min-w-max">
+                    {additionalServices
+                      .filter(addon => addon.category === 'furniture' && addon.subcategory === 'carpet')
+                      .map((addon) => {
+                        const isSelected = selectedAddons.some(selected => selected.id === addon.id);
+                        
+                        return (
+                          <div
+                            key={addon.id}
+                            className={`flex-shrink-0 w-48 border-2 rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-emerald-500 bg-emerald-50' 
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                            onClick={() => toggleAddon(addon)}
+                          >
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {addon.image_url ? (
+                                    <img
+                                      src={addon.image_url}
+                                      alt={addon.name}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-xl">🏠</span>
+                                  )}
+                                </div>
+                                <button
+                                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected 
+                                      ? 'border-emerald-500 bg-emerald-500' 
+                                      : 'border-gray-300 bg-white'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                              
+                              <h4 className="font-semibold text-gray-900 mb-1">{addon.name}</h4>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{addon.description}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-bold text-emerald-600">
+                                  <DirhamIcon size="sm" className="mr-1" /> {addon.price}
+                                </span>
+                                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+                                  ADD +
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mattress Cleaning Section */}
+              <div id="mattress-addons-section">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center">
+                    <span className="text-purple-600 text-xl">🛏️</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Mattress</h2>
+                </div>
+                
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl p-4 mb-4">
+                  <img
+                    src="/mattress-cleaning-banner.png"
+                    alt="Mattress Cleaning"
+                    className="w-full h-32 object-cover rounded-xl mb-4"
+                    onLoad={() => {
+                      console.log('✅ Mattress banner loaded successfully');
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Failed to load mattress banner image');
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="w-full h-32 bg-gradient-to-br from-purple-200 to-purple-300 rounded-xl hidden items-center justify-center mb-4">
+                    <span className="text-purple-700 text-4xl font-bold">Mattress</span>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-4 pb-4 min-w-max">
+                    {additionalServices
+                      .filter(addon => addon.category === 'furniture' && addon.subcategory === 'mattress')
+                      .map((addon) => {
+                        const isSelected = selectedAddons.some(selected => selected.id === addon.id);
+                        
+                        return (
+                          <div
+                            key={addon.id}
+                            className={`flex-shrink-0 w-48 border-2 rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-emerald-500 bg-emerald-50' 
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                            onClick={() => toggleAddon(addon)}
+                          >
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {addon.image_url ? (
+                                    <img
+                                      src={addon.image_url}
+                                      alt={addon.name}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-xl">🛏️</span>
+                                  )}
+                                </div>
+                                <button
+                                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected 
+                                      ? 'border-emerald-500 bg-emerald-500' 
+                                      : 'border-gray-300 bg-white'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                              
+                              <h4 className="font-semibold text-gray-900 mb-1">{addon.name}</h4>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{addon.description}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-bold text-emerald-600">
+                                  <DirhamIcon size="sm" className="mr-1" /> {addon.price}
+                                </span>
+                                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+                                  ADD +
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Curtains Cleaning Section */}
+              <div id="curtains-addons-section">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-teal-100 to-teal-200 rounded-full flex items-center justify-center">
+                    <span className="text-teal-600 text-xl">🪟</span>
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Curtains</h2>
+                </div>
+                
+                <div className="bg-gradient-to-r from-teal-50 to-teal-100 rounded-2xl p-4 mb-4">
+                  <img
+                    src="/curtain-cleaning-banner.png"
+                    alt="Curtain Cleaning"
+                    className="w-full h-32 object-cover rounded-xl mb-4"
+                    onLoad={() => {
+                      console.log('✅ Curtain banner loaded successfully');
+                    }}
+                    onError={(e) => {
+                      console.error('❌ Failed to load curtain banner image');
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      if (target.nextElementSibling) {
+                        (target.nextElementSibling as HTMLElement).style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className="w-full h-32 bg-gradient-to-br from-teal-200 to-teal-300 rounded-xl hidden items-center justify-center mb-4">
+                    <span className="text-teal-700 text-4xl font-bold">Curtains</span>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-4 pb-4 min-w-max">
+                    {additionalServices
+                      .filter(addon => addon.category === 'furniture' && addon.subcategory === 'curtain')
+                      .map((addon) => {
+                        const isSelected = selectedAddons.some(selected => selected.id === addon.id);
+                        
+                        return (
+                          <div
+                            key={addon.id}
+                            className={`flex-shrink-0 w-48 border-2 rounded-xl cursor-pointer transition-all ${
+                              isSelected 
+                                ? 'border-emerald-500 bg-emerald-50' 
+                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                            }`}
+                            onClick={() => toggleAddon(addon)}
+                          >
+                            <div className="p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {addon.image_url ? (
+                                    <img
+                                      src={addon.image_url}
+                                      alt={addon.name}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-400 text-xl">🪟</span>
+                                  )}
+                                </div>
+                                <button
+                                  className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected 
+                                      ? 'border-emerald-500 bg-emerald-500' 
+                                      : 'border-gray-300 bg-white'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                              
+                              <h4 className="font-semibold text-gray-900 mb-1">{addon.name}</h4>
+                              <p className="text-sm text-gray-600 mb-3 line-clamp-2">{addon.description}</p>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-bold text-emerald-600">
+                                  <DirhamIcon size="sm" className="mr-1" /> {addon.price}
+                                </span>
+                                <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+                                  ADD +
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Other Services Section */}
+              <div id="other-addons-section">
+                <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">Other Services</h2>
+                
+                <div className="overflow-x-auto scrollbar-hide">
+                  <div className="flex gap-4 pb-4 min-w-max">
+                    {additionalServices
+                      .filter(addon => addon.category === 'other')
+                      .map((addon) => {
                       const isSelected = selectedAddons.some(selected => selected.id === addon.id);
                       
                       return (
@@ -1532,12 +2274,17 @@ const BookingPage: React.FC = () => {
                           <div className="relative">
                             <div className="w-full h-32 rounded-t-2xl overflow-hidden bg-gray-100">
                               <img
-                                src={getAddonImage(addon.id)}
+                                  src={addon.image_url || getAddonImage(addon.id)}
                                 alt={addon.name}
                                 className="w-full h-full object-cover"
                                 style={{ aspectRatio: '2/1' }}
+                                onLoad={() => {
+                                  console.log(`✅ Image loaded successfully: ${addon.name} - ${addon.image_url || getAddonImage(addon.id)}`);
+                                }}
                                 onError={(e) => {
                                   const target = e.currentTarget;
+                                  const imageSrc = addon.image_url || getAddonImage(addon.id);
+                                  console.error(`❌ Failed to load image: ${addon.name} - ${imageSrc}`);
                                   target.style.display = 'none';
                                   if (target.nextElementSibling) {
                                     (target.nextElementSibling as HTMLElement).style.display = 'flex';
@@ -1582,7 +2329,7 @@ const BookingPage: React.FC = () => {
                               
                               <div className="flex items-center justify-center">
                                 <span className="text-lg font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200">
-                                  +{addon.price} AED
+                                  <span className="flex items-center gap-1">+{addon.price} <DirhamIcon size="sm" /></span>
                                 </span>
                               </div>
                             </div>
@@ -1590,13 +2337,6 @@ const BookingPage: React.FC = () => {
                         </div>
                       );
                     })}
-                  </div>
-                </div>
-                
-                {/* Scroll indicators */}
-                <div className="flex justify-center mt-2">
-                  <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                    {t('booking.additionalServices.scrollHint', '← Scroll to see all services →')}
                   </div>
                 </div>
               </div>
@@ -1609,7 +2349,7 @@ const BookingPage: React.FC = () => {
                 <div className="relative z-10">
                   <div className="text-gray-600 text-sm mb-2">Extra Services Total</div>
                   <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                    {selectedAddons.reduce((sum, addon) => sum + addon.price, 0)} AED
+                    <span className="flex items-center gap-1">{selectedAddons.reduce((sum, addon) => sum + addon.price, 0)} <DirhamIcon size="sm" /></span>
                   </div>
                 </div>
               </div>
@@ -1687,19 +2427,19 @@ const BookingPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <select
-                        className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
-                        {...register('selectedAddressId', { valueAsNumber: true })}
-                      >
-                        <option value="">Select an address</option>
-                        {addresses.map((address) => (
-                          <option key={address.id} value={address.id}>
-                            {address.street}, {address.city}
-                            {address.is_default && ' (Default)'}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select
+                      className="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none"
+                      {...register('selectedAddressId', { valueAsNumber: true })}
+                    >
+                      <option value="">Select an address</option>
+                      {addresses.map((address) => (
+                                        <option key={address.id} value={address.id}>
+                  {address.street}, {address.city}
+                  {address.is_default && ' (Default)'}
+                </option>
+                      ))}
+                    </select>
+                          </div>
                     <Button
                       type="button"
                       variant="primary"
@@ -1713,7 +2453,7 @@ const BookingPage: React.FC = () => {
                     >
                       Add New
                     </Button>
-                  </div>
+                        </div>
 
                 </div>
               </div>
@@ -1742,7 +2482,7 @@ const BookingPage: React.FC = () => {
                   </span>
                 </div>
                 
-                {selectedPropertySize && !isWindowCleaningService(selectedService?.id) && (
+                {selectedPropertySize && !isWindowCleaningService(selectedService?.id) && selectedMainCategory !== 'packages' && (
                   <div className="flex justify-between items-start">
                     <span className="text-gray-600 flex-shrink-0">Property Size:</span>
                     <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
@@ -1760,7 +2500,7 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
                 
-                {selectedCleaners && (
+                {selectedCleaners && selectedMainCategory !== 'packages' && (
                   <div className="flex justify-between items-start">
                     <span className="text-gray-600 flex-shrink-0">Number of Cleaners:</span>
                     <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
@@ -1769,7 +2509,7 @@ const BookingPage: React.FC = () => {
                   </div>
                 )}
                 
-                {selectedHours && (
+                {selectedHours && selectedMainCategory !== 'packages' && (
                   <div className="flex justify-between items-start">
                     <span className="text-gray-600 flex-shrink-0">Duration:</span>
                     <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
@@ -1781,7 +2521,7 @@ const BookingPage: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <span className="text-gray-600 flex-shrink-0">Materials:</span>
                   <span className="font-semibold text-gray-900 text-right flex-1 ml-2">
-                    {ownMaterials ? 'Customer provided' : 'Cleaner provided'}
+                    {selectedMainCategory === 'packages' ? 'All included' : (ownMaterials ? 'Customer provided' : 'Cleaner provided')}
                   </span>
                 </div>
                 
@@ -1837,7 +2577,7 @@ const BookingPage: React.FC = () => {
                   <span className="text-gray-600">VAT (5%):</span>
                   <span className="font-semibold text-gray-900">
                     <DirhamIcon size="sm" />
-                    {Math.round(calculatePricing().total * 0.05)}
+                    {(calculatePricing().total * 0.05).toFixed(2)}
                   </span>
                 </div>
                 
@@ -2157,10 +2897,10 @@ const BookingPage: React.FC = () => {
               disabled={
                 loading ||
                 (currentStep === 1 && (!selectedMainCategory || 
-                  // For packages and specialized, need specific service selection
-                  ((selectedMainCategory === 'packages' || selectedMainCategory === 'specialized') && !selectedService) ||
-                  // For packages, only need property size
-                  (selectedMainCategory === 'packages' && selectedService && !selectedPropertySize) ||
+                  // For packages, only need service selection (no property size, cleaners, hours)
+                  (selectedMainCategory === 'packages' && !selectedService) ||
+                  // For specialized, need specific service selection
+                  (selectedMainCategory === 'specialized' && !selectedService) ||
                   // For regular/deep/specialized hourly services, need full configuration
                   ((selectedMainCategory === 'regular' || selectedMainCategory === 'deep' || 
                     (selectedMainCategory === 'specialized' && selectedService?.price_per_hour)) && 
@@ -2180,8 +2920,8 @@ const BookingPage: React.FC = () => {
 
       {/* Floating Cart - Display Only */}
       {currentStep <= 4 && selectedService && (
-        // For packages, only need property size
-        (selectedMainCategory === 'packages' && selectedPropertySize) ||
+        // For packages, only need service selection (no property size needed)
+        (selectedMainCategory === 'packages') ||
         // For regular/deep cleaning, need property size, cleaners, and hours  
         ((selectedMainCategory === 'regular' || selectedMainCategory === 'deep') && selectedPropertySize && selectedCleaners && selectedHours) ||
         // For window cleaning services
@@ -2219,7 +2959,7 @@ const BookingPage: React.FC = () => {
                     </>
                   ) : selectedMainCategory === 'packages' ? (
                     <>
-                      {selectedPropertySize ? selectedPropertySize.charAt(0).toUpperCase() + selectedPropertySize.slice(1) : 'Unknown'} • Package Service • {ownMaterials ? 'Own materials' : 'Materials provided'}
+                      Complete Package • All materials included
                       {selectedAddons.length > 0 && ` • +${selectedAddons.length} extra${selectedAddons.length > 1 ? 's' : ''}`}
                     </>
                   ) : selectedService.price_per_hour && selectedPropertySize && selectedCleaners && selectedHours ? (
@@ -2242,7 +2982,7 @@ const BookingPage: React.FC = () => {
                 {/* Show VAT and fees info */}
                 <div className="text-xs text-gray-500 mt-1">
                   <span>+5% VAT</span>
-                  {selectedPaymentMethod === 'cash' && <span className="ml-2">+5 AED cash fee</span>}
+                  {selectedPaymentMethod === 'cash' && <span className="ml-2 flex items-center gap-1">+5 <DirhamIcon size="sm" /> cash fee</span>}
                 </div>
               </div>
             </div>
@@ -2284,6 +3024,20 @@ const BookingPage: React.FC = () => {
         onClose={handleCloseGuestSignupModal}
         message="To continue for scheduling you will need to sign up"
         onSignup={handleGuestSignup}
+      />
+
+      {/* Service Inclusions Modal */}
+      <ServiceInclusionsModal
+        isOpen={showServiceInclusionsModal}
+        onClose={() => {
+          setShowServiceInclusionsModal(false);
+          setSelectedPackageService(null);
+        }}
+        onSelect={handleSelectPackageService}
+        serviceId={selectedPackageService?.id || 0}
+        serviceName={selectedPackageService?.name || ''}
+        servicePrice={selectedPackageService?.base_price || 0}
+        serviceImage={selectedPackageService?.image}
       />
 
       {/* Add Address Modal */}

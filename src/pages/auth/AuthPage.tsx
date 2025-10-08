@@ -239,11 +239,16 @@ const AuthPage: React.FC = () => {
           background: none;
           border: none;
           cursor: pointer;
-          transition: color 0.3s ease;
+          transition: all 0.3s ease;
           font-weight: 600;
           z-index: 2;
           position: relative;
           color: #0F172A;
+        }
+
+        .toggle-btn:hover:not(.active) {
+          background-color: rgba(37, 99, 235, 0.1);
+          color: #2563EB;
         }
 
         .toggle-btn.active {
@@ -340,15 +345,26 @@ const AuthPage: React.FC = () => {
           transition: all 0.3s ease;
           position: relative;
           overflow: hidden;
+          -webkit-tap-highlight-color: transparent !important;
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          outline: none !important;
         }
 
         .submit-btn:hover {
           transform: translateY(-2px);
           box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
         }
 
         .submit-btn:active {
           transform: translateY(0);
+        }
+
+        .submit-btn:focus {
+          outline: none !important;
+          box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3) !important;
+          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
         }
 
         .submit-btn:disabled {
@@ -481,14 +497,18 @@ const AuthPage: React.FC = () => {
           max-width: 22px !important;
           max-height: 22px !important;
           padding: 0 !important;
-          margin: 2px 8px 0 0 !important;
+          margin: 0 8px 0 0 !important;
           border: 2px solid #d1d5db !important;
           border-radius: 0 !important;
           background-color: white !important;
           appearance: none !important;
           cursor: pointer !important;
           position: relative !important;
-          vertical-align: text-bottom !important;
+          vertical-align: middle !important;
+          flex-shrink: 0 !important;
+          -webkit-tap-highlight-color: transparent !important;
+          -webkit-appearance: none !important;
+          outline: none !important;
         }
         
         .custom-checkbox:checked {
@@ -505,6 +525,11 @@ const AuthPage: React.FC = () => {
           color: white;
           font-size: 16px;
           font-weight: bold;
+        }
+        
+        .custom-checkbox:focus {
+          outline: none !important;
+          box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3) !important;
         }
       `}</style>
 
@@ -600,7 +625,25 @@ const AuthPage: React.FC = () => {
             </button>
 
             <div className="forgot-password">
-              <button type="button" className="text-blue-600 hover:text-blue-700 text-sm underline bg-transparent border-none cursor-pointer">
+              <button 
+                type="button" 
+                className="text-blue-600 hover:text-blue-700 text-sm underline bg-transparent border-none cursor-pointer"
+                style={{
+                  WebkitTapHighlightColor: 'transparent',
+                  WebkitAppearance: 'none',
+                  appearance: 'none',
+                  outline: 'none',
+                  padding: '4px 8px',
+                  transition: 'color 0.3s ease'
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.outline = 'none';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.3)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 Forgot Password?
               </button>
             </div>
@@ -630,7 +673,28 @@ const AuthPage: React.FC = () => {
                     borderRadius: 12,
                     padding: '12px 16px',
                     fontWeight: 600,
-                    border: '1px solid #d1d5db'
+                    border: '1px solid #d1d5db',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    WebkitTapHighlightColor: 'transparent',
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#d1d5db';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e5e7eb';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.outline = 'none';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.3)';
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.boxShadow = 'none';
                   }}
                 >
                   Log in as a guest
@@ -727,7 +791,7 @@ const AuthPage: React.FC = () => {
             <div className="form-group" style={{ marginBottom: '20px' }}>
               <div style={{ 
                 display: 'flex', 
-                alignItems: 'flex-start', 
+                alignItems: 'center', 
                 justifyContent: 'center',
                 gap: '10px',
                 fontSize: '14px',
@@ -754,11 +818,15 @@ const AuthPage: React.FC = () => {
                     maxWidth: '22px',
                     maxHeight: '22px',
                     padding: '0',
-                    margin: '2px 8px 0 0',
-                    verticalAlign: 'text-bottom'
+                    margin: '0 8px 0 0',
+                    verticalAlign: 'middle',
+                    flexShrink: 0,
+                    WebkitTapHighlightColor: 'transparent',
+                    WebkitAppearance: 'none',
+                    outline: 'none'
                   }}
                 />
-                <label htmlFor="termsAccepted" style={{ cursor: 'pointer', lineHeight: '1.4' }}>
+                <label htmlFor="termsAccepted" style={{ cursor: 'pointer', lineHeight: '1.4', display: 'flex', alignItems: 'center' }}>
                   I agree with{' '}
                   <button
                     type="button"
@@ -768,10 +836,22 @@ const AuthPage: React.FC = () => {
                       textDecoration: 'underline',
                       background: 'none',
                       border: 'none',
-                      padding: '0',
+                      padding: '0 0 0 4px',
                       cursor: 'pointer',
                       fontSize: 'inherit',
-                      fontFamily: 'inherit'
+                      fontFamily: 'inherit',
+                      WebkitTapHighlightColor: 'transparent',
+                      WebkitAppearance: 'none',
+                      appearance: 'none',
+                      outline: 'none',
+                      transition: 'color 0.3s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.outline = 'none';
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.3)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     Terms and Conditions

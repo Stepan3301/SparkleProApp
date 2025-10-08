@@ -5,7 +5,10 @@ import { supabase } from '../lib/supabase';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import BookingCancelAnimation from '../components/ui/BookingCancelAnimation';
 import GuestAccessModal from '../components/ui/GuestAccessModal';
-import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import InvoiceDownloadModal from '../components/invoice/InvoiceDownloadModal';
+import { InvoiceGenerator } from '../components/invoice/InvoiceGenerator';
+import { transformBookingToInvoice, generateInvoiceFilename } from '../components/invoice/invoiceUtils';
+import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon, MapPinIcon, XMarkIcon, TrashIcon, ArrowPathIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import DirhamIcon from '../components/ui/DirhamIcon';
 import Button from '../components/ui/Button';
 import { 
@@ -39,6 +42,10 @@ const HistoryPage: React.FC = () => {
   // Guest access modal state
   const [showGuestAccessModal, setShowGuestAccessModal] = useState(false);
 
+  // PDF invoice modal state
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   // Guest mode check
   React.useEffect(() => {
     if (isGuest) {
@@ -55,6 +62,50 @@ const HistoryPage: React.FC = () => {
   const handleGoHome = () => {
     setShowGuestAccessModal(false);
     navigate('/home');
+  };
+
+  // PDF invoice handlers
+  const handleDownloadInvoice = () => {
+    if (!selectedBooking) return;
+    
+    // Only allow PDF download for completed orders
+    if (selectedBooking.status !== 'completed') {
+      return;
+    }
+    
+    setShowInvoiceModal(true);
+  };
+
+  const handlePdfDownload = async () => {
+    if (!selectedBooking) return;
+    
+    setIsGeneratingPdf(true);
+    
+    try {
+      // Transform booking data to invoice format
+      const invoiceData = await transformBookingToInvoice(selectedBooking);
+      
+      // Generate PDF
+      const generator = new InvoiceGenerator();
+      await generator.generateInvoice(invoiceData);
+      
+      // Generate filename
+      const filename = generateInvoiceFilename(
+        invoiceData.bookingNumber,
+        invoiceData.customerName
+      );
+      
+      // Download PDF
+      generator.download(filename);
+      
+      // Close modal
+      setShowInvoiceModal(false);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // You could add a toast notification here for error handling
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   // Add custom styles for smooth animations
@@ -295,11 +346,37 @@ const HistoryPage: React.FC = () => {
       '3': '/balcony-cleaning.JPG',          // Balcony Cleaning
       '4': '/wardrobe-cabinet-cleaning.png', // Wardrobe/Cabinet Cleaning
       '5': '/laundry-service.JPG',           // Ironing Service
-      '6': '/sofa-cleaning.png',             // Sofa Cleaning
-      '7': '/carpet-cleaning.JPG',           // Carpet Cleaning
-      '8': '/matress-cleaning.png',          // Mattress Cleaning Single
-      '9': '/matress-cleaning.png',          // Mattress Cleaning Double
-      '10': '/curtains-cleaning.JPG'         // Curtains Cleaning
+      '6': '/sofa-cleaning-banner.png',      // Sofa Cleaning (updated)
+      '7': '/carpet-cleaning-banner.png',    // Carpet Cleaning (updated)
+      '8': '/mattress-cleaning-banner.png',  // Mattress Cleaning Single (updated)
+      '9': '/mattress-cleaning-banner.png',  // Mattress Cleaning Double (updated)
+      '10': '/curtain-cleaning-banner.png',  // Curtain Cleaning (new)
+      
+      // New specific addon mappings
+      // Sofa sizes
+      '11': '/single-seat-sofa.png',         // Single Seat Sofa
+      '12': '/2-seater-sofa.png',            // 2 Seater Sofa
+      '13': '/3-seater-sofa.png',            // 3 Seater Sofa
+      '14': '/4-seater-sofa.png',            // 4 Seater (L-Shape) Sofa
+      '15': '/5-seater-sofa.png',            // 5 Seater Sofa
+      
+      // Carpet sizes
+      '16': '/small-carpet.png',             // Small Carpet
+      '17': '/medium-carpet.png',            // Medium Carpet
+      '18': '/large-carpet.png',             // Large Carpet
+      '19': '/extra-large-carpet.png',       // Extra Large Carpet
+      
+      // Mattress sizes
+      '20': '/single-mattress.png',          // Single Mattress
+      '21': '/double-mattress.png',          // Double Mattress
+      '22': '/queen-mattress.png',           // Queen Mattress
+      '23': '/king-mattress.png',            // King Mattress
+      
+      // Curtain sizes
+      '24': '/small-curtains.png',           // Small Curtains
+      '25': '/medium-curtains.png',          // Medium Curtains
+      '26': '/large-curtains.png',           // Large Curtains
+      '27': '/extra-large-curtains.png'      // Extra Large Curtains
     };
     return imageMap[addonId] || '/regular-cleaning.jpg'; // Fallback to main service image
   };
@@ -646,13 +723,30 @@ const HistoryPage: React.FC = () => {
                 <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white opacity-20 transform -translate-x-12 translate-y-12"></div>
               </div>
               
-              {/* Close button - Top right */}
+              {/* Header buttons - Top right */}
+              <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                {/* PDF Download button */}
+                <button
+                  onClick={handleDownloadInvoice}
+                  disabled={selectedBooking.status !== 'completed'}
+                  className={`w-8 h-8 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-colors ${
+                    selectedBooking.status === 'completed'
+                      ? 'bg-white/20 hover:bg-white/30 cursor-pointer'
+                      : 'bg-white/10 cursor-not-allowed opacity-50'
+                  }`}
+                  title={selectedBooking.status === 'completed' ? 'Download Invoice' : 'Invoice available for completed orders only'}
+                >
+                  <DocumentIcon className="w-5 h-5" />
+                </button>
+                
+                {/* Close button */}
               <button
                 onClick={closeModal}
-                className="absolute top-4 right-4 w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors z-20"
+                  className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
+              </div>
               
               {/* Status badge - Top left */}
               <div className="absolute top-4 left-4 z-20">
@@ -1065,6 +1159,15 @@ const HistoryPage: React.FC = () => {
         onGoHome={handleGoHome}
         title="Sign Up Required"
         message="Sign up to view your booking history and track your orders"
+      />
+
+      {/* Invoice Download Modal */}
+      <InvoiceDownloadModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        onDownload={handlePdfDownload}
+        bookingNumber={`SP${String(selectedBooking?.id || '').padStart(6, '0')}`}
+        isGenerating={isGeneratingPdf}
       />
     </div>
       )}

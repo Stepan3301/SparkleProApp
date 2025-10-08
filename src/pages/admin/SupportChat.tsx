@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import Button from '../../components/ui/Button';
 import { 
   ArrowLeftIcon, 
-  ChatBubbleLeftRightIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  FunnelIcon,
   MagnifyingGlassIcon,
-  EllipsisVerticalIcon
+  EllipsisVerticalIcon,
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 
 interface SupportMessage {
@@ -26,15 +21,15 @@ interface SupportMessage {
 }
 
 const SupportChat: React.FC = () => {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<SupportMessage | null>(null);
-  const [adminNotes, setAdminNotes] = useState('');
+  const [replyText, setReplyText] = useState('');
   const [updating, setUpdating] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'read' | 'replied' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'unread' | 'open' | 'closed'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showMobileConversation, setShowMobileConversation] = useState(false);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   useEffect(() => {
     fetchMessages();
@@ -104,330 +99,399 @@ const SupportChat: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: SupportMessage['status']) => {
-    switch (status) {
-      case 'unread':
-        return <div className="w-2 h-2 bg-blue-500 rounded-full" />;
-      case 'read':
-        return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
-      case 'replied':
-        return <CheckCircleIcon className="w-4 h-4 text-blue-500" />;
-      case 'closed':
-        return <XCircleIcon className="w-4 h-4 text-gray-400" />;
-      default:
-        return null;
+  const handleSendReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyText.trim() || !selectedMessage || updating) return;
+
+    try {
+      setUpdating(true);
+      await updateMessageStatus(selectedMessage.id, 'replied', replyText.trim());
+      setReplyText('');
+    } catch (error) {
+      console.error('Error sending reply:', error);
     }
   };
 
-  const getPriorityColor = (priority: SupportMessage['priority']) => {
-    switch (priority) {
-      case 'urgent':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'high':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'medium':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'low':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const openConversation = (message: SupportMessage) => {
+    setSelectedMessage(message);
+    setShowMobileConversation(true);
+    
+    // Mark as read if it's unread
+    if (message.status === 'unread') {
+      updateMessageStatus(message.id, 'read');
     }
   };
 
+  const closeConversation = () => {
+    setShowMobileConversation(false);
+    setSelectedMessage(null);
+    setReplyText('');
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  // Filter messages
   const filteredMessages = messages.filter(msg => {
-    const matchesFilter = filter === 'all' || msg.status === filter;
+    const matchesFilter = filter === 'all' || 
+      (filter === 'unread' && msg.status === 'unread') ||
+      (filter === 'open' && (msg.status === 'unread' || msg.status === 'read' || msg.status === 'replied')) ||
+      (filter === 'closed' && msg.status === 'closed');
     const matchesSearch = searchQuery === '' || 
       msg.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      msg.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       msg.message.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor(diffInHours * 60);
-      return `${diffInMinutes}m`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h`;
-    } else {
-      return date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric'
-      });
-    }
-  };
+  // Handle ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showActionSheet) {
+          setShowActionSheet(false);
+        } else if (showMobileConversation) {
+          closeConversation();
+        }
+      }
+    };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    });
-  };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showActionSheet, showMobileConversation]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading support messages...</p>
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
+          <p style={{ color: 'var(--muted)' }}>Loading support messages...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile-First Telegram-like Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/admin')}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-              >
-                <ArrowLeftIcon className="w-4 h-4 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">Support Chat</h1>
-                <p className="text-xs text-gray-500">{filteredMessages.length} messages</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-              >
-                <FunnelIcon className="w-4 h-4 text-gray-600" />
-              </button>
-              <button className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <EllipsisVerticalIcon className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
+    <div style={{ height: '100dvh' }}>
+      <style>{`
+        :root{
+          --primary:#0ABDC6; --accent:#00E6B8; --violet:#6c5dd3;
+          --ink:#0f172a; --muted:#5b7a88; --line:#dbe8ee; --bg:#f7fbfd; --card:#fff;
+          --shadow:0 12px 28px rgba(10,30,40,.10);
+        }
+        
+        * { box-sizing: border-box; }
+        
+        .chat-split{
+          height:100dvh; display:grid; grid-template-columns:340px 1fr; gap:10px; padding:10px;
+        }
+        .pane{background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow)}
+        
+        /* LEFT PANE */
+        .leftbar{padding:10px;border-bottom:1px solid var(--line)}
+        .leftbar h1{margin:0 0 8px;font-size:1.05rem;font-weight:900;color:var(--ink)}
+        .search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+        .search svg{width:18px;height:18px;fill:none;stroke:#5f7c8a;stroke-width:2}
+        .search input{border:0;outline:none;width:100%;font-size:.95rem;color:var(--ink)}
+        .filters{display:flex;gap:6px;margin-top:8px;overflow:auto}
+        .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 10px;font-weight:800;color:#355a64;cursor:pointer;transition:all .2s ease;font-size:.85rem}
+        .chip.is-active{border-color:rgba(10,189,198,.4);box-shadow:inset 0 0 0 2px rgba(10,189,198,.18);background:#f0fffe}
+        .chip:hover{background:#f6fbfc}
+        
+        .threads{height:calc(100% - 108px);overflow:auto;padding:8px}
+        .thread{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:10px;border-radius:12px;cursor:pointer;transition:background .2s ease}
+        .thread:hover{background:#f6fbfc}
+        .thread .avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#0a3940;background:#e6fbff;font-size:.9rem}
+        .thread .name{font-weight:900;font-size:.9rem;color:var(--ink)}
+        .thread .preview{color:#55737f;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px;margin-top:2px}
+        .thread .badges{display:flex;gap:4px;align-items:center;flex-direction:column}
+        .badge{min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;font-size:.7rem;font-weight:900;padding:0 6px}
+        .badge.unread{background:#ff4d4f;color:#fff;box-shadow:0 4px 12px rgba(255,77,79,.25)}
+        .badge.prio{background:rgba(255,200,60,.18);color:#8a6311;border:1px solid rgba(255,200,60,.45)}
+        .badge.status{background:rgba(16,185,129,.18);color:#0a6d3b;border:1px solid rgba(16,185,129,.45)}
+        .badge.closed{background:rgba(107,114,128,.18);color:#374151;border:1px solid rgba(107,114,128,.45)}
+        .thread.is-active{background:#eef9fb;border:1px solid rgba(10,189,198,.2)}
+        
+        /* RIGHT PANE */
+        .convbar{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:10px;background:#fff}
+        .icon-btn{appearance:none;border:0;border-radius:12px;background:#eef6f8;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;transition:background .2s ease}
+        .icon-btn:hover{background:#ddeef2}
+        .icon-btn svg{width:18px;height:18px;fill:none;stroke:#204e57;stroke-width:2}
+        .icon-btn.back{display:none}
+        
+        .peer{display:flex;align-items:center;gap:10px;flex:1}
+        .avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:900;color:#0a3940;background:#e6fbff}
+        .meta .name{font-weight:900;color:var(--ink)}
+        .status{display:flex;gap:6px;align-items:center;color:#5c7a86;font-size:.85rem}
+        .dot{width:8px;height:8px;border-radius:50%}
+        .dot.online{background:#39d98a;box-shadow:0 0 10px rgba(57,217,138,.6)}
+        
+        .conversation{display:grid;grid-template-rows:1fr auto;height:calc(100% - 56px)}
+        .messages{overflow:auto;padding:10px;background:linear-gradient(#fbfeff,#f6fbfc)}
+        .empty{height:100%;display:grid;place-items:center;color:#6a8893;text-align:center}
+        .ghost{font-size:42px;margin-bottom:6px}
+        
+        .msg{display:flex;margin:6px 0}
+        .bubble{max-width:78%;padding:10px 12px;border-radius:14px;line-height:1.35;font-size:.98rem;box-shadow:0 6px 14px rgba(10,30,40,.08)}
+        .msg.me{justify-content:flex-end}
+        .msg.me .bubble{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border-top-right-radius:6px}
+        .msg.other .bubble{background:#fff;border:1px solid var(--line);border-top-left-radius:6px;color:var(--ink)}
+        .msg .time{display:block;font-size:.72rem;margin-top:6px;opacity:.75}
+        
+        .composer{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px;border-top:1px solid var(--line);background:#fff}
+        .composer input{border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:1rem;outline:none;transition:border-color .2s ease;color:var(--ink)}
+        .composer input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(10,189,198,.18)}
+        .send{border:0;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--accent));width:44px;height:44px;display:grid;place-items:center;box-shadow:0 10px 22px rgba(10,189,198,.25);cursor:pointer;transition:transform .2s ease}
+        .send:hover{transform:translateY(-1px)}
+        .send svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2}
+        .send:disabled{opacity:.6;cursor:not-allowed;transform:none}
+        
+        /* Bottom sheet */
+        .sheet{position:fixed;inset:0;z-index:50;display:none}
+        .sheet.show{display:block}
+        .sheet__backdrop{position:absolute;inset:0;background:rgba(7,14,20,.5);backdrop-filter:blur(2px)}
+        .sheet__panel{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -12px 30px rgba(0,0,0,.25);transform:translateY(100%);animation:slideUp .25s ease forwards}
+        @keyframes slideUp{to{transform:translateY(0)}}
+        .sheet__drag{width:38px;height:5px;border-radius:999px;background:#d9e7ee;margin:8px auto}
+        .sheet__content{display:grid;padding:6px 10px}
+        .sheet-btn{appearance:none;border:0;background:#fff;text-align:left;padding:14px 10px;font-weight:900;border-bottom:1px solid #f1f6f8;cursor:pointer;color:var(--ink)}
+        .sheet-btn:last-of-type{border-bottom:0}
+        .sheet-btn.danger{color:#c63939}
+        .sheet__footer{display:flex;justify-content:flex-end;padding:10px}
+        .btn-ghost{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:800;cursor:pointer;color:var(--ink)}
+        
+        /* Mobile responsive */
+        @media (max-width: 720px){
+          .chat-split{grid-template-columns:1fr;padding:0}
+          .pane{border-radius:0;border:0}
+          .pane--left{display:block}
+          .pane--right{display:none}
+          .pane--right.is-open{display:block}
+          .icon-btn.back{display:grid}
+        }
+        
+        .loading-spinner{
+          width:20px;height:20px;border:2px solid #e5e7eb;border-top:2px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite
+        }
+        @keyframes spin{to{transform:rotate(360deg)}}
+      `}</style>
 
-        {/* Search Bar */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search messages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        {showFilters && (
-          <div className="px-4 pb-3">
-            <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
-              {[
-                { key: 'all', label: 'All', count: messages.length },
-                { key: 'unread', label: 'Unread', count: messages.filter(m => m.status === 'unread').length },
-                { key: 'read', label: 'Read', count: messages.filter(m => m.status === 'read').length },
-                { key: 'replied', label: 'Replied', count: messages.filter(m => m.status === 'replied').length },
-                { key: 'closed', label: 'Closed', count: messages.filter(m => m.status === 'closed').length },
-              ].map(({ key, label, count }) => (
+      <section className="chat-split">
+        {/* LEFT PANE - Threads List */}
+        <aside className="pane pane--left">
+          <header className="leftbar">
+            <h1>Support</h1>
+            <div className="search">
+              <MagnifyingGlassIcon />
+              <input
+                type="search"
+                placeholder="Search…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="filters">
+              {(['all', 'unread', 'open', 'closed'] as const).map((filterOption) => (
                 <button
-                  key={key}
-                  onClick={() => setFilter(key as any)}
-                  className={`flex-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
-                    filter === key
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
+                  key={filterOption}
+                  className={`chip ${filter === filterOption ? 'is-active' : ''}`}
+                  onClick={() => setFilter(filterOption)}
                 >
-                  {label} ({count})
+                  {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
                 </button>
               ))}
             </div>
-          </div>
-        )}
-      </div>
+          </header>
 
-      {/* Messages List - Telegram-like */}
-      <div className="flex-1">
-        {filteredMessages.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center">
-              <ChatBubbleLeftRightIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500 text-sm">No messages found</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {filteredMessages.map((message) => (
-              <div
-                key={message.id}
-                onClick={() => setSelectedMessage(message)}
-                className={`p-4 bg-white border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedMessage?.id === message.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-semibold text-sm">
-                      {message.user_name.charAt(0).toUpperCase()}
+          <main className="threads">
+            {filteredMessages.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)' }}>
+                No messages found
+              </div>
+            ) : (
+              filteredMessages.map((message) => (
+                <article
+                  key={message.id}
+                  className={`thread ${selectedMessage?.id === message.id ? 'is-active' : ''}`}
+                  onClick={() => openConversation(message)}
+                >
+                  <div className="avatar">
+                    {message.user_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="name">{message.user_name}</div>
+                    <div className="preview">
+                      {message.message.length > 50 
+                        ? `${message.message.substring(0, 50)}...` 
+                        : message.message}
+                    </div>
+                  </div>
+                  <div className="badges">
+                    {message.status === 'unread' && (
+                      <span className="badge unread">●</span>
+                    )}
+                    <span className={`badge ${
+                      message.status === 'closed' ? 'closed' : 
+                      message.status === 'unread' ? 'prio' : 'status'
+                    }`}>
+                      {message.status}
                     </span>
                   </div>
+                </article>
+              ))
+            )}
+          </main>
+        </aside>
 
-                  {/* Message Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900 text-sm truncate">
-                          {message.user_name}
-                        </h3>
-                        {getStatusIcon(message.status)}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(message.priority)}`}>
-                          {message.priority}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(message.created_at)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-2 line-clamp-2">
-                      {message.message}
-                    </p>
-                    
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span>{message.user_email}</span>
-                      <span>•</span>
-                      <span>{formatTime(message.created_at)}</span>
+        {/* RIGHT PANE - Conversation */}
+        <section className={`pane pane--right ${showMobileConversation ? 'is-open' : ''}`}>
+          <header className="convbar">
+            <button className="icon-btn back" onClick={closeConversation}>
+              <ArrowLeftIcon />
+            </button>
+            <div className="peer">
+              {selectedMessage ? (
+                <>
+                  <span className="avatar">
+                    {selectedMessage.user_name.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="meta">
+                    <div className="name">{selectedMessage.user_name}</div>
+                    <div className="status">
+                      <span className={`dot ${selectedMessage.status !== 'closed' ? 'online' : ''}`}></span>
+                      <span>{selectedMessage.status === 'closed' ? 'Closed' : 'Open ticket'}</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Message Detail Modal - Mobile Optimized */}
-      {selectedMessage && (
-        <div className="fixed inset-0 bg-white z-20 flex flex-col">
-          {/* Modal Header */}
-          <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSelectedMessage(null)}
-                className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-              >
-                <ArrowLeftIcon className="w-4 h-4 text-gray-600" />
-              </button>
-              <div>
-                <h2 className="font-semibold text-gray-900">{selectedMessage.user_name}</h2>
-                <p className="text-xs text-gray-500">{selectedMessage.user_email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {getStatusIcon(selectedMessage.status)}
-              <span className="text-xs font-medium text-gray-600 capitalize">
-                {selectedMessage.status}
-              </span>
-            </div>
-          </div>
-
-          {/* Message Content */}
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-            <div className="space-y-4">
-              {/* User Message */}
-              <div className="flex justify-start">
-                <div className="max-w-[80%]">
-                  <div className="bg-white rounded-2xl rounded-tl-md p-4 shadow-sm">
-                    <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">
-                      {selectedMessage.message}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500">
-                        {formatTime(selectedMessage.created_at)}
-                      </span>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getPriorityColor(selectedMessage.priority)}`}>
-                        {selectedMessage.priority}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Admin Notes */}
-              {selectedMessage.admin_notes && (
-                <div className="flex justify-end">
-                  <div className="max-w-[80%]">
-                    <div className="bg-blue-500 text-white rounded-2xl rounded-tr-md p-4">
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {selectedMessage.admin_notes}
-                      </p>
-                      <span className="text-xs text-blue-100 mt-2 block">
-                        Admin Notes
-                      </span>
-                    </div>
-                  </div>
+                </>
+              ) : (
+                <div className="meta">
+                  <div className="name">Select a chat</div>
+                  <div className="status">—</div>
                 </div>
               )}
             </div>
-          </div>
+            <button className="icon-btn" onClick={() => setShowActionSheet(true)}>
+              <EllipsisVerticalIcon />
+            </button>
+          </header>
 
-          {/* Action Bar */}
-          <div className="bg-white border-t border-gray-200 p-4">
-            <div className="space-y-3">
-              <textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Add admin notes..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                rows={2}
-              />
-              
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => updateMessageStatus(selectedMessage.id, 'read', adminNotes)}
-                  disabled={updating}
-                  variant="secondary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  Mark as Read
-                </Button>
-                
-                <Button
-                  onClick={() => updateMessageStatus(selectedMessage.id, 'replied', adminNotes)}
-                  disabled={updating}
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                >
-                  Mark as Replied
-                </Button>
-                
-                <Button
-                  onClick={() => updateMessageStatus(selectedMessage.id, 'closed', adminNotes)}
-                  disabled={updating}
-                  variant="delete"
-                  size="sm"
-                  className="flex-1"
-                >
-                  Close
-                </Button>
-              </div>
+          <div className="conversation">
+            <div className="messages">
+              {!selectedMessage ? (
+                <div className="empty">
+                  <div className="ghost">💬</div>
+                  <p>Select a conversation to start</p>
+                </div>
+              ) : (
+                <>
+                  <div className="msg other">
+                    <div className="bubble">
+                      {selectedMessage.message}
+                      <span className="time">{formatTime(selectedMessage.created_at)}</span>
+                    </div>
+                  </div>
+                  
+                  {selectedMessage.admin_notes && (
+                    <div className="msg me">
+                      <div className="bubble">
+                        {selectedMessage.admin_notes}
+                        <span className="time">Support Team</span>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
+
+            {selectedMessage && selectedMessage.status !== 'closed' && (
+              <form className="composer" onSubmit={handleSendReply}>
+                <input
+                  type="text"
+                  placeholder="Write a message…"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                />
+                <button 
+                  type="submit" 
+                  className="send"
+                  disabled={!replyText.trim() || updating}
+                >
+                  {updating ? (
+                    <div className="loading-spinner"></div>
+                  ) : (
+                    <PaperAirplaneIcon />
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </section>
+      </section>
+
+      {/* Action Sheet */}
+      <div className={`sheet ${showActionSheet ? 'show' : ''}`}>
+        <div className="sheet__backdrop" onClick={() => setShowActionSheet(false)}></div>
+        <div className="sheet__panel">
+          <div className="sheet__drag"></div>
+          <div className="sheet__content">
+            {selectedMessage && (
+              <>
+                <button 
+                  className="sheet-btn"
+                  onClick={() => {
+                    updateMessageStatus(selectedMessage.id, 'read');
+                    setShowActionSheet(false);
+                  }}
+                >
+                  Mark as read
+                </button>
+                <button 
+                  className="sheet-btn"
+                  onClick={() => {
+                    updateMessageStatus(selectedMessage.id, 'replied');
+                    setShowActionSheet(false);
+                  }}
+                >
+                  Mark as replied
+                </button>
+                <button 
+                  className="sheet-btn"
+                  onClick={() => {
+                    updateMessageStatus(selectedMessage.id, 'closed');
+                    setShowActionSheet(false);
+                  }}
+                >
+                  Close ticket
+                </button>
+                <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid #f1f6f8' }} />
+                <button 
+                  className="sheet-btn danger"
+                  onClick={() => {
+                    if (window.confirm('Delete this conversation?')) {
+                      // Add delete functionality here if needed
+                      setShowActionSheet(false);
+                    }
+                  }}
+                >
+                  Delete conversation
+                </button>
+              </>
+            )}
+          </div>
+          <div className="sheet__footer">
+            <button className="btn-ghost" onClick={() => setShowActionSheet(false)}>
+              Cancel
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

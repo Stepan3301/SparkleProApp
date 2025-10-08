@@ -12,10 +12,12 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   EyeIcon,
-  MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon
 } from '@heroicons/react/24/outline';
 import SupportChat from './SupportChat';
+import { StaffManagement } from '../../components/admin/StaffManagement';
+import { AssignStaffModal } from '../../components/admin/AssignStaffModal';
+import { AddCleanerModal } from '../../components/admin/AddCleanerModal';
 
 interface DashboardStats {
   totalBookings: number;
@@ -52,6 +54,15 @@ interface Booking {
   addons_total?: number;
   street?: string; // For fetched address info
   service_id?: number; // Service ID for fetching service name
+  assigned_cleaners?: string[]; // Array of cleaner IDs
+  assigned_cleaners_details?: Array<{
+    id: string;
+    name: string;
+    phone?: string;
+    sex?: string;
+    avatar_url?: string;
+    is_active: boolean;
+  }>;
   detailed_addons?: Array<{
     id: number;
     name: string;
@@ -87,6 +98,7 @@ const AdminDashboard: React.FC = () => {
   };
   // Removed notification-related hooks as they're no longer needed
   const [activeTab, setActiveTab] = useState('orders');
+  const [usersSubTab, setUsersSubTab] = useState('customers'); // 'customers' or 'staff'
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -97,6 +109,9 @@ const AdminDashboard: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userBookings, setUserBookings] = useState<Booking[]>([]);
+  const [isAssignStaffModalOpen, setIsAssignStaffModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [orderFilter, setOrderFilter] = useState<'all' | 'new' | 'processed'>('all');
   const [showModal, setShowModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<number | null>(null);
@@ -128,6 +143,16 @@ const AdminDashboard: React.FC = () => {
       setFilteredUsers(filtered);
     }
   }, [userSearchQuery, users]);
+
+  // Filter orders based on selected filter
+  const filteredOrders = bookings.filter(booking => {
+    if (orderFilter === 'new') {
+      return booking.status === 'pending';
+    } else if (orderFilter === 'processed') {
+      return booking.status !== 'pending';
+    }
+    return true; // 'all' - show all orders
+  });
 
   const fetchUnreadSupportCount = async () => {
     try {
@@ -242,17 +267,69 @@ const AdminDashboard: React.FC = () => {
 
   const fetchBookings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('admin_bookings_with_addons')
+      console.log('📡 fetchBookings: Starting to fetch bookings...');
+      
+      // First, fetch all bookings
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
-      
-      // Fetch address information for bookings with address_id
-      const bookingsWithAddresses = await Promise.all(
-        (data || []).map(async (booking) => {
+      if (bookingsError) {
+        console.error('❌ fetchBookings: Error fetching bookings:', bookingsError);
+        throw bookingsError;
+      }
+
+      console.log('✅ fetchBookings: Bookings fetched successfully:', bookingsData?.length);
+
+      // Process each booking to fetch related data
+      const bookingsWithDetails = await Promise.all(
+        (bookingsData || []).map(async (booking) => {
+          let updatedBooking = { ...booking };
+          
+          // Fetch additional services through the junction table
+          try {
+            const { data: addonsData, error: addonsError } = await supabase
+              .from('booking_additional_services')
+              .select(`
+                id,
+                quantity,
+                unit_price,
+                total_price,
+                additional_services (
+                  id,
+                  name,
+                  description,
+                  price
+                )
+              `)
+              .eq('booking_id', booking.id);
+
+            if (addonsError) {
+              console.warn('⚠️ fetchBookings: Error fetching addons for booking', booking.id, ':', addonsError);
+              updatedBooking.detailed_addons = [];
+            } else if (addonsData && addonsData.length > 0) {
+              // Flatten the data structure
+              updatedBooking.detailed_addons = addonsData.map((item: any) => ({
+                id: item.additional_services.id,
+                name: item.additional_services.name,
+                description: item.additional_services.description,
+                price: item.additional_services.price,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                total_price: item.total_price
+              }));
+              console.log('✅ fetchBookings: Processed addons for booking', booking.id, ':', updatedBooking.detailed_addons);
+            } else {
+              updatedBooking.detailed_addons = [];
+            }
+          } catch (error) {
+            console.warn('⚠️ fetchBookings: Failed to fetch addons for booking', booking.id, ':', error);
+            updatedBooking.detailed_addons = [];
+          }
+          
+          // Fetch address information
           if (booking.address_id) {
             try {
               const { data: addressData } = await supabase
@@ -260,18 +337,37 @@ const AdminDashboard: React.FC = () => {
                 .select('street')
                 .eq('id', booking.address_id)
                 .single();
-              return { ...booking, street: addressData?.street };
+              updatedBooking.street = addressData?.street;
             } catch {
-              return booking;
+              // Address fetch failed, continue without it
             }
           }
-          return booking;
+          
+          // Fetch assigned cleaners details
+          if (booking.assigned_cleaners && booking.assigned_cleaners.length > 0) {
+            try {
+              const { data: cleanersData } = await supabase
+                .from('cleaners')
+                .select('id, name, phone, sex, avatar_url, is_active')
+                .in('id', booking.assigned_cleaners);
+              updatedBooking.assigned_cleaners_details = cleanersData || [];
+              console.log('✅ fetchBookings: Cleaners fetched for booking', booking.id, ':', cleanersData?.length);
+            } catch {
+              // Cleaners fetch failed, continue without them
+              updatedBooking.assigned_cleaners_details = [];
+            }
+          } else {
+            updatedBooking.assigned_cleaners_details = [];
+          }
+          
+          return updatedBooking;
         })
       );
       
-      setBookings(bookingsWithAddresses || []);
+      setBookings(bookingsWithDetails || []);
+      console.log('✅ fetchBookings: All bookings processed and set successfully');
     } catch (error) {
-      console.error('Error fetching bookings:', error);
+      console.error('❌ fetchBookings: Error fetching bookings:', error);
     }
   };
 
@@ -349,15 +445,143 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const refreshSelectedBooking = async () => {
+    if (!selectedBooking) {
+      console.log('❌ refreshSelectedBooking: No selectedBooking to refresh');
+      return;
+    }
+    
+    console.log('🔄 refreshSelectedBooking: Starting refresh for booking ID:', selectedBooking.id);
+    
+    try {
+      // Fetch updated booking data
+      console.log('📡 refreshSelectedBooking: Fetching booking data from bookings table...');
+      const { data: bookingData, error: bookingError } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', selectedBooking.id)
+        .single();
+
+      if (bookingError) {
+        console.error('❌ refreshSelectedBooking: Error fetching booking data:', bookingError);
+        throw bookingError;
+      }
+      
+      console.log('✅ refreshSelectedBooking: Booking data fetched successfully:', bookingData);
+      console.log('🧹 refreshSelectedBooking: Assigned cleaners from DB:', bookingData.assigned_cleaners);
+      
+      let updatedBooking = { ...bookingData };
+      
+      // Fetch additional services through the junction table
+      try {
+        const { data: addonsData, error: addonsError } = await supabase
+          .from('booking_additional_services')
+          .select(`
+            id,
+            quantity,
+            unit_price,
+            total_price,
+            additional_services (
+              id,
+              name,
+              description,
+              price
+            )
+          `)
+          .eq('booking_id', selectedBooking.id);
+
+        if (addonsError) {
+          console.warn('⚠️ refreshSelectedBooking: Error fetching addons:', addonsError);
+          updatedBooking.detailed_addons = [];
+        } else if (addonsData && addonsData.length > 0) {
+          // Flatten the data structure
+          updatedBooking.detailed_addons = addonsData.map((item: any) => ({
+            id: item.additional_services.id,
+            name: item.additional_services.name,
+            description: item.additional_services.description,
+            price: item.additional_services.price,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price
+          }));
+          console.log('📦 refreshSelectedBooking: Processed additional services:', updatedBooking.detailed_addons);
+        } else {
+          updatedBooking.detailed_addons = [];
+        }
+      } catch (error) {
+        console.warn('⚠️ refreshSelectedBooking: Failed to fetch addons:', error);
+        updatedBooking.detailed_addons = [];
+      }
+      
+      // Fetch address information
+      if (bookingData.address_id) {
+        try {
+          console.log('🏠 refreshSelectedBooking: Fetching address data for address_id:', bookingData.address_id);
+          const { data: addressData } = await supabase
+            .from('addresses')
+            .select('street')
+            .eq('id', bookingData.address_id)
+            .single();
+          updatedBooking.street = addressData?.street;
+          console.log('✅ refreshSelectedBooking: Address data fetched:', addressData?.street);
+        } catch (error) {
+          console.warn('⚠️ refreshSelectedBooking: Address fetch failed:', error);
+        }
+      }
+      
+      // Fetch assigned cleaners details
+      if (bookingData.assigned_cleaners && bookingData.assigned_cleaners.length > 0) {
+        try {
+          console.log('👥 refreshSelectedBooking: Fetching cleaners details for IDs:', bookingData.assigned_cleaners);
+          const { data: cleanersData, error: cleanersError } = await supabase
+            .from('cleaners')
+            .select('id, name, phone, sex, avatar_url, is_active')
+            .in('id', bookingData.assigned_cleaners);
+          
+          if (cleanersError) {
+            console.error('❌ refreshSelectedBooking: Error fetching cleaners data:', cleanersError);
+            updatedBooking.assigned_cleaners_details = [];
+          } else {
+            console.log('✅ refreshSelectedBooking: Cleaners data fetched successfully:', cleanersData);
+            updatedBooking.assigned_cleaners_details = cleanersData || [];
+          }
+        } catch (error) {
+          console.error('❌ refreshSelectedBooking: Cleaners fetch failed:', error);
+          updatedBooking.assigned_cleaners_details = [];
+        }
+      } else {
+        console.log('ℹ️ refreshSelectedBooking: No assigned cleaners found, setting empty array');
+        updatedBooking.assigned_cleaners_details = [];
+      }
+      
+      console.log('🔄 refreshSelectedBooking: Final updated booking data:', updatedBooking);
+      console.log('👥 refreshSelectedBooking: Final assigned_cleaners_details:', updatedBooking.assigned_cleaners_details);
+      
+      // Update the selected booking with fresh data
+      setSelectedBooking(updatedBooking);
+      console.log('✅ refreshSelectedBooking: Selected booking state updated successfully');
+    } catch (error) {
+      console.error('❌ refreshSelectedBooking: Error refreshing selected booking:', error);
+    }
+  };
+
   const viewBooking = (booking: Booking) => {
     setSelectedBooking(booking);
     setShowModal(true);
   };
 
   const viewUser = async (user: User) => {
-    setSelectedUser(user);
-    await fetchUserBookings(user.id);
-    setShowUserModal(true);
+    // Reset state first to ensure clean modal opening
+    setSelectedUser(null);
+    setUserBookings([]);
+    setShowUserModal(false);
+    
+    // Small delay to ensure state is reset
+    setTimeout(async () => {
+      setSelectedUser(user);
+      await fetchUserBookings(user.id);
+      setShowUserModal(true);
+    }, 50);
   };
 
   const closeModal = () => {
@@ -465,7 +689,7 @@ const AdminDashboard: React.FC = () => {
     return (
       <span className="flex items-center gap-1">
         <DirhamIcon size="sm" color={iconColor} />
-        {amount.toFixed(0)}
+        {amount.toFixed(2)}
       </span>
     );
   };
@@ -499,7 +723,7 @@ const AdminDashboard: React.FC = () => {
               <span className="text-sm font-medium text-gray-700">{profile?.full_name || 'Admin'}</span>
               <button
                 onClick={handleLogout}
-                className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200 transition-colors"
+                className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs hover:text-gray-800 transition-colors focus:outline-none"
               >
                 <ArrowRightOnRectangleIcon className="w-4 h-4" />
               </button>
@@ -535,6 +759,40 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Order Filter Buttons */}
+                <div className="flex gap-2 mb-6 justify-center">
+                  <button
+                    onClick={() => setOrderFilter('all')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none ${
+                      orderFilter === 'all'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:text-emerald-600'
+                    }`}
+                  >
+                    All Orders
+                  </button>
+                  <button
+                    onClick={() => setOrderFilter('new')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none ${
+                      orderFilter === 'new'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:text-orange-600'
+                    }`}
+                  >
+                    New (Pending)
+                  </button>
+                  <button
+                    onClick={() => setOrderFilter('processed')}
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors focus:outline-none ${
+                      orderFilter === 'processed'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    Processed
+                  </button>
+                </div>
+
                 {/* Bookings List */}
                 <div className="space-y-4">
                   {services.length === 0 && (
@@ -542,10 +800,10 @@ const AdminDashboard: React.FC = () => {
                       Loading services...
                     </div>
                   )}
-                  {bookings.map((booking) => (
+                  {filteredOrders.map((booking) => (
                     <div 
                       key={booking.id} 
-                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 border-l-4 border-l-emerald-500 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-4 border-l-4 border-l-emerald-500 cursor-pointer hover:border-l-emerald-600 transition-colors focus:outline-none"
                       onClick={() => viewBooking(booking)}
                     >
                       <div className="flex justify-between items-start mb-3">
@@ -620,93 +878,147 @@ const AdminDashboard: React.FC = () => {
 
             {/* Users Tab */}
             {activeTab === 'users' && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-800 mb-6 text-center">Users Management</h2>
+              <div className="pb-8">
+                {/* Title */}
+                <h1 className="text-lg font-bold text-slate-800 mb-3 text-center">Users Management</h1>
                 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
-                    <div className="text-xl font-bold">{stats?.totalUsers || 0}</div>
-                    <div className="text-xs opacity-90">Total Users</div>
+                {/* Segmented Control with SparklePro styling */}
+                <div className="relative grid grid-cols-2 bg-emerald-50 border border-emerald-200 rounded-2xl overflow-hidden max-w-md mx-auto mb-3">
+                  <button
+                    onClick={() => setUsersSubTab('customers')}
+                    className={`relative py-2.5 px-4 font-black text-sm transition-colors duration-200 focus:outline-none user-select-none ${
+                      usersSubTab === 'customers'
+                        ? 'bg-white text-emerald-600 shadow-lg shadow-emerald-100 z-10'
+                        : 'text-slate-600 hover:text-emerald-600'
+                    }`}
+                  >
+                    Customers
+                  </button>
+                  <button
+                    onClick={() => setUsersSubTab('staff')}
+                    className={`relative py-2.5 px-4 font-black text-sm transition-colors duration-200 focus:outline-none user-select-none ${
+                      usersSubTab === 'staff'
+                        ? 'bg-white text-emerald-600 shadow-lg shadow-emerald-100 z-10'
+                        : 'text-slate-600 hover:text-emerald-600'
+                    }`}
+                  >
+                    Staff
+                  </button>
+                </div>
+
+                {/* Stats Cards - Customers */}
+                <div className={`grid grid-cols-2 gap-2.5 mb-3 ${usersSubTab === 'staff' ? 'hidden' : ''}`}>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">{stats?.totalUsers || 0}</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Total Users</div>
                   </div>
-                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
-                    <div className="text-xl font-bold">{stats?.newUsersThisMonth || 0}</div>
-                    <div className="text-xs opacity-90">New This Month</div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">{stats?.newUsersThisMonth || 0}</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">New This Month</div>
                   </div>
-                  <div className="bg-sky-500 text-white p-4 rounded-lg text-center">
-                    <div className="text-xl font-bold">{stats?.activeClients || 0}</div>
-                    <div className="text-xs opacity-90">Active Clients</div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">{stats?.activeClients || 0}</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Active Clients</div>
                   </div>
-                  <div className="bg-emerald-500 text-white p-4 rounded-lg text-center">
-                    <div className="text-xl font-bold">{stats?.satisfaction || 0}%</div>
-                    <div className="text-xs opacity-90">Satisfaction</div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">{stats?.satisfaction || 0}%</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Satisfaction</div>
                   </div>
                 </div>
 
-                {/* Search Bar */}
-                <div className="mb-4">
-                  <div className="relative">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                {/* Stats Cards - Staff */}
+                <div className={`grid grid-cols-2 gap-2.5 mb-3 ${usersSubTab === 'customers' ? 'hidden' : ''}`}>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">7</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Total Staff</div>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">7</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Active Staff</div>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">0</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Inactive</div>
+                  </div>
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                    <div className="text-xl font-black text-slate-800">3</div>
+                    <div className="text-xs text-slate-500 mt-0.5 font-medium">Female Staff</div>
+                  </div>
+                </div>
+
+                {/* Toolbar */}
+                <div className="flex gap-2.5 items-center mb-4">
+                  <div className="flex-1 flex items-center gap-2.5 bg-white border border-slate-200 rounded-xl px-3 py-2.5 shadow-sm">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                     <input
                       type="text"
-                      placeholder="Search users by name, email, phone, or ID..."
+                      placeholder="Search users by name, email, phone, or ID…"
                       value={userSearchQuery}
                       onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                      className="flex-1 border-0 outline-none text-sm text-slate-700 placeholder-slate-400"
                     />
                   </div>
+                  {usersSubTab === 'staff' && (
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-3 py-2.5 rounded-xl font-black text-sm flex items-center gap-2 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-200/70 transition-all duration-200 focus:outline-none user-select-none"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v14M5 12h14" />
+                      </svg>
+                      Add Cleaner
+                    </button>
+                  )}
                 </div>
 
-                {/* Users List - Compact Design */}
-                <div className="space-y-3">
-                  {filteredUsers.slice(0, 20).map((user) => (
-                    <div key={user.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 border-l-4 border-l-sky-500">
-                      <div className="flex justify-between items-center">
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="font-semibold text-sky-600 text-xs">#{user.id.slice(0, 8)}</div>
-                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                              user.role === 'admin' ? 'bg-emerald-100 text-emerald-800' : 'bg-sky-100 text-sky-800'
-                            }`}>
-                              {user.role.toUpperCase()}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <span className="text-gray-600">Name:</span>
-                              <span className="ml-1 font-semibold text-gray-800">{user.full_name || 'N/A'}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-600">Phone:</span>
-                              <span className="ml-1 font-semibold text-gray-800">{user.phone_number || 'N/A'}</span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-gray-600">Email:</span>
-                              <span className="ml-1 font-semibold text-gray-800 text-xs break-all">{user.email}</span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="ml-3">
+                {/* Customers List */}
+                {usersSubTab === 'customers' && (
+                  <div className="space-y-2.5">
+                    {filteredUsers.slice(0, 20).map((user) => (
+                      <div key={user.id} className="bg-white border border-slate-200 rounded-2xl p-3 shadow-lg shadow-slate-100/50">
+                        <div className="flex items-center justify-between gap-2.5 mb-2">
+                          <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                            CUSTOMER
+                          </span>
                           <button
                             onClick={() => viewUser(user)}
-                            className="flex items-center gap-1 px-3 py-1 bg-sky-500 text-white rounded-lg text-xs hover:bg-sky-600 transition-colors"
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs px-3 py-1.5 rounded-full transition-colors duration-200 focus:outline-none user-select-none"
                           >
-                            <EyeIcon className="w-3 h-3" />
                             View
                           </button>
                         </div>
+                        <div className="space-y-1.5">
+                          <div className="font-black text-sm text-slate-800">#{user.id.slice(0, 8)}</div>
+                          <div className="flex gap-2 text-xs">
+                            <span className="text-slate-500 font-bold w-16 shrink-0">Name:</span>
+                            <span className="flex-1 text-slate-700 font-medium">{user.full_name || 'N/A'}</span>
+                          </div>
+                          <div className="flex gap-2 text-xs">
+                            <span className="text-slate-500 font-bold w-16 shrink-0">Phone:</span>
+                            <span className="flex-1 text-slate-700 font-medium">{user.phone_number || 'N/A'}</span>
+                          </div>
+                          <div className="flex gap-2 text-xs">
+                            <span className="text-slate-500 font-bold w-16 shrink-0">Email:</span>
+                            <span className="flex-1 break-all text-slate-700 font-medium">{user.email}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  
-                  {filteredUsers.length === 0 && userSearchQuery && (
-                    <div className="text-center text-gray-500 py-4">
-                      No users found matching "{userSearchQuery}"
-                    </div>
-                  )}
-                </div>
+                    ))}
+                    
+                    {filteredUsers.length === 0 && userSearchQuery && (
+                      <div className="text-center text-slate-500 py-8 font-medium">
+                        No users found matching "{userSearchQuery}"
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Staff List */}
+                {usersSubTab === 'staff' && (
+                  <StaffManagement />
+                )}
               </div>
             )}
 
@@ -971,6 +1283,66 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 )}
 
+                {/* Assigned Staff Section */}
+                {(() => {
+                  console.log('🔍 Assigned Staff Section: Checking if should render...');
+                  console.log('🔍 Assigned Staff Section: selectedBooking.assigned_cleaners_details:', selectedBooking.assigned_cleaners_details);
+                  console.log('🔍 Assigned Staff Section: Length check:', selectedBooking.assigned_cleaners_details?.length);
+                  console.log('🔍 Assigned Staff Section: Should render:', selectedBooking.assigned_cleaners_details && selectedBooking.assigned_cleaners_details.length > 0);
+                  
+                  return selectedBooking.assigned_cleaners_details && selectedBooking.assigned_cleaners_details.length > 0 ? (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-800 mb-3">Assigned Staff</h3>
+                      <div className="space-y-3">
+                        {selectedBooking.assigned_cleaners_details.map((cleaner: any, index: number) => {
+                          console.log('👤 Rendering cleaner:', cleaner);
+                          return (
+                            <div key={cleaner.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                                  {cleaner.avatar_url ? (
+                                    <img
+                                      src={cleaner.avatar_url}
+                                      alt={cleaner.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-gray-800">{cleaner.name}</div>
+                                  {cleaner.phone && (
+                                    <div className="text-sm text-gray-600">{cleaner.phone}</div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                  cleaner.is_active 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {cleaner.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h3 className="font-semibold text-gray-800 mb-3">Assigned Staff</h3>
+                      <div className="text-sm text-gray-500 italic">
+                        No staff assigned yet
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {selectedBooking.additional_notes && (
                   <div className="bg-gray-50 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-800 mb-3">Additional Notes</h3>
@@ -990,27 +1362,39 @@ const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 space-y-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={closeModal}
+                    className="flex-1 bg-gray-300 hover:text-gray-900 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors focus:outline-none"
+                  >
+                    Close
+                  </button>
+                  <select
+                    value={selectedBooking.status}
+                    onChange={(e) => {
+                      updateBookingStatus(selectedBooking.id, e.target.value);
+                      closeModal();
+                    }}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+                  >
+                    {getStatusOptions().map((status) => (
+                      <option key={status} value={status} className="text-black">
+                        Update to {status.replace('_', ' ').toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
                 <button
-                  onClick={closeModal}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors"
+                  onClick={() => setIsAssignStaffModalOpen(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
                 >
-                  Close
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                  <span>Assign Staff</span>
                 </button>
-                <select
-                  value={selectedBooking.status}
-                  onChange={(e) => {
-                    updateBookingStatus(selectedBooking.id, e.target.value);
-                    closeModal();
-                  }}
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-                >
-                  {getStatusOptions().map((status) => (
-                    <option key={status} value={status} className="text-black">
-                      Update to {status.replace('_', ' ').toUpperCase()}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
@@ -1115,7 +1499,7 @@ const AdminDashboard: React.FC = () => {
               <div className="mt-6">
                 <button
                   onClick={closeUserModal}
-                  className="w-full bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-600 transition-colors"
+                  className="w-full bg-gray-500 text-white py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors focus:outline-none"
                 >
                   Close
                 </button>
@@ -1130,8 +1514,8 @@ const AdminDashboard: React.FC = () => {
         <div className="flex justify-around py-3">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'orders' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none ${
+              activeTab === 'orders' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:text-emerald-600'
             }`}
           >
             <ClipboardDocumentListIcon className="w-5 h-5 mb-1" />
@@ -1139,8 +1523,8 @@ const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'users' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none ${
+              activeTab === 'users' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:text-sky-600'
             }`}
           >
             <UsersIcon className="w-5 h-5 mb-1" />
@@ -1148,8 +1532,8 @@ const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('support')}
-            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all relative ${
-              activeTab === 'support' ? 'bg-purple-100 text-purple-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none relative ${
+              activeTab === 'support' ? 'bg-purple-100 text-purple-600' : 'text-gray-600 hover:text-purple-600'
             }`}
           >
             <div className="relative">
@@ -1164,8 +1548,8 @@ const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'analytics' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none ${
+              activeTab === 'analytics' ? 'bg-emerald-100 text-emerald-600' : 'text-gray-600 hover:text-emerald-600'
             }`}
           >
             <ChartBarIcon className="w-5 h-5 mb-1" />
@@ -1173,8 +1557,8 @@ const AdminDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-all ${
-              activeTab === 'profile' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`flex flex-col items-center px-3 py-2 rounded-lg transition-colors duration-200 focus:outline-none ${
+              activeTab === 'profile' ? 'bg-sky-100 text-sky-600' : 'text-gray-600 hover:text-sky-600'
             }`}
           >
             <Cog6ToothIcon className="w-5 h-5 mb-1" />
@@ -1182,6 +1566,42 @@ const AdminDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Assign Staff Modal */}
+      {selectedBooking && (
+        <AssignStaffModal
+          isOpen={isAssignStaffModalOpen}
+          onClose={() => setIsAssignStaffModalOpen(false)}
+          bookingId={selectedBooking.id}
+          currentAssignedCleaners={selectedBooking.assigned_cleaners || []}
+          onSuccess={async () => {
+            console.log('🎉 AssignStaffModal onSuccess: Staff assignment completed');
+            console.log('⏳ AssignStaffModal onSuccess: Waiting 500ms for DB update to complete...');
+            
+            // Close the modal first
+            setIsAssignStaffModalOpen(false);
+            
+            // Wait a bit for the database update to complete
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            console.log('🔄 AssignStaffModal onSuccess: Starting booking refresh...');
+            // Refresh the selected booking data to show updated assignments
+            await refreshSelectedBooking();
+            console.log('✅ AssignStaffModal onSuccess: Booking refresh completed');
+          }}
+        />
+      )}
+
+      {/* Add Cleaner Modal */}
+      <AddCleanerModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={() => {
+          // Refresh the dashboard data
+          fetchDashboardData();
+          setIsAddModalOpen(false);
+        }}
+      />
     </div>
   );
 };

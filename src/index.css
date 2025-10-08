@@ -11,6 +11,115 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Remove default button styles and hover conflicts */
+button {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Remove focus and active states that cause gray boxes, but preserve intentional backgrounds */
+button:focus,
+button:focus-visible,
+button:focus-within {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Only override active state for buttons without explicit active classes */
+button:active:not([class*="bg-"]):not([class*="active"]) {
+  background-color: inherit !important;
+  border: inherit !important;
+}
+
+/* Remove tap highlights on mobile */
+button:active,
+button:focus,
+*:active,
+*:focus {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Prevent any system focus styles */
+button::-moz-focus-inner {
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove gray box hover effects completely, but preserve intentional backgrounds */
+button:hover:not([class*="bg-"]):not([class*="active"]),
+button:active:not([class*="bg-"]):not([class*="active"]),
+button:focus:not([class*="bg-"]):not([class*="active"]) {
+  background-image: none !important;
+  background-color: inherit !important;
+}
+
+/* Always remove outlines and unwanted box shadows */
+button:hover,
+button:active,
+button:focus {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Override any Tailwind focus styles */
+.focus\:ring-2:focus,
+.focus\:ring-offset-2:focus,
+.focus\:ring-offset-1:focus,
+.focus\:outline-none:focus {
+  --tw-ring-shadow: none !important;
+  --tw-ring-offset-shadow: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Prevent text selection on interactive elements */
+.user-select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Smooth scrolling for better mobile experience */
+html {
+  scroll-behavior: smooth;
+  touch-action: manipulation;
+}
+
+/* Fix scrolling issues */
+body {
+  touch-action: manipulation;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Ensure proper scrolling on all containers */
+* {
+  touch-action: manipulation;
+}
+
+/* Allow scrolling without requiring focus */
+.scrollable,
+div[class*="overflow"],
+div[class*="scroll"] {
+  touch-action: pan-y pan-x;
+}
+
+/* Remove default webkit appearance for buttons */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

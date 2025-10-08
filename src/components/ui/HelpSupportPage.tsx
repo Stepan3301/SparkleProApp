@@ -4,6 +4,19 @@ import { supabase } from '../../lib/supabase';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 
+interface SupportMessage {
+  id: number;
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  message: string;
+  status: 'unread' | 'read' | 'replied' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  created_at: string;
+  updated_at: string;
+  admin_notes?: string;
+}
+
 const HelpSupportPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -11,6 +24,13 @@ const HelpSupportPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
+  
+  // Chat functionality state
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<SupportMessage[]>([]);
+  const [selectedChat, setSelectedChat] = useState<SupportMessage | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +128,105 @@ const HelpSupportPage: React.FC = () => {
   useEffect(() => {
     updateCount();
   }, [message, updateCount]);
+
+  // Chat functionality functions
+  const fetchUserMessages = useCallback(async () => {
+    if (!user) return;
+    
+    setChatLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('support_messages')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setChatMessages(data || []);
+      
+      // Count unread messages (messages that haven't been replied to)
+      const unread = data?.filter(msg => msg.status === 'unread' || msg.status === 'read').length || 0;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error('Error fetching user messages:', error);
+    } finally {
+      setChatLoading(false);
+    }
+  }, [user]);
+
+  const openChat = () => {
+    setShowChat(true);
+    fetchUserMessages();
+  };
+
+  const closeChat = () => {
+    setShowChat(false);
+    setSelectedChat(null);
+  };
+
+  const selectChat = (chatMessage: SupportMessage) => {
+    setSelectedChat(chatMessage);
+  };
+
+  const formatChatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      month: 'short',
+      day: '2-digit'
+    }).format(date);
+  };
+
+  const getStatusColor = (status: SupportMessage['status']) => {
+    switch (status) {
+      case 'unread':
+        return 'rgba(255,200,60,.18)';
+      case 'read':
+        return 'rgba(59,130,246,.18)';
+      case 'replied':
+        return 'rgba(16,185,129,.18)';
+      case 'closed':
+        return 'rgba(107,114,128,.18)';
+      default:
+        return 'rgba(107,114,128,.18)';
+    }
+  };
+
+  const getStatusText = (status: SupportMessage['status']) => {
+    switch (status) {
+      case 'unread':
+        return 'Pending';
+      case 'read':
+        return 'Reviewed';
+      case 'replied':
+        return 'Replied';
+      case 'closed':
+        return 'Closed';
+      default:
+        return 'Unknown';
+    }
+  };
+
+  // Load unread count on component mount
+  useEffect(() => {
+    if (user) {
+      fetchUserMessages();
+    }
+  }, [user, fetchUserMessages]);
+
+  // Handle ESC key to close chat
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showChat) {
+        e.preventDefault();
+        closeChat();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showChat]);
 
   return (
     <div className="support-page">
@@ -493,6 +612,104 @@ const HelpSupportPage: React.FC = () => {
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
           }
         }
+
+        /* Chat FAB and Widget Styles */
+        .chat-fab{
+          position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
+          z-index:60; width:56px; height:56px; border:0; border-radius:16px; cursor:pointer;
+          display:grid; place-items:center; color:#073238;
+          background:linear-gradient(135deg,var(--primary),var(--accent));
+          box-shadow:0 14px 28px rgba(10,189,198,.35);
+          transition: transform .12s ease, filter .2s ease;
+        }
+        .chat-fab:hover{
+          transform: translateY(-1px);
+          filter: saturate(1.05);
+        }
+        .chat-fab svg{width:24px;height:24px;fill:#fff}
+        .chat-fab .fab-gloss{
+          content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+          background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0) 55%);
+          mix-blend-mode:screen; opacity:.85;
+        }
+        .badge{
+          position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 6px;
+          border-radius:999px; background:#ff4d4f; color:#fff; font-size:.75rem; font-weight:900;
+          box-shadow:0 6px 14px rgba(255,77,79,.35); display:grid; place-items:center;
+        }
+
+        /* Chat window */
+        .chat{
+          position:fixed; right:16px; bottom:calc(82px + env(safe-area-inset-bottom));
+          width:min(360px, 92vw); height:460px; border-radius:18px; overflow:hidden; z-index:59;
+          background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow);
+          transform:translateY(16px) scale(.98); opacity:0; pointer-events:none;
+          transition:transform .24s ease, opacity .24s ease;
+        }
+        .chat.show{ transform:translateY(0) scale(1); opacity:1; pointer-events:auto }
+
+        /* Header */
+        .chat__hdr{
+          position:relative; padding:10px 10px 10px 14px; color:#fff;
+          background:
+            radial-gradient(120% 100% at 100% -20%, #c8fff1 0%, transparent 55%),
+            radial-gradient(120% 100% at 0% 120%, #b7f8ff 0%, transparent 60%),
+            linear-gradient(135deg, #6c5dd3, #36c2cf);
+          display:flex; align-items:center; justify-content:space-between;
+        }
+        .chat-title{font-weight:900; display:flex; flex-direction:column}
+        .chat-title small{font-weight:600; opacity:.9}
+        .chat-dot{width:8px;height:8px;border-radius:50%;background:#8affc1;display:inline-block;box-shadow:0 0 12px #8affc1;margin-bottom:6px}
+        .chat-close-btn{border:0;background:rgba(255,255,255,.2); border-radius:12px; width:36px; height:36px; display:grid; place-items:center; cursor:pointer}
+        .chat-close-btn svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2}
+
+        /* Messages list */
+        .chat__list{
+          height: calc(460px - 62px);
+          padding:12px; overflow:auto; background:linear-gradient(#fbfeff,#f6fbfc);
+        }
+        .chat-message{
+          display:flex; gap:10px; margin:8px 0; align-items:flex-start; padding:12px; border-radius:12px;
+          background:#fff; border:1px solid var(--line); box-shadow:0 6px 16px rgba(10,30,40,.08);
+        }
+        .chat-message-content{flex:1}
+        .chat-message-text{margin:0 0 8px; line-height:1.4; color:var(--ink)}
+        .chat-message-meta{display:flex; justify-content:space-between; align-items:center; font-size:.72rem; color:var(--muted)}
+        .chat-status-pill{
+          padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:700;
+          border:1px solid; display:inline-flex; align-items:center;
+        }
+        .chat-back-btn{
+          background:rgba(255,255,255,.2); border:0; border-radius:8px; padding:6px;
+          color:#fff; cursor:pointer; display:flex; align-items:center; gap:4px;
+          font-size:.8rem; font-weight:600;
+        }
+        .chat-back-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
+
+        /* Individual chat view */
+        .individual-chat{
+          height: calc(460px - 62px);
+          padding:12px; overflow:auto; background:linear-gradient(#fbfeff,#f6fbfc);
+        }
+        .chat-bubble{
+          max-width:85%; padding:10px 12px; border-radius:14px; line-height:1.35; font-size:.95rem;
+          margin:8px 0; border:1px solid var(--line); background:#fff; color:var(--ink);
+          box-shadow:0 6px 16px rgba(10,30,40,.08);
+        }
+        .chat-bubble.user{
+          background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff; border-color:transparent;
+          margin-left:auto; margin-right:0;
+        }
+        .chat-bubble.admin{
+          background:#fff; color:var(--ink);
+        }
+        .chat-bubble-meta{display:block; font-size:.72rem; color:var(--muted); margin-top:4px; opacity:.8}
+        .chat-bubble.user .chat-bubble-meta{color:rgba(255,255,255,.8)}
+
+        @media (max-height:700px){
+          .chat{height:400px}
+          .chat__list, .individual-chat{height: calc(400px - 62px)}
+        }
       `}</style>
 
       <div className="support-hero">
@@ -611,6 +828,114 @@ const HelpSupportPage: React.FC = () => {
         </svg>
         <span>Message sent! We'll get back to you soon.</span>
       </div>
+
+      {/* Chat FAB Button */}
+      <button className="chat-fab" onClick={openChat} aria-label="Open support chat">
+        <span className="fab-gloss" aria-hidden="true"></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M21 15a4 4 0 0 1-4 4H9l-6 3 2-4a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v8Z"/>
+        </svg>
+        {unreadCount > 0 && (
+          <span className="badge">{unreadCount}</span>
+        )}
+      </button>
+
+      {/* Chat Widget */}
+      <aside className={`chat ${showChat ? 'show' : ''}`} aria-hidden={!showChat} aria-label="Support chat">
+        <header className="chat__hdr">
+          <div className="chat-title">
+            {selectedChat ? (
+              <button className="chat-back-btn" onClick={() => setSelectedChat(null)}>
+                <svg viewBox="0 0 24 24">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+                Back to messages
+              </button>
+            ) : (
+              <>
+                <span className="chat-dot"></span>
+                Help & Support
+                <small>Your message history</small>
+              </>
+            )}
+          </div>
+          <button className="chat-close-btn" onClick={closeChat} aria-label="Close chat">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6l12 12M18 6l-12 12"/>
+            </svg>
+          </button>
+        </header>
+
+        {!selectedChat ? (
+          // Messages List View
+          <div className="chat__list" role="log" aria-live="polite" aria-relevant="additions">
+            {chatLoading ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)' }}>
+                Loading your messages...
+              </div>
+            ) : chatMessages.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--muted)' }}>
+                No messages yet. Send your first message using the form above!
+              </div>
+            ) : (
+              chatMessages.map((msg) => (
+                <div 
+                  key={msg.id} 
+                  className="chat-message" 
+                  onClick={() => selectChat(msg)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="chat-message-content">
+                    <p className="chat-message-text">
+                      {msg.message.length > 100 ? `${msg.message.substring(0, 100)}...` : msg.message}
+                    </p>
+                    <div className="chat-message-meta">
+                      <span>{formatChatTime(msg.created_at)}</span>
+                      <span 
+                        className="chat-status-pill"
+                        style={{ 
+                          backgroundColor: getStatusColor(msg.status),
+                          borderColor: getStatusColor(msg.status),
+                          color: 'var(--ink)'
+                        }}
+                      >
+                        {getStatusText(msg.status)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          // Individual Chat View
+          <div className="individual-chat">
+            <div className="chat-bubble user">
+              {selectedChat.message}
+              <span className="chat-bubble-meta">{formatChatTime(selectedChat.created_at)}</span>
+            </div>
+            
+            {selectedChat.admin_notes && (
+              <div className="chat-bubble admin">
+                {selectedChat.admin_notes}
+                <span className="chat-bubble-meta">Support Team</span>
+              </div>
+            )}
+            
+            {selectedChat.status === 'unread' || selectedChat.status === 'read' ? (
+              <div style={{ 
+                padding: '12px', 
+                textAlign: 'center', 
+                color: 'var(--muted)', 
+                fontSize: '0.85rem',
+                fontStyle: 'italic'
+              }}>
+                Your message is being reviewed by our support team.
+              </div>
+            ) : null}
+          </div>
+        )}
+      </aside>
     </div>
   );
 };
