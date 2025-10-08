@@ -165,6 +165,7 @@ const BookingPage: React.FC = () => {
   // Add-ons sub-navigation state
   const [activeAddonSection, setActiveAddonSection] = useState<'sofa' | 'carpet' | 'mattress' | 'curtains' | 'other'>('sofa');
   const [isAddonNavSticky, setIsAddonNavSticky] = useState(false);
+  const [addonImagesLoading, setAddonImagesLoading] = useState(true);
   
   // Service data from database
   const [services, setServices] = useState<ServiceType[]>([]);
@@ -448,6 +449,46 @@ const BookingPage: React.FC = () => {
     // This effect triggers re-render when selectedPaymentMethod changes
     // This ensures the floating cart updates with VAT and cash fees
   }, [selectedPaymentMethod]);
+
+  // Preload addon images when additional services are loaded or when moving to step 2
+  useEffect(() => {
+    if (additionalServices.length > 0 && (currentStep === 2 || currentStep > 2)) {
+      preloadAddonImages();
+    }
+  }, [additionalServices, currentStep]);
+
+  // Reset addon images loading state when moving to step 2
+  useEffect(() => {
+    if (currentStep === 2 && additionalServices.length > 0) {
+      setAddonImagesLoading(true);
+      preloadAddonImages();
+    }
+  }, [currentStep]);
+
+  // Ensure floating cart stays fixed at bottom
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .floating-cart-fixed {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 9999 !important;
+        transform: none !important;
+      }
+      
+      /* Ensure scrollable content doesn't overlap cart */
+      .booking-content-with-cart {
+        padding-bottom: 120px !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Complete Packages sub-navigation scroll listener
   useEffect(() => {
@@ -775,6 +816,30 @@ const BookingPage: React.FC = () => {
   const handleGuestSignup = () => {
     setShowGuestSignupModal(false);
     navigate('/auth', { state: { fromBooking: true } });
+  };
+
+  // Preload addon images
+  const preloadAddonImages = async () => {
+    if (additionalServices.length === 0) return;
+    
+    const imagePromises = additionalServices
+      .filter(addon => addon.image_url)
+      .map(addon => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = resolve;
+          img.onerror = resolve; // Resolve even on error to not block loading
+          img.src = addon.image_url;
+        });
+      });
+
+    try {
+      await Promise.all(imagePromises);
+      setAddonImagesLoading(false);
+    } catch (error) {
+      console.log('Some images failed to load, but continuing...');
+      setAddonImagesLoading(false);
+    }
   };
 
   const handleCloseGuestSignupModal = () => {
@@ -1834,14 +1899,24 @@ const BookingPage: React.FC = () => {
               <h2 className="text-xl font-bold text-primary mb-2">{t('booking.steps.extraServices', 'Extra Services')}</h2>
               <p className="text-gray-600">{t('booking.steps.extraServicesDesc', 'Add optional services to enhance your cleaning')}</p>
             </div>
-            
+
+            {/* Loading state for addon images */}
+            {addonImagesLoading && (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-gray-600 text-sm">Loading services...</p>
+              </div>
+            )}
+
+            {/* Show content only when images are loaded */}
+            {!addonImagesLoading && (
             <div id="addons-container" className="space-y-6 mb-6">
               {/* Sub-navigation for Add-ons */}
               <div className={`bg-white/80 backdrop-blur-sm border-b border-gray-200 transition-all duration-300 ${
                 isAddonNavSticky ? 'fixed top-0 left-0 right-0 z-40 shadow-md' : 'relative'
               }`}>
-                <div className="max-w-md mx-auto px-4">
-                  <div className="flex justify-center space-x-1 py-3 overflow-x-auto scrollbar-hide">
+                <div className="w-full px-2">
+                  <div className="flex gap-3 py-3 overflow-x-auto scrollbar-hide" style={{ scrollSnapType: 'x mandatory' }}>
                     {[
                       { key: 'sofa', label: 'Sofa', icon: '🛋️' },
                       { key: 'carpet', label: 'Carpet', icon: '🏠' },
@@ -1852,13 +1927,14 @@ const BookingPage: React.FC = () => {
                       <button
                         key={section.key}
                         onClick={() => scrollToAddonSection(section.key as 'sofa' | 'carpet' | 'mattress' | 'curtains' | 'other')}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-medium transition-all duration-200 border-2 whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 border-2 whitespace-nowrap flex-shrink-0 ${
                           activeAddonSection === section.key
-                            ? 'border-emerald-500 text-emerald-700 bg-emerald-50/30'
-                            : 'border-gray-200 text-gray-600 bg-white/50 hover:border-gray-300 hover:bg-white/70'
+                            ? 'border-emerald-500 text-emerald-700 bg-emerald-50'
+                            : 'border-gray-200 text-gray-600 bg-white hover:border-gray-300 hover:bg-gray-50'
                         }`}
+                        style={{ scrollSnapAlign: 'start' }}
                       >
-                        <span className="text-sm">{section.icon}</span>
+                        <span className="text-base">{section.icon}</span>
                         <span>{section.label}</span>
                       </button>
                     ))}
@@ -2342,14 +2418,16 @@ const BookingPage: React.FC = () => {
               </div>
             </div>
 
+            )}
+
             {/* Total Section */}
             {selectedAddons.length > 0 && (
               <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-5 text-center relative overflow-hidden">
                 <div className="shimmer"></div>
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col items-center justify-center">
                   <div className="text-gray-600 text-sm mb-2">Extra Services Total</div>
                   <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                    <span className="flex items-center gap-1">{selectedAddons.reduce((sum, addon) => sum + addon.price, 0)} <DirhamIcon size="sm" /></span>
+                    <span className="flex items-center justify-center gap-1">{selectedAddons.reduce((sum, addon) => sum + addon.price, 0)} <DirhamIcon size="sm" /></span>
                   </div>
                 </div>
               </div>
@@ -2856,7 +2934,7 @@ const BookingPage: React.FC = () => {
         <h1 className="text-xl font-bold text-gray-900">Make Booking</h1>
       </header>
 
-      <div className="max-w-2xl mx-auto p-4 pb-40">
+      <div className="max-w-2xl mx-auto p-4 booking-content-with-cart">
         {/* Step Indicator */}
         {currentStep <= 4 && (
           <StepIndicator currentStep={currentStep} totalSteps={4} />
@@ -2870,6 +2948,25 @@ const BookingPage: React.FC = () => {
         </div>
 
 
+
+        {/* Booking Policy Notice - Only show on step 4 */}
+        {currentStep === 4 && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-semibold text-amber-800 mb-1">Important Booking Policy</h4>
+                <p className="text-sm text-amber-700">
+                  <strong>Once your order is created, it cannot be cancelled.</strong> However, you can reschedule your booking up to 24 hours before the scheduled service time. By proceeding, you agree to these terms.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navigation Buttons */}
         {currentStep <= 4 && (
@@ -2936,7 +3033,7 @@ const BookingPage: React.FC = () => {
         // For order again data, show cart if we have the service and basic data
         (localStorage.getItem('orderAgainData') && selectedService)
       ) && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
+        <div className="floating-cart-fixed bg-white border-t border-gray-200 shadow-lg">
           <div className="max-w-2xl mx-auto p-4">
             <div className="flex items-center justify-between">
               <div className="flex-1">

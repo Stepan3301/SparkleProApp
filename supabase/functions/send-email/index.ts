@@ -87,10 +87,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'SparklePro <onboarding@resend.dev>', // Will be changed to your domain later
+        from: 'Sparkle NCS <noreply@sparklencs.com>', // Updated sender name and email
         to: [requestData.recipient_email],
         subject: subject,
         html: htmlContent,
+        reply_to: 'support@sparklencs.com', // Support email for replies
       }),
     })
 

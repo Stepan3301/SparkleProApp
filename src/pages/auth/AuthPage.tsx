@@ -992,8 +992,9 @@ const AuthPage: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">2. Booking and Scheduling</h3>
                   <p>
                     All bookings must be made through our platform. We require at least 24 hours notice 
-                    for booking confirmations and 4 hours notice for cancellations. Same-day bookings 
-                    are subject to availability.
+                    for booking confirmations. Once an order is created, customers will not be able to cancel it. 
+                    However, rescheduling is possible up to 24 hours before the initial scheduled date and time. 
+                    Same-day bookings are subject to availability and cannot be rescheduled.
                   </p>
                 </div>
 

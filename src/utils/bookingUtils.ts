@@ -1,12 +1,13 @@
 import { Booking, BookingStatus } from '../types/booking';
 
 /**
- * Check if a booking can be cancelled based on business rules:
+ * Check if a booking can be rescheduled based on business rules:
  * 1. Must be more than 24 hours before the service date/time
  * 2. Must have status "pending" or "confirmed" (not in_progress, completed, or cancelled)
+ * Note: Cancellation is no longer allowed - only rescheduling is permitted
  */
 export const canCancelBooking = (booking: Booking): boolean => {
-  // Check status - only allow cancellation for pending or confirmed bookings
+  // Check status - only allow rescheduling for pending or confirmed bookings
   const allowedStatuses: BookingStatus[] = ['pending', 'confirmed'];
   if (!allowedStatuses.includes(booking.status)) {
     return false;
@@ -23,20 +24,21 @@ export const canCancelBooking = (booking: Booking): boolean => {
 };
 
 /**
- * Get a human-readable reason why cancellation is not allowed
+ * Get a human-readable reason why rescheduling is not allowed
+ * Note: Cancellation is no longer permitted - only rescheduling is available
  */
 export const getCancellationBlockedReason = (booking: Booking): string => {
   const allowedStatuses: BookingStatus[] = ['pending', 'confirmed'];
   if (!allowedStatuses.includes(booking.status)) {
     switch (booking.status) {
       case 'in_progress':
-        return 'Cannot cancel booking that is currently in progress';
+        return 'Cannot reschedule booking that is currently in progress';
       case 'completed':
-        return 'Cannot cancel completed booking';
+        return 'Cannot reschedule completed booking';
       case 'cancelled':
         return 'Booking is already cancelled';
       default:
-        return 'Cannot cancel booking with current status';
+        return 'Cannot reschedule booking with current status';
     }
   }
 
@@ -47,12 +49,12 @@ export const getCancellationBlockedReason = (booking: Booking): string => {
 
   if (timeDifferenceHours <= 24) {
     if (timeDifferenceHours <= 0) {
-      return 'Cannot cancel booking after service time has passed';
+      return 'Cannot reschedule booking after service time has passed';
     }
-    return `Cannot cancel booking less than 24 hours before service (${Math.round(timeDifferenceHours)} hours remaining)`;
+    return `Cannot reschedule booking less than 24 hours before service (${Math.round(timeDifferenceHours)} hours remaining)`;
   }
 
-  return 'Cancellation not allowed';
+  return 'Rescheduling not allowed';
 };
 
 /**
