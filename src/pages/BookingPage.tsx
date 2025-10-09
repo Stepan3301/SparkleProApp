@@ -480,7 +480,22 @@ const BookingPage: React.FC = () => {
       
       /* Ensure scrollable content doesn't overlap cart */
       .booking-content-with-cart {
-        padding-bottom: 120px !important;
+        padding-bottom: 180px !important;
+      }
+      
+      /* For modals and popups that need to account for floating cart */
+      .modal-with-cart {
+        margin-bottom: 120px !important;
+      }
+      
+      /* For full-screen modals that need bottom padding */
+      .modal-content-with-cart {
+        padding-bottom: 140px !important;
+      }
+      
+      /* Ensure buttons in modals are accessible */
+      .modal-button-area {
+        margin-bottom: 20px !important;
       }
     `;
     document.head.appendChild(style);

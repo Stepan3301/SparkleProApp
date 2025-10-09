@@ -57,8 +57,8 @@ const ServiceInclusionsModal: React.FC<ServiceInclusionsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 modal-content-with-cart">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="relative">
           {serviceImage && (
@@ -148,18 +148,20 @@ const ServiceInclusionsModal: React.FC<ServiceInclusionsModalProps> = ({
           )}
 
           {/* Action Button */}
-          <button
-            onClick={() => {
-              if (onSelect) {
-                onSelect();
-              } else {
-                onClose();
-              }
-            }}
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2"
-          >
-            Choose This Package
-          </button>
+          <div className="modal-button-area">
+            <button
+              onClick={() => {
+                if (onSelect) {
+                  onSelect();
+                } else {
+                  onClose();
+                }
+              }}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold py-3 rounded-xl hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-offset-2"
+            >
+              Choose This Package
+            </button>
+          </div>
         </div>
       </div>
     </div>

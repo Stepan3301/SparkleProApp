@@ -72,11 +72,11 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
       {/* Modal */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-50 transform transition-transform duration-300 ease-out modal-with-cart ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
-        <div className="bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <div className="bg-white rounded-t-3xl shadow-2xl max-h-[75vh] overflow-hidden flex flex-col">
           {/* Handle bar */}
           <div className="flex justify-center pt-3 pb-2">
             <div className="w-10 h-1 bg-gray-300 rounded-full" />
@@ -170,7 +170,7 @@ const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({
 
           {/* Action Buttons */}
           {/* Fixed Footer for Buttons */}
-          <div className="border-t border-gray-100 p-6 bg-gray-50 flex-shrink-0">
+          <div className="border-t border-gray-100 p-6 bg-gray-50 flex-shrink-0 modal-button-area">
             <div className="flex gap-3">
               <button
                 onClick={onClose}
