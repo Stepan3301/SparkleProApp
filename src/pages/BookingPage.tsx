@@ -12,7 +12,7 @@ import StepIndicator from '../components/ui/StepIndicator';
 import EnhancedDateTimePicker from '../components/booking/EnhancedDateTimePicker';
 import AddCardForm from '../components/ui/AddCardForm';
 import LoadingScreen from '../components/ui/LoadingScreen';
-import PlacesAutocomplete from '../components/ui/PlacesAutocomplete';
+import AddressAutocomplete from '../components/ui/AddressAutocomplete';
 import PhoneNumberInput from '../components/ui/PhoneNumberInput';
 import GuestSignupModal from '../components/ui/GuestSignupModal';
 import ServiceInclusionsModal from '../components/booking/ServiceInclusionsModal';
@@ -3305,8 +3305,8 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50">
-      <div className="bg-white w-full rounded-t-3xl p-6 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50 modal-content-with-cart">
+      <div className="bg-white w-full rounded-t-3xl p-6 max-h-[75vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-gray-900">
             {isEditing ? 'Edit Address' : 'Add New Address'}
@@ -3324,7 +3324,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Search Building/Place Name</label>
-            <PlacesAutocomplete
+            <AddressAutocomplete
               value={searchValue}
               onChange={handleAddressChange}
               placeholder="Search for building name (e.g., Westwood Grande 2 by Imtiaz)..."
@@ -3368,20 +3368,22 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
             />
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            shape="bubble"
-            size="md"
-            disabled={loading || !searchValue.trim()}
-            fullWidth={true}
-            className="!py-3 !shadow-lg"
-          >
-            {loading 
-              ? (isEditing ? 'Updating...' : 'Adding...') 
-              : (isEditing ? 'Update Address' : 'Add Address')
-            }
-          </Button>
+          <div className="modal-button-area">
+            <Button
+              type="submit"
+              variant="primary"
+              shape="bubble"
+              size="md"
+              disabled={loading || !searchValue.trim()}
+              fullWidth={true}
+              className="!py-3 !shadow-lg"
+            >
+              {loading 
+                ? (isEditing ? 'Updating...' : 'Adding...') 
+                : (isEditing ? 'Update Address' : 'Add Address')
+              }
+            </Button>
+          </div>
         </form>
       </div>
     </div>

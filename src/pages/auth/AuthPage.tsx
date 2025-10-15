@@ -349,22 +349,31 @@ const AuthPage: React.FC = () => {
           -webkit-appearance: none !important;
           appearance: none !important;
           outline: none !important;
+          -webkit-user-select: none !important;
+          -moz-user-select: none !important;
+          -ms-user-select: none !important;
+          user-select: none !important;
+          -webkit-touch-callout: none !important;
         }
 
         .submit-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
-          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+          /* No hover effects */
+          background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+          color: white !important;
         }
 
         .submit-btn:active {
-          transform: translateY(0);
+          /* No active effects - maintain original colors */
+          background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+          color: white !important;
+          transform: none !important;
         }
 
         .submit-btn:focus {
           outline: none !important;
-          box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3) !important;
-          background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%) !important;
+          /* No focus effects - maintain original colors */
+          background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%) !important;
+          color: white !important;
         }
 
         .submit-btn:disabled {

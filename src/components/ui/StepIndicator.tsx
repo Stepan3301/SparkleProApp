@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -6,7 +6,8 @@ interface StepIndicatorProps {
 }
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }) => {
-  const stepLabels = ['Service', 'Extras', 'Schedule', 'Contact'];
+  // ✅ Memoize step labels to avoid recreation
+  const stepLabels = useMemo(() => ['Service', 'Extras', 'Schedule', 'Contact'], []);
 
   return (
     <div className="mb-8">
@@ -124,4 +125,5 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
   );
 };
 
-export default StepIndicator; 
+// ✅ Memoize StepIndicator component
+export default memo(StepIndicator); 

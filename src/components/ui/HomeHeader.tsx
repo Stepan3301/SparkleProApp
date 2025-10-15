@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { useSimpleTranslation } from '../../utils/i18n';
 import { MapPinIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -15,32 +15,34 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ userStats, onProfileClick }) =>
   const { user, profile } = useAuth();
   const { t } = useSimpleTranslation();
 
-  const getGreeting = () => {
+  // ✅ Memoize greeting to avoid recalculation on every render
+  const greeting = useMemo(() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
-  };
+  }, []);
 
-  const getUserName = () => {
+  // ✅ Memoize user name
+  const userName = useMemo(() => {
     return profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
-  };
+  }, [profile?.full_name, user?.user_metadata?.full_name, user?.email]);
 
-  const getUserAvatar = () => {
+  // ✅ Memoize avatar URL
+  const avatarUrl = useMemo(() => {
     if (profile?.avatar_url) {
       return profile.avatar_url;
     }
-    // Generate avatar based on user name
-    const name = getUserName();
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0ABDC6&color=fff&size=120`;
-  };
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=0ABDC6&color=fff&size=120`;
+  }, [profile?.avatar_url, userName]);
 
-  const getPersonalizedMessage = () => {
+  // ✅ Memoize personalized message
+  const personalizedMessage = useMemo(() => {
     if (userStats.totalBookings > 0) {
       return 'Hope your last cleaning was perfect!';
     }
     return 'Welcome to SparklePro!';
-  };
+  }, [userStats.totalBookings]);
 
   return (
     <section className="home-hero">
@@ -56,9 +58,9 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ userStats, onProfileClick }) =>
       <header className="hero-content">
         <div className="hero-row">
           <div className="user">
-            <img className="avatar" src={getUserAvatar()} alt="User avatar" />
+            <img className="avatar" src={avatarUrl} alt="User avatar" />
             <div className="user-meta">
-              <h1 className="user-name">{getGreeting()}, {getUserName()}! 👋</h1>
+              <h1 className="user-name">{greeting}, {userName}! 👋</h1>
               <div className="user-sub">
                 <div className="location flex items-center gap-1 text-sm opacity-90">
                   <MapPinIcon className="w-3 h-3" />
@@ -76,7 +78,7 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ userStats, onProfileClick }) =>
         </div>
 
         <div className="welcome-card">
-          <div className="welcome-title">✨ {getPersonalizedMessage()}</div>
+          <div className="welcome-title">✨ {personalizedMessage}</div>
           <div className="welcome-text">
             {userStats.totalBookings > 0 
               ? `${userStats.totalBookings} cleaning${userStats.totalBookings > 1 ? 's' : ''} completed • ${userStats.totalAddresses} address${userStats.totalAddresses > 1 ? 'es' : ''} saved`
@@ -220,4 +222,5 @@ const HomeHeader: React.FC<HomeHeaderProps> = ({ userStats, onProfileClick }) =>
   );
 };
 
-export default HomeHeader;
+// ✅ Memoize component to prevent unnecessary re-renders
+export default memo(HomeHeader);

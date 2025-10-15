@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/OptimizedAuthContext';
 import { supabase } from '../../lib/supabase';
 import Button from '../../components/ui/Button';
-import PlacesAutocomplete from '../../components/ui/PlacesAutocomplete';
+import AddressAutocomplete from '../../components/ui/AddressAutocomplete';
 import AddressSuccessAnimation from '../../components/ui/AddressSuccessAnimation';
 
 import { 
@@ -516,7 +516,7 @@ const AddAddressModal: React.FC<AddAddressModalProps> = ({ address, onClose, onS
           <div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Search Building/Place Name</label>
-              <PlacesAutocomplete
+              <AddressAutocomplete
                 value={searchValue}
                 onChange={(address: string, placeDetails?: any) => {
                   console.log('Places API - Address changed:', address, placeDetails);

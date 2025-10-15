@@ -18,6 +18,9 @@ import {
 import SEO from '../components/seo/SEO';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import PWAInstallPrompt from '../components/ui/PWAInstallPrompt';
+// ✅ React Query hooks
+import { useActiveBookings } from '../hooks/useBookings';
+import { useServices } from '../hooks/useServices';
 
 interface UserStats {
   totalBookings: number;
@@ -53,18 +56,54 @@ const HomePage: React.FC = () => {
   const { user, isGuest } = useAuth();
   const { t } = useSimpleTranslation();
   const { currentReviewBooking, dismissCurrentReview, markReviewCompleted } = useReviewNotifications();
+  // ✅ React Query hooks - automatic caching and state management
+  const { 
+    data: activeBookingsData, 
+    isLoading: activeBookingsLoading,
+    isError: activeBookingsError 
+  } = useActiveBookings(user?.id);
+
+  const { 
+    data: servicesData, 
+    isLoading: servicesLoading,
+    isError: servicesError 
+  } = useServices();
+
+  // Local state
   const [userStats, setUserStats] = useState<UserStats>({
     totalBookings: 0,
     averageRating: 4.9,
     totalAddresses: 0
   });
-  const [activeBookings, setActiveBookings] = useState<ActiveBooking[]>([]);
-  const [services, setServices] = useState<ServiceData[]>([]);
   const [popularServices, setPopularServices] = useState<ServiceData[]>([]);
   const [userPreferences, setUserPreferences] = useState<string[]>([]);
   const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
+  
+  // ✅ Derive loading state from React Query
+  const loading = activeBookingsLoading || servicesLoading;
+
+  // ✅ Transform React Query data to match existing component expectations
+  const activeBookings = useMemo(() => {
+    if (!activeBookingsData) return [];
+    
+    // Transform to match existing interface
+    return activeBookingsData.slice(0, 3).map(booking => ({
+      id: booking.id,
+      service_date: booking.service_date,
+      service_time: booking.service_time,
+      status: booking.status,
+      total_price: booking.total_price,
+      property_size: booking.property_size,
+      service_name: booking.services?.name || 'Cleaning Service',
+      service_image_url: booking.services?.image_url || '/regular-cleaning.jpg'
+    }));
+  }, [activeBookingsData]);
+
+  const services = useMemo(() => {
+    if (!servicesData) return [];
+    return servicesData.filter(s => s.is_active !== false);
+  }, [servicesData]);
   
   // Service Detail Modal State
   const [selectedService, setSelectedService] = useState<ServiceData | null>(null);
@@ -79,33 +118,26 @@ const HomePage: React.FC = () => {
   const [showGuestAccessModal, setShowGuestAccessModal] = useState(false);
   const [guestAccessType, setGuestAccessType] = useState<'profile' | 'history'>('profile');
 
+  // ✅ Simplified useEffect - React Query handles activeBookings and services
   useEffect(() => {
-    // Load data for both authenticated users and guests
-    const loadAllData = async () => {
-      setLoading(true);
+    const loadAdditionalData = async () => {
       try {
         if (user) {
-          // For authenticated users, load all data
+          // Only fetch data not covered by React Query hooks
           await Promise.all([
             fetchUserStats(),
             fetchProfile(),
-            fetchActiveBookings(),
-            fetchServices(),
             fetchPopularServices()
           ]);
-          // These can load in parallel without affecting layout
+          // Load preferences in parallel (non-critical)
           fetchUserPreferences();
         } else if (isGuest) {
-          // For guest users, only load public data
-          await Promise.all([
-            fetchServices(),
-            fetchPopularServices()
-          ]);
+          // For guest users, only load popular services (services handled by React Query)
+          await fetchPopularServices();
         }
       } catch (error) {
         console.error('Error loading homepage data:', error);
       } finally {
-        setLoading(false);
         // Only set initial loading to false after the first load
         if (initialLoading) {
           setInitialLoading(false);
@@ -113,14 +145,14 @@ const HomePage: React.FC = () => {
       }
     };
     
-    loadAllData();
+    loadAdditionalData();
 
     // Set up real-time updates every 30 seconds (only for authenticated users)
+    // React Query will handle activeBookings automatically with refetchOnWindowFocus
     if (user) {
       const interval = setInterval(() => {
-        // Only refresh data, don't show loading for background updates
+        // Only refresh stats (React Query handles bookings)
         fetchUserStats();
-        fetchActiveBookings();
       }, 30000);
 
       return () => clearInterval(interval);
@@ -180,59 +212,11 @@ const HomePage: React.FC = () => {
   };
 
 
-  const fetchServices = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('services')
-        .select('id, name, description, base_price, price_per_hour, is_active, image_url')
-        .eq('is_active', true)
-        .order('name');
+  // ✅ Removed - now handled by React Query useServices hook
+  // const fetchServices = async () => { ... }
 
-      if (error) throw error;
-      setServices(data || []);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-    }
-  };
-
-  const fetchActiveBookings = async () => {
-    if (!user) return;
-
-    try {
-      const now = new Date().toISOString();
-      const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select(`
-          id,
-          service_date,
-          service_time,
-          status,
-          total_price,
-          property_size,
-          services (
-            name,
-            image_url
-          )
-        `)
-        .eq('customer_id', user.id)
-        .in('status', ['confirmed', 'in_progress'])
-        .gte('service_date', now.split('T')[0])
-        .order('service_date', { ascending: true })
-        .limit(3);
-
-      if (error) throw error;
-
-      const transformedBookings = (bookings || []).map(booking => ({
-        ...booking,
-        service_name: booking.services?.[0]?.name || 'Cleaning Service',
-        service_image_url: booking.services?.[0]?.image_url || '/regular-cleaning.jpg'
-      }));
-
-      setActiveBookings(transformedBookings);
-    } catch (error) {
-      console.error('Error fetching active bookings:', error);
-    }
-  };
+  // ✅ Removed - now handled by React Query useActiveBookings hook
+  // const fetchActiveBookings = async () => { ... }
 
   const fetchPopularServices = async () => {
     try {

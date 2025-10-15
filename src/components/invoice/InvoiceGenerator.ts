@@ -1,4 +1,5 @@
-import jsPDF from 'jspdf';
+// ✅ Dynamic import type - no direct import
+type jsPDF = any;
 
 // Invoice data interface
 export interface InvoiceData {
@@ -39,23 +40,27 @@ export interface InvoiceData {
 }
 
 export class InvoiceGenerator {
-  private doc: jsPDF;
-  private pageWidth: number;
-  private pageHeight: number;
-  private margin: number;
-  private currentY: number;
+  private doc: jsPDF | null = null;
+  private pageWidth: number = 0;
+  private pageHeight: number = 0;
+  private margin: number = 20;
+  private currentY: number = 20;
   private logoLoaded: boolean = false;
 
-  constructor() {
-    this.doc = new jsPDF('p', 'mm', 'a4');
+  // ✅ Initialize with dynamic import
+  async init(): Promise<void> {
+    const { default: jsPDFModule } = await import('jspdf');
+    this.doc = new jsPDFModule('p', 'mm', 'a4');
     this.pageWidth = this.doc.internal.pageSize.getWidth();
     this.pageHeight = this.doc.internal.pageSize.getHeight();
-    this.margin = 20;
     this.currentY = this.margin;
   }
 
   // Generate PDF invoice
   public async generateInvoice(data: InvoiceData): Promise<void> {
+    if (!this.doc) {
+      await this.init();
+    }
     await this.addHeader(data);
     this.addCompanyAndCustomerInfo(data);
     this.addServiceDetailsTable(data);
@@ -64,15 +69,24 @@ export class InvoiceGenerator {
 
   // Download the generated PDF
   public download(filename: string): void {
+    if (!this.doc) throw new Error('PDF not initialized');
     this.doc.save(filename);
   }
 
   // Get PDF as blob for preview
   public getBlob(): Blob {
+    if (!this.doc) throw new Error('PDF not initialized');
     return this.doc.output('blob');
   }
 
+  private ensureDoc(): asserts this is { doc: jsPDF } {
+    if (!this.doc) {
+      throw new Error('PDF document not initialized. Call init() or generateInvoice() first.');
+    }
+  }
+
   private async addHeader(data: InvoiceData): Promise<void> {
+    this.ensureDoc();
     // Professional header background - grey instead of green
     this.doc.setFillColor(156, 163, 175); // gray-400 for professional look
     this.doc.rect(0, 0, this.pageWidth, 30, 'F');
@@ -108,6 +122,7 @@ export class InvoiceGenerator {
   }
 
   private async addLogo(): Promise<void> {
+    this.ensureDoc();
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
@@ -117,7 +132,7 @@ export class InvoiceGenerator {
           const logoHeight = (img.height / img.width) * logoWidth;
           
           // Add logo to PDF
-          this.doc.addImage(img, 'PNG', this.margin, 5, logoWidth, logoHeight);
+          this.doc!.addImage(img, 'PNG', this.margin, 5, logoWidth, logoHeight);
           this.logoLoaded = true;
           resolve();
         } catch (error) {
@@ -130,6 +145,7 @@ export class InvoiceGenerator {
   }
 
   private addCompanyAndCustomerInfo(data: InvoiceData): void {
+    this.ensureDoc();
     // Reset text color to black
     this.doc.setTextColor(0, 0, 0);
     
@@ -141,8 +157,8 @@ export class InvoiceGenerator {
     this.doc.setFont('helvetica', 'normal');
     this.doc.setFontSize(10);
     this.doc.text('Dubai, UAE', this.margin, this.currentY + 6);
-    this.doc.text('Phone: +971-XXX-XXXX', this.margin, this.currentY + 12);
-    this.doc.text('Email: info@sparklenew.com', this.margin, this.currentY + 18);
+    this.doc.text('Phone: +971 52 787 5006', this.margin, this.currentY + 12);
+    this.doc.text('Email: sparklencs@gmail.com', this.margin, this.currentY + 18);
     this.doc.text('Website: www.sparklenew.com', this.margin, this.currentY + 24);
     
     // Customer information (right side)
@@ -189,6 +205,7 @@ export class InvoiceGenerator {
   }
 
   private addServiceDetailsTable(data: InvoiceData): void {
+    this.ensureDoc();
     // Table header - grey background to match header (taller to accommodate AED text)
     this.doc.setFillColor(156, 163, 175); // gray-400 to match header
     this.doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 15, 'F'); // Increased from 10 to 15
@@ -242,6 +259,7 @@ export class InvoiceGenerator {
   }
 
   private addTableRow(title: string, description: string, qty: string, rate: string, amount: string): void {
+    this.ensureDoc();
     // Alternating row colors
     if (Math.floor((this.currentY - 85) / 25) % 2 === 0) {
       this.doc.setFillColor(249, 250, 251); // gray-50
@@ -279,6 +297,7 @@ export class InvoiceGenerator {
   }
 
   private addTotalsSection(data: InvoiceData): void {
+    this.ensureDoc();
     const rightX = this.pageWidth - 80;
     
     // Calculate height needed for totals section
@@ -325,6 +344,7 @@ export class InvoiceGenerator {
   }
 
   private addFooter(): void {
+    this.ensureDoc();
     // Footer section
     this.currentY = this.pageHeight - 50;
     

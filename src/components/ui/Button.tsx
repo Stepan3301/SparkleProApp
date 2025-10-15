@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 export type ButtonVariant = 
   | 'primary'
@@ -172,4 +172,5 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
-export default Button; 
+// ✅ Memoize Button component to prevent re-renders when props haven't changed
+export default memo(Button); 
