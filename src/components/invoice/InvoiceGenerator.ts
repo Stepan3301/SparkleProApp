@@ -79,17 +79,18 @@ export class InvoiceGenerator {
     return this.doc.output('blob');
   }
 
-  private ensureDoc(): asserts this is { doc: jsPDF } {
+  private ensureDoc(): jsPDF {
     if (!this.doc) {
       throw new Error('PDF document not initialized. Call init() or generateInvoice() first.');
     }
+    return this.doc;
   }
 
   private async addHeader(data: InvoiceData): Promise<void> {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     // Professional header background - grey instead of green
-    this.doc.setFillColor(156, 163, 175); // gray-400 for professional look
-    this.doc.rect(0, 0, this.pageWidth, 30, 'F');
+    doc.setFillColor(156, 163, 175); // gray-400 for professional look
+    doc.rect(0, 0, this.pageWidth, 30, 'F');
     
     // Add logo
     try {
@@ -99,30 +100,30 @@ export class InvoiceGenerator {
     }
     
     // Company name - white text
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(24);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Sparkle New', 50, 15);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sparkle New', 50, 15);
     
-    this.doc.setFontSize(12);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.text('CLEANING SERVICE', 50, 22);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('CLEANING SERVICE', 50, 22);
     
     // Invoice title and number - white text
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(18);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text('INVOICE', this.pageWidth - 60, 12);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', this.pageWidth - 60, 12);
     
-    this.doc.setFontSize(14);
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.text(`#${data.bookingNumber}`, this.pageWidth - 60, 20);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`#${data.bookingNumber}`, this.pageWidth - 60, 20);
     
     this.currentY = 40;
   }
 
   private async addLogo(): Promise<void> {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
@@ -132,7 +133,7 @@ export class InvoiceGenerator {
           const logoHeight = (img.height / img.width) * logoWidth;
           
           // Add logo to PDF
-          this.doc!.addImage(img, 'PNG', this.margin, 5, logoWidth, logoHeight);
+          doc.addImage(img, 'PNG', this.margin, 5, logoWidth, logoHeight);
           this.logoLoaded = true;
           resolve();
         } catch (error) {
@@ -145,86 +146,86 @@ export class InvoiceGenerator {
   }
 
   private addCompanyAndCustomerInfo(data: InvoiceData): void {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     // Reset text color to black
-    this.doc.setTextColor(0, 0, 0);
+    doc.setTextColor(0, 0, 0);
     
     // Company information (left side)
-    this.doc.setFontSize(11);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Sparkle New Cleaning Service', this.margin, this.currentY);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sparkle New Cleaning Service', this.margin, this.currentY);
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
-    this.doc.text('Dubai, UAE', this.margin, this.currentY + 6);
-    this.doc.text('Phone: +971 52 787 5006', this.margin, this.currentY + 12);
-    this.doc.text('Email: sparklencs@gmail.com', this.margin, this.currentY + 18);
-    this.doc.text('Website: www.sparklenew.com', this.margin, this.currentY + 24);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Dubai, UAE', this.margin, this.currentY + 6);
+    doc.text('Phone: +971 52 787 5006', this.margin, this.currentY + 12);
+    doc.text('Email: sparklencs@gmail.com', this.margin, this.currentY + 18);
+    doc.text('Website: www.sparklenew.com', this.margin, this.currentY + 24);
     
     // Customer information (right side)
     const rightX = this.pageWidth - 80;
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setFontSize(11);
-    this.doc.text('BILL TO:', rightX, this.currentY);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('BILL TO:', rightX, this.currentY);
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
-    this.doc.text(data.customerName, rightX, this.currentY + 6);
-    this.doc.text(data.customerPhone, rightX, this.currentY + 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(data.customerName, rightX, this.currentY + 6);
+    doc.text(data.customerPhone, rightX, this.currentY + 12);
     
     // Split address into multiple lines if too long
     const addressLines = this.splitText(data.customerAddress, 50);
     addressLines.forEach((line, index) => {
-      this.doc.text(line, rightX, this.currentY + 18 + (index * 6));
+      doc.text(line, rightX, this.currentY + 18 + (index * 6));
     });
     
     this.currentY += 40;
     
     // Invoice details section
-    this.doc.setFillColor(248, 250, 252); // gray-50
-    this.doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 20, 'F');
+    doc.setFillColor(248, 250, 252); // gray-50
+    doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 20, 'F');
     
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setFontSize(10);
-    this.doc.text('Invoice Date:', this.margin + 5, this.currentY + 7);
-    this.doc.text('Service Date:', this.margin + 5, this.currentY + 14);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Invoice Date:', this.margin + 5, this.currentY + 7);
+    doc.text('Service Date:', this.margin + 5, this.currentY + 14);
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.text(data.invoiceDate, this.margin + 35, this.currentY + 7);
-    this.doc.text(`${data.serviceDate} at ${data.serviceTime}`, this.margin + 35, this.currentY + 14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.invoiceDate, this.margin + 35, this.currentY + 7);
+    doc.text(`${data.serviceDate} at ${data.serviceTime}`, this.margin + 35, this.currentY + 14);
     
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.text('Status:', rightX, this.currentY + 7);
-    this.doc.text('Payment:', rightX, this.currentY + 14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Status:', rightX, this.currentY + 7);
+    doc.text('Payment:', rightX, this.currentY + 14);
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.text(data.status.toUpperCase(), rightX + 20, this.currentY + 7);
-    this.doc.text('Due on completion', rightX + 20, this.currentY + 14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(data.status.toUpperCase(), rightX + 20, this.currentY + 7);
+    doc.text('Due on completion', rightX + 20, this.currentY + 14);
     
     this.currentY += 30;
   }
 
   private addServiceDetailsTable(data: InvoiceData): void {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     // Table header - grey background to match header (taller to accommodate AED text)
-    this.doc.setFillColor(156, 163, 175); // gray-400 to match header
-    this.doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 15, 'F'); // Increased from 10 to 15
+    doc.setFillColor(156, 163, 175); // gray-400 to match header
+    doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 15, 'F'); // Increased from 10 to 15
     
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFontSize(10);
-    this.doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     
     // Table headers - adjusted Y position for taller header
-    this.doc.text('DESCRIPTION', this.margin + 3, this.currentY + 9);
-    this.doc.text('QTY', this.margin + 80, this.currentY + 9);
-    this.doc.text('RATE', this.margin + 100, this.currentY + 9);
-    this.doc.text('AMOUNT', this.pageWidth - 35, this.currentY + 9);
+    doc.text('DESCRIPTION', this.margin + 3, this.currentY + 9);
+    doc.text('QTY', this.margin + 80, this.currentY + 9);
+    doc.text('RATE', this.margin + 100, this.currentY + 9);
+    doc.text('AMOUNT', this.pageWidth - 35, this.currentY + 9);
     
     this.currentY += 20; // Increased from 15 to 20
     
     // Reset text color
-    this.doc.setTextColor(0, 0, 0);
-    this.doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
     
     // Main service row
     const mainServiceAmount = data.subtotal - data.additionalServices.reduce((sum, service) => sum + (service.price * (service.quantity || 1)), 0);
@@ -259,45 +260,45 @@ export class InvoiceGenerator {
   }
 
   private addTableRow(title: string, description: string, qty: string, rate: string, amount: string): void {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     // Alternating row colors
     if (Math.floor((this.currentY - 85) / 25) % 2 === 0) {
-      this.doc.setFillColor(249, 250, 251); // gray-50
-      this.doc.rect(this.margin, this.currentY - 2, this.pageWidth - (this.margin * 2), 20, 'F');
+      doc.setFillColor(249, 250, 251); // gray-50
+      doc.rect(this.margin, this.currentY - 2, this.pageWidth - (this.margin * 2), 20, 'F');
     }
     
     // Title
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setFontSize(10);
-    this.doc.text(title, this.margin + 3, this.currentY + 4);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(title, this.margin + 3, this.currentY + 4);
     
     // Description
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     const descLines = this.splitText(description, 60);
     descLines.forEach((line, index) => {
-      this.doc.text(line, this.margin + 3, this.currentY + 10 + (index * 4));
+      doc.text(line, this.margin + 3, this.currentY + 10 + (index * 4));
     });
     
     // Quantity, Rate, Amount
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
-    this.doc.text(qty, this.margin + 83, this.currentY + 4);
-    this.doc.text(rate, this.margin + 103, this.currentY + 4);
-    this.doc.text(amount, this.pageWidth - 35, this.currentY + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(qty, this.margin + 83, this.currentY + 4);
+    doc.text(rate, this.margin + 103, this.currentY + 4);
+    doc.text(amount, this.pageWidth - 35, this.currentY + 4);
     
     this.currentY += Math.max(15, descLines.length * 4 + 8);
     
     // Add line separator
-    this.doc.setDrawColor(229, 231, 235); // gray-200
-    this.doc.setLineWidth(0.2);
-    this.doc.line(this.margin, this.currentY, this.pageWidth - this.margin, this.currentY);
+    doc.setDrawColor(229, 231, 235); // gray-200
+    doc.setLineWidth(0.2);
+    doc.line(this.margin, this.currentY, this.pageWidth - this.margin, this.currentY);
     
     this.currentY += 5;
   }
 
   private addTotalsSection(data: InvoiceData): void {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     const rightX = this.pageWidth - 80;
     
     // Calculate height needed for totals section
@@ -307,69 +308,69 @@ export class InvoiceGenerator {
     }
     
     // Totals background - expanded to fit all information
-    this.doc.setFillColor(248, 250, 252); // gray-50
-    this.doc.rect(rightX - 15, this.currentY, 85, totalHeight, 'F'); // Expanded width from 70 to 85, added 5 more margin
+    doc.setFillColor(248, 250, 252); // gray-50
+    doc.rect(rightX - 15, this.currentY, 85, totalHeight, 'F'); // Expanded width from 70 to 85, added 5 more margin
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
     
     // Subtotal
-    this.doc.text('Subtotal:', rightX - 10, this.currentY + 8);
-    this.doc.text(`${data.subtotal.toFixed(2)} AED`, rightX + 40, this.currentY + 8);
+    doc.text('Subtotal:', rightX - 10, this.currentY + 8);
+    doc.text(`${data.subtotal.toFixed(2)} AED`, rightX + 40, this.currentY + 8);
     
     // VAT
-    this.doc.text('VAT (5%):', rightX - 10, this.currentY + 16);
-    this.doc.text(`${data.vatAmount.toFixed(2)} AED`, rightX + 40, this.currentY + 16);
+    doc.text('VAT (5%):', rightX - 10, this.currentY + 16);
+    doc.text(`${data.vatAmount.toFixed(2)} AED`, rightX + 40, this.currentY + 16);
     
     // Cash fee (if applicable)
     if (data.cashFee > 0) {
-      this.doc.text('Cash Fee:', rightX - 10, this.currentY + 24);
-      this.doc.text(`${data.cashFee.toFixed(2)} AED`, rightX + 40, this.currentY + 24);
+      doc.text('Cash Fee:', rightX - 10, this.currentY + 24);
+      doc.text(`${data.cashFee.toFixed(2)} AED`, rightX + 40, this.currentY + 24);
       this.currentY += 8;
     }
     
     // Total line
-    this.doc.setDrawColor(156, 163, 175); // gray-400 to match theme
-    this.doc.setLineWidth(1);
-    this.doc.line(rightX - 10, this.currentY + 28, rightX + 55, this.currentY + 28);
+    doc.setDrawColor(156, 163, 175); // gray-400 to match theme
+    doc.setLineWidth(1);
+    doc.line(rightX - 10, this.currentY + 28, rightX + 55, this.currentY + 28);
     
     // Total amount
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setFontSize(12);
-    this.doc.setTextColor(75, 85, 99); // gray-600 for professional look
-    this.doc.text('TOTAL:', rightX - 10, this.currentY + 36);
-    this.doc.text(`${data.totalCost.toFixed(2)} AED`, rightX + 40, this.currentY + 36);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(75, 85, 99); // gray-600 for professional look
+    doc.text('TOTAL:', rightX - 10, this.currentY + 36);
+    doc.text(`${data.totalCost.toFixed(2)} AED`, rightX + 40, this.currentY + 36);
     
     this.currentY += 55;
   }
 
   private addFooter(): void {
-    this.ensureDoc();
+    const doc = this.ensureDoc();
     // Footer section
     this.currentY = this.pageHeight - 50;
     
     // Thank you section - grey background to match theme
-    this.doc.setFillColor(156, 163, 175); // gray-400 to match header
-    this.doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 25, 'F');
+    doc.setFillColor(156, 163, 175); // gray-400 to match header
+    doc.rect(this.margin, this.currentY, this.pageWidth - (this.margin * 2), 25, 'F');
     
-    this.doc.setTextColor(255, 255, 255);
-    this.doc.setFont('helvetica', 'bold');
-    this.doc.setFontSize(12);
-    this.doc.text('Thank you for choosing Sparkle New Cleaning Service!', this.margin + 5, this.currentY + 8);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Thank you for choosing Sparkle New Cleaning Service!', this.margin + 5, this.currentY + 8);
     
-    this.doc.setFont('helvetica', 'normal');
-    this.doc.setFontSize(10);
-    this.doc.text('We appreciate your business and look forward to serving you again.', this.margin + 5, this.currentY + 16);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('We appreciate your business and look forward to serving you again.', this.margin + 5, this.currentY + 16);
     
     // Terms and conditions
     this.currentY += 30;
-    this.doc.setTextColor(100, 100, 100);
-    this.doc.setFontSize(8);
-    this.doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     
-    this.doc.text('PAYMENT TERMS: Payment is due upon completion of service. Late payments may incur additional charges.', this.margin, this.currentY);
-    this.doc.text('This invoice was generated electronically and is valid without signature.', this.margin, this.currentY + 4);
-    this.doc.text(`Generated on ${new Date().toLocaleDateString('en-GB')} | Invoice #${Math.random().toString(36).substr(2, 9).toUpperCase()}`, this.margin, this.currentY + 8);
+    doc.text('PAYMENT TERMS: Payment is due upon completion of service. Late payments may incur additional charges.', this.margin, this.currentY);
+    doc.text('This invoice was generated electronically and is valid without signature.', this.margin, this.currentY + 4);
+    doc.text(`Generated on ${new Date().toLocaleDateString('en-GB')} | Invoice #${Math.random().toString(36).substr(2, 9).toUpperCase()}`, this.margin, this.currentY + 8);
   }
 
   private splitText(text: string, maxWidth: number): string[] {
